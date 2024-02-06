@@ -19,8 +19,21 @@ router.post('/', (req, res) => {
 })
 
 router.post('/run-picard-tools', (req, res) => {
-  const picardCommand = 'java';
-  const picardArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), '-h'];
+  //// I CAN RUN PICARD TOOLS
+  // const picardCommand = 'java';
+  // const picardArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CommandLineTool' ];
+
+  //// I CAN RUN FASTQC
+  // const picardCommand = path.join(__dirname, '..', 'bio_modules', 'FastQC.app', 'Contents', 'MacOS', 'fastqc');
+  // const picardArgs = ['-version' ];
+
+  //// I CAN RUN BWA
+  // const picardCommand = path.join(__dirname, '..', 'bio_modules', 'bwa');
+  // const picardArgs = ['index' ];
+
+  //// I CAN RUN SAMTOOLS BABEY
+  const picardCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const picardArgs = ['help' ];
 
   const picardProcess = spawn(picardCommand, picardArgs);
 
