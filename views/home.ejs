@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tripathi Bioinformatics</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+    <h1>Bioinformatics Landing Page</h1>
+    <p>Welcome! Please Select a Workflow</p>
+
+    <form action="/file-information" method="post">
+        <input type="hidden" name="mode" value="custom">
+        <button type="submit">
+            <div>
+                <h2>Create My Own Pipeline</h2>
+                <br>
+                <p>I have a moderate to advanced level of experience and I would like to customize my conversion
+                    pipeline</p>
+            </div>
+        </button>
+    </form>
+
+    <form action="/file-information" method="post">
+        <input type="hidden" name="mode" value="recommended">
+        <button type="submit">
+            <div>
+                <h2>Use Recommended Pipeline</h2>
+                <br>
+                <p>I would like a pipeline to be generated for me based on my file format and preferences</p>
+            </div>
+        </button>
+    </form>
+
+</body>
+
+</html>

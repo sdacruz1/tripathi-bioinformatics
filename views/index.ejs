@@ -15,6 +15,11 @@
 
     <button id="runButton">Run Child Process</button>
 
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="file">
+      <button type="submit">Upload</button>
+    </form>
+
   <script>
     const runButton = document.getElementById('runButton');
 
