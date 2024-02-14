@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tripathi Bioinformatics</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+    <h1>Bioinformatics File Informatics</h1>
+
+    <h3>Select an Input Type</h3>
+    <button id="DNAButton">
+        <h4>DNA</h4>
+    </button>
+    <button id="RNAButton">
+        <h4>RNA</h4>
+    </button>
+    <br>
+
+    <h3>Upload File(s)</h3>
+    <form id="fileForm" action="/upload-test" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" id="fileInput">
+    </form>
+
+    <h3 id="adapterCheckHeading"></h3>
+
+    <script>
+        // Define variables to store button states
+        let DNA = false;
+        let RNA = false;
+
+        // Get references to the buttons
+        const DNAbutton = document.getElementById('DNAButton');
+        const RNAbutton = document.getElementById('RNAButton');
+
+        // Adapter check heading
+        const ACHeading = document.getElementById('adapterCheckHeading');
+
+        // Add event listener for Button 1
+        DNAbutton.addEventListener('click', function () {
+            // Set the variable based on the button press
+            DNA = true;
+            RNA = false;
+
+            // Perform any other actions based on the button press
+            ACHeading.textContent = 'DNA'
+            console.log('Button 1 pressed');
+        });
+
+        // Add event listener for Button 2
+        RNAbutton.addEventListener('click', function () {
+            // Set the variable based on the button press
+            DNA = false;
+            RNA = true;
+
+            // Perform any other actions based on the button press
+            ACHeading.textContent = 'RNA'
+            console.log('Button 2 pressed');
+        });
+
+    </script>
+
+</body>
+
+</html>

@@ -25,19 +25,52 @@ router.get('/', function(req, res, next) {
   res.render('home');
 });
 
+router.get('/file-info', function(req, res, next) {
+  res.render('file-info');
+});
+
+router.get('/test', function(req, res, next) {
+  res.render('test');
+});
+
 router.post('/file-information', function(req, res, next) {
   const mode = req.body.mode;
 
   // Perform different actions based on the buttonType
   if (mode === 'custom') {
-    res.send('<h1>Custom</h1>');
+    // res.send('<h1>Custom</h1>');
+    res.render('file-info');
     // res.render('index', {title: mode});
   } else if (mode === 'recommended') {
-    res.send('<h1>Recommended</h1>');
+    // res.send('<h1>Recommended</h1>');
+    res.render('file-info');
     // res.render('index', {title: mode});
   } else {
     res.send('<h1>Unknown button type</h1>');
   }
+});
+
+router.post('/upload-test', upload.single('file'), (req, res) => {
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Access file details
+  const fileName = uploadedFile.originalname;
+  const fileSize = uploadedFile.size;
+
+  // Log the file name on the server
+  console.log(`Uploaded file name: ${fileName}`);
+  console.log(`File Size: ${fileSize} bytes`);
+
+  // You can perform additional processing or respond to the client here
+
+  // Respond with information about the uploaded file
+  res.send(`File Size: ${fileSize} bytes`);
 });
 
 // Handle file upload
