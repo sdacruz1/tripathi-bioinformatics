@@ -9,6 +9,7 @@
 <body>
     <h1>Bioinformatics File Informatics</h1>
 
+    <!-- Input Type Buttons -->
     <h3>Select an Input Type</h3>
     <button id="DNAButton">
         <h4>DNA</h4>
@@ -18,46 +19,111 @@
     </button>
     <br>
 
+    <!-- Upload Main Files -->
     <h3>Upload File(s)</h3>
     <form id="fileForm" action="/upload-test" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" id="fileInput">
+        <input type="file" name="file" id="Main_File_Uploader" multiple>
+    </form>
+    <p id="fileTypeInfo"></p>
+
+    <!-- Upload Adapter Files -->
+    <h3 id="adapterCheckHeading"></h3>
+    <form id="fileForm" action="/upload-test" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" id="Adapter_File_Uploader" multiple>
     </form>
 
-    <h3 id="adapterCheckHeading"></h3>
+    <!-- Upload RNA Genome Files (Optional) -->
+    <h3>Reference Genome/Transcriptome</h3>
+    <form id="fileForm" action="/upload-test" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" id="RNA_Genome_Uploader" multiple disabled>
+    </form>
 
+    <!-- Continue Button -->
+    <button id="file_info_continue_button" disabled><h3>Continue</h3></button>
+
+
+    <!-- ... LOGIC ... -->
     <script>
-        // Define variables to store button states
-        let DNA = false;
-        let RNA = false;
+        // ... INPUT TYPE BUTTONS ... //
 
-        // Get references to the buttons
+        // Define the input type
+        let input_type = '';
+
+        // Get references to the buttons and the RNA Genome Uploader
         const DNAbutton = document.getElementById('DNAButton');
         const RNAbutton = document.getElementById('RNAButton');
+        const RNA_Genome_Uploader = document.getElementById('RNA_Genome_Uploader');
 
-        // Adapter check heading
-        const ACHeading = document.getElementById('adapterCheckHeading');
-
-        // Add event listener for Button 1
+        
+        // If DNA Button clicked
         DNAbutton.addEventListener('click', function () {
-            // Set the variable based on the button press
-            DNA = true;
-            RNA = false;
-
-            // Perform any other actions based on the button press
-            ACHeading.textContent = 'DNA'
-            console.log('Button 1 pressed');
+            // Set input type to DNA and disable the RNA Genome Uploader
+            input_type = 'DNA';
+            RNA_Genome_Uploader.disabled = true;
         });
 
-        // Add event listener for Button 2
+        // If RNA Button clicked
         RNAbutton.addEventListener('click', function () {
-            // Set the variable based on the button press
-            DNA = false;
-            RNA = true;
-
-            // Perform any other actions based on the button press
-            ACHeading.textContent = 'RNA'
-            console.log('Button 2 pressed');
+            // Set input type to RNA and enable the RNA Genome Uploader
+            input_type = 'RNA';
+            RNA_Genome_Uploader.disabled = false;
         });
+        
+
+        // ... MAIN FILE UPLOADER ... //
+        
+        // Get references to the upload button and the file information text
+        const mainFileInput = document.getElementById('Main_File_Uploader');
+        const fileTypeCheck = document.getElementById('fileTypeInfo');
+
+        // Get the adapter variable, heading text, and uploader
+        const hasAdapters = false;
+        const ACHeading = document.getElementById('adapterCheckHeading');
+        const adapterFileInput = document.getElementById('Adapter_File_Uploader');
+
+
+        // When a file is uploaded
+        mainFileInput.addEventListener('change', function () {
+            // Check the number of files. If it's more than 2, deliver an error
+            const selectedFile = mainFileInput.files[0];
+
+            // Check and display the file type(s). If it's not a valid type, deliver an error
+            if (selectedFile) {
+                const fileName = selectedFile.name;
+                const fileExtension = fileName.split('.').pop().toLowerCase();
+
+                // Check the file extension to determine the file type
+                if (fileExtension === 'bcl') {
+                    fileTypeCheck.textContent = 'BCL file detected';
+                } else if (fileExtension === 'fastq') {
+                    fileTypeCheck.textContent = 'FastQ file detected';
+                } else if (fileExtension === 'fasta' || fileExtension === 'fast5') {
+                    fileTypeCheck.textContent = 'FASTA and FAST5 file detected';
+                } else if (fileExtension === 'bam') {
+                    fileTypeCheck.textContent = 'BAM file detected';
+                } else if (fileExtension === 'sam' || fileExtension === 'cram') {
+                    fileTypeCheck.textContent = 'SAM and CRAM files detected';
+                } else {
+                    fileTypeCheck.textContent = 'Unknown file type';
+                }
+            }
+
+            // ...  ADAPTERS ... //
+            // // Run FastQC on the files and check for adapters
+            // // Set the adapter text/variable and uploader enabled settings accordingly
+            // hasAdapters = result;
+            // if (result) {
+            // ACHeading.textContent = 'Your data appears to have an adapter applied. Please upload an adapter file.'
+            // } else {
+            // ACHeading.textContent = 'We found no adapters on your file.'
+            // }
+            // if input type is DNA and there are no adapters, enable the continue button
+        });
+
+        // If an adapter file is uploaded...
+
+        // If a genome file is uploaded...
+       
 
     </script>
 
