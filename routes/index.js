@@ -21,19 +21,19 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', function (req, res, next) {
   res.render('home');
 });
 
-router.get('/file-info', function(req, res, next) {
+router.get('/file-info', function (req, res, next) {
   res.render('file-info');
 });
 
-router.get('/test', function(req, res, next) {
+router.get('/test', function (req, res, next) {
   res.render('test');
 });
 
-router.post('/file-information', function(req, res, next) {
+router.post('/file-information', function (req, res, next) {
   const mode = req.body.mode;
 
   // Perform different actions based on the buttonType
@@ -50,8 +50,9 @@ router.post('/file-information', function(req, res, next) {
   }
 });
 
-router.post('/upload-test', upload.single('file'), (req, res) => {
-  const uploadedFile = req.file;
+router.post('/main-file-upload', upload.array('files'), (req, res) => {
+  const uploadedFile = req.files[0];
+  const secondFile = req.files[1];
 
   // Check if a file was uploaded
   if (!uploadedFile) {
@@ -59,18 +60,39 @@ router.post('/upload-test', upload.single('file'), (req, res) => {
     return;
   }
 
-  // Access file details
-  const fileName = uploadedFile.originalname;
-  const fileSize = uploadedFile.size;
+  if (req.files.length > 2) {
+    res.status(400).send('Too many files uploaded');
+    return;
+  }
 
-  // Log the file name on the server
-  console.log(`Uploaded file name: ${fileName}`);
-  console.log(`File Size: ${fileSize} bytes`);
+  // Run FastQC
 
-  // You can perform additional processing or respond to the client here
+  const hasAdapters = false; // set this based on the result of the QC
 
-  // Respond with information about the uploaded file
-  res.send(`File Size: ${fileSize} bytes`);
+  // return whether the file has adapters or not
+  res.json({ hasAdapters });
+
+});
+
+router.post('/upload-test', upload.array('files'), (req, res) => {
+  const uploadedFile = req.files[0];
+  const secondFile = req.files[1];
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  if (req.files.length > 2) {
+    res.status(400).send('Too many files uploaded');
+    return;
+  }
+
+  // Run FastQC
+
+  // return wether the file has adapters or not
+
 });
 
 // Handle file upload
@@ -127,7 +149,7 @@ router.post('/run-picard-tools', (req, res) => {
 
   //// I CAN RUN SAMTOOLS BABEY
   const picardCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const picardArgs = ['help' ];
+  const picardArgs = ['help'];
 
   const picardProcess = spawn(picardCommand, picardArgs);
 

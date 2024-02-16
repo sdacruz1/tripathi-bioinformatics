@@ -21,15 +21,16 @@
 
     <!-- Upload Main Files -->
     <h3>Upload File(s)</h3>
-    <form id="fileForm" action="/upload-test" method="post" enctype="multipart/form-data">
+    <form id="mainFileForm" enctype="multipart/form-data">
         <input type="file" name="file" id="Main_File_Uploader" multiple>
+        <button type="button" onclick="processmainFile()">Upload</button>
     </form>
     <p id="fileTypeInfo"></p>
 
     <!-- Upload Adapter Files -->
     <h3 id="adapterCheckHeading"></h3>
     <form id="fileForm" action="/upload-test" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" id="Adapter_File_Uploader" multiple>
+        <input type="file" name="file" id="Adapter_File_Uploader" multiple disabled>
     </form>
 
     <!-- Upload RNA Genome Files (Optional) -->
@@ -39,7 +40,9 @@
     </form>
 
     <!-- Continue Button -->
-    <button id="file_info_continue_button" disabled><h3>Continue</h3></button>
+    <button id="file_info_continue_button" disabled>
+        <h3>Continue</h3>
+    </button>
 
 
     <!-- ... LOGIC ... -->
@@ -54,7 +57,7 @@
         const RNAbutton = document.getElementById('RNAButton');
         const RNA_Genome_Uploader = document.getElementById('RNA_Genome_Uploader');
 
-        
+
         // If DNA Button clicked
         DNAbutton.addEventListener('click', function () {
             // Set input type to DNA and disable the RNA Genome Uploader
@@ -68,10 +71,10 @@
             input_type = 'RNA';
             RNA_Genome_Uploader.disabled = false;
         });
-        
+
 
         // ... MAIN FILE UPLOADER ... //
-        
+
         // Get references to the upload button and the file information text
         const mainFileInput = document.getElementById('Main_File_Uploader');
         const fileTypeCheck = document.getElementById('fileTypeInfo');
@@ -81,13 +84,15 @@
         const ACHeading = document.getElementById('adapterCheckHeading');
         const adapterFileInput = document.getElementById('Adapter_File_Uploader');
 
+        // Get the continue button
+        const continue_button = document.getElementById('file_info_continue_button');
 
-        // When a file is uploaded
+
+        // When a file is uploaded, display the detected file type
         mainFileInput.addEventListener('change', function () {
-            // Check the number of files. If it's more than 2, deliver an error
             const selectedFile = mainFileInput.files[0];
 
-            // Check and display the file type(s). If it's not a valid type, deliver an error
+            // Check and display the file type(s). If it's not a valid type, say so
             if (selectedFile) {
                 const fileName = selectedFile.name;
                 const fileExtension = fileName.split('.').pop().toLowerCase();
@@ -107,23 +112,54 @@
                     fileTypeCheck.textContent = 'Unknown file type';
                 }
             }
-
-            // ...  ADAPTERS ... //
-            // // Run FastQC on the files and check for adapters
-            // // Set the adapter text/variable and uploader enabled settings accordingly
-            // hasAdapters = result;
-            // if (result) {
-            // ACHeading.textContent = 'Your data appears to have an adapter applied. Please upload an adapter file.'
-            // } else {
-            // ACHeading.textContent = 'We found no adapters on your file.'
-            // }
-            // if input type is DNA and there are no adapters, enable the continue button
         });
 
+        function processmainFile() {
+            const fileInput = document.getElementById('Main_File_Uploader');
+            const formData = new FormData();
+
+            for (const file of fileInput.files) {
+                formData.append('files', file);
+            }
+
+            // Make an asynchronous request to the server using the Fetch API
+            fetch('/main-file-upload', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json()) // Assume the server sends JSON data
+                .then(data => {
+                    // ...  ADAPTERS ... //
+                    // Run FastQC on the files and check for adapters
+                    hasAdapters = data.hasAdapters;
+
+                    // Set the adapter text/variable and uploader enabled settings accordingly
+                    if (hasAdapters) {
+                        ACHeading.textContent = 'Your data appears to have an adapter applied. Please upload an adapter file.'
+                        adapterFileInput.disabled = false;
+                    } else {
+                        ACHeading.textContent = 'We found no adapters on your file.'
+                        adapterFileInput.disabled = true;
+                        // if input type is DNA and there are no adapters, enable the continue button
+                        if (input_type === 'DNA') {
+                            continue_button.disabled = false;
+                        }
+                    }
+
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
         // If an adapter file is uploaded...
+        // nothing to do! just send it to the backend
+        // and set up a listener to activate the continue button if input type is DNA
 
         // If a genome file is uploaded...
-       
+        // have the backend check if it's a transcriptome or not
+        // set that variable and the info text, then activate the continue button
+
 
     </script>
 
