@@ -11,14 +11,16 @@
     <h2>Select a goalpost for the end of your timeline</h2>
 
     <form id="menuForm">
-        <% for (let i = 0; i < 4; i++) { %>
-            <h2>Category <%= i + 1 %></h2>
+        <% let count = 0;
+        for (let i = 0; i < categories.length; i++) { %>
+            <h2><%=categories[i] %></h2>
 
             <div>
-                <% for (let j = 0; j < 3; j++) { %>
+                <% for (let j = 0; j < categoryOptions[i].length; j++) {
+                    count++; %>
                     <label>
-                        <input type="checkbox" name="option<%= i * 3 + j %>" <% if (checkboxStatus[i * 3 + j]) { %>checked<% } %>>
-                        Option <%= i * 3 + j + 1 %>
+                        <input type="checkbox" name="option<%=count%>" <% if (checkboxStatus[count]) { %>checked<% } %>>
+                        <%= categoryOptions[i][j] %>
                     </label>
                 <% } %>
             </div>

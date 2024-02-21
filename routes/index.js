@@ -34,10 +34,21 @@ router.get('/test', function (req, res, next) {
 });
 
 router.get('/dna-goalposts', (req, res) => {
-  // Initialize an array to track the checkbox status
+  // Category titles
+  const categories = ["File Processing", "Statistics", "Summary", "Graphs", "Metrics", "Cleanup and Sequencing"];
+  // Options by category
+  const fileCategory = ["Trimming", "Alignment", "BAM File"];
+  const statsCategory = ["Add or Replace Read Groups", "Bam Index Stats"];
+  const summaryCategory = ["Alignment Summary", "GC Bias Summary", "Insert Size Summary"];
+  const graphsCategory = ["Alignment Graph", "GC Bias Graphs", "Insert Size Graphs"];
+  const metricsCategory = ["Quality Yield Metrics", "Whole Genome Sequencing Metrics", "Targeted PCR Metrics"];
+  const cleanupCategory = ["Create Sequence Dictionary", "Mark Duplicates", "Sort Bam File", "Flag Stats", "Sequencing Depth", "Sequencing Coverage"];
+  // Assembled options by category
+  const categoryOptions = [fileCategory, statsCategory, summaryCategory, graphsCategory, metricsCategory, cleanupCategory];
+  // Checkbox status
   const checkboxStatus = [false, false, false, false, false, false, false, false, false, false, false, false];
 
-  res.render('dna-goalposts', { checkboxStatus });
+  res.render('dna-goalposts', { categories, categoryOptions, checkboxStatus });
 });
 
 router.post('/qc-check-2', (req, res) => {
