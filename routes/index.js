@@ -33,6 +33,18 @@ router.get('/test', function (req, res, next) {
   res.render('test');
 });
 
+router.get('/dna-goalposts', (req, res) => {
+  // Initialize an array to track the checkbox status
+  const checkboxStatus = [false, false, false, false, false, false, false, false, false, false, false, false];
+
+  res.render('dna-goalposts', { checkboxStatus });
+});
+
+router.post('/qc-check-2', (req, res) => {
+  // stuff here
+  res.redirect('dna-goalposts');
+})
+
 router.post('/file-information', function (req, res, next) {
   const mode = req.body.mode;
 

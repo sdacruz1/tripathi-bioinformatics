@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tripathi Bioinformatics</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+    <h1>Recommended Pipeline</h1>
+    <h2>Select a goalpost for the end of your timeline</h2>
+
+    <form id="menuForm">
+        <% for (let i = 0; i < 4; i++) { %>
+            <h2>Category <%= i + 1 %></h2>
+
+            <div>
+                <% for (let j = 0; j < 3; j++) { %>
+                    <label>
+                        <input type="checkbox" name="option<%= i * 3 + j %>" <% if (checkboxStatus[i * 3 + j]) { %>checked<% } %>>
+                        Option <%= i * 3 + j + 1 %>
+                    </label>
+                <% } %>
+            </div>
+        <% } %>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        // Client-side JavaScript to handle checkbox changes
+        const form = document.getElementById('menuForm');
+        form.addEventListener('change', function(event) {
+            if (event.target.type === 'checkbox') {
+                const index = parseInt(event.target.name.replace('option', ''), 10);
+                checkboxStatus[index] = event.target.checked;
+            }
+        });
+    </script>
+
+</body>
+
+</html>

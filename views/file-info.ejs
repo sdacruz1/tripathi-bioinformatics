@@ -7,7 +7,7 @@
 </head>
 
 <body>
-    <h1>Bioinformatics File Informatics</h1>
+    <h1>Bioinformatics File Information</h1>
 
     <!-- Input Type Buttons -->
     <h3>Select an Input Type</h3>
@@ -22,7 +22,7 @@
     <!-- Upload Main Files -->
     <h3>Upload File(s)</h3>
     <form id="mainFileForm" enctype="multipart/form-data">
-        <input type="file" name="file" id="Main_File_Uploader" multiple>
+        <input type="file" name="file" id="Main_File_Uploader" multiple disabled>
         <button type="button" onclick="processMainFile()">Confirm</button>
     </form>
     <p id="fileTypeInfo"></p>
@@ -44,6 +44,7 @@
 
     <!-- Continue Button -->
     <form action="/qc-check-2" method="post">
+        <!-- can send the variables along as hidden values in this form -->
         <button type="submit" id="file_info_continue_button" disabled>
             <h3>Continue</h3>
         </button>
@@ -62,11 +63,15 @@
         const RNAbutton = document.getElementById('RNAButton');
         const RNA_Genome_Uploader = document.getElementById('RNA_Genome_Uploader');
 
+        // Get references to the upload button and the file information text
+        const Main_File_Uploader = document.getElementById('Main_File_Uploader');
+        const fileTypeCheck = document.getElementById('fileTypeInfo');
 
         // If DNA Button clicked
         DNAbutton.addEventListener('click', function () {
-            // Set input type to DNA and disable the RNA Genome Uploader
+            // Set input type to DNA, enable the main upload, and disable the RNA Genome Uploader
             input_type = 'DNA';
+            Main_File_Uploader.disabled = false;
             RNA_Genome_Uploader.disabled = true;
         });
 
@@ -74,18 +79,16 @@
         RNAbutton.addEventListener('click', function () {
             // Set input type to RNA and enable the RNA Genome Uploader
             input_type = 'RNA';
+            Main_File_Uploader.disabled = false;
             RNA_Genome_Uploader.disabled = false;
         });
 
 
         // ... MAIN FILE UPLOADER ... //
 
-        // Get references to the upload button and the file information text
-        const mainFileInput = document.getElementById('Main_File_Uploader');
-        const fileTypeCheck = document.getElementById('fileTypeInfo');
 
         // Get the Adapter objects
-        const hasAdapters = false;
+        hasAdapters = false;
         const ACHeading = document.getElementById('adapterCheckHeading');
         const adapterFileInput = document.getElementById('Adapter_File_Uploader');
         const adapterUploadButton = document.getElementById('adapterUploadButton');
@@ -98,8 +101,8 @@
 
 
         // When a file is uploaded, display the detected file type
-        mainFileInput.addEventListener('change', function () {
-            const selectedFile = mainFileInput.files[0];
+        Main_File_Uploader.addEventListener('change', function () {
+            const selectedFile = Main_File_Uploader.files[0];
 
             // Check and display the file type(s). If it's not a valid type, say so
             if (selectedFile) {
