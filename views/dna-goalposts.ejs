@@ -11,28 +11,28 @@
     <h2>Select a goalpost for the end of your timeline</h2>
 
     <form id="menuForm">
-        <% let count = 0;
-        for (let i = 0; i < categories.length; i++) { %>
-            <h2><%=categories[i] %></h2>
+        <% let count=0; for (let i=0; i < categories.length; i++) { %>
+            <h3>
+                <%=categories[i] %>
+            </h3>
 
             <div>
-                <% for (let j = 0; j < categoryOptions[i].length; j++) {
-                    count++; %>
+                <% for (let j=0; j < categoryOptions[i].length; j++) { count++; %>
                     <label>
                         <input type="checkbox" name="option<%=count%>" <% if (checkboxStatus[count]) { %>checked<% } %>>
-                        <%= categoryOptions[i][j] %>
+                            <%= categoryOptions[i][j] %>
                     </label>
-                <% } %>
+                    <% } %>
             </div>
-        <% } %>
+            <% } %>
 
-        <button type="submit">Submit</button>
+                <button type="submit">Generate Timeline</button>
     </form>
 
     <script>
         // Client-side JavaScript to handle checkbox changes
         const form = document.getElementById('menuForm');
-        form.addEventListener('change', function(event) {
+        form.addEventListener('change', function (event) {
             if (event.target.type === 'checkbox') {
                 const index = parseInt(event.target.name.replace('option', ''), 10);
                 checkboxStatus[index] = event.target.checked;

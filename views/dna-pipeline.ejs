@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tripathi Bioinformatics</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+    <h1>Recommended Pipeline</h1>
+    <h2>Your recommended pipieline:</h2>
+
+    <form id="menuForm">
+        <h3>File Type Requirments</h3>
+        <label>
+            <input type="checkbox" name="option0" <% if (checkboxStatus[0]) { %>checked<% } %>>
+                Demultiplex FastQ
+        </label>
+
+
+        <% let count=1;%>
+            <%for (let i=0; i < categories.length; i++) { %>
+                <h3>
+                    <%=categories[i] %>
+                </h3>
+
+                <div>
+                    <% for (let j=0; j < categoryOptions[i].length; j++) { count++; %>
+                        <label>
+                            <input type="checkbox" name="option<%=count%>" <% if (checkboxStatus[count]) { %>checked<% }
+                                %>>
+                                <%= categoryOptions[i][j] %>
+                        </label>
+                        <% } %>
+                </div>
+                <% } %>
+
+                    <button type="submit">Run Timeline</button>
+    </form>
+
+</body>
+
+</html>

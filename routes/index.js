@@ -37,7 +37,7 @@ router.get('/dna-goalposts', (req, res) => {
   // Category titles
   const categories = ["File Processing", "Statistics", "Summary", "Graphs", "Metrics", "Cleanup and Sequencing"];
   // Options by category
-  const fileCategory = ["Trimming", "Alignment", "BAM File"];
+  const fileCategory = ["Trimming", "Alignment", "Convert to BAM File", "Cleanup BAM File"];
   const statsCategory = ["Add or Replace Read Groups", "Bam Index Stats"];
   const summaryCategory = ["Alignment Summary", "GC Bias Summary", "Insert Size Summary"];
   const graphsCategory = ["Alignment Graph", "GC Bias Graphs", "Insert Size Graphs"];
