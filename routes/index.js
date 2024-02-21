@@ -51,6 +51,17 @@ router.get('/dna-goalposts', (req, res) => {
   res.render('dna-goalposts', { categories, categoryOptions, checkboxStatus });
 });
 
+router.post('/dna-pipeline', (req, res) => {
+  // const categories = req.body.categories;
+  // const categoryOptions = req.body.categoryOptions;
+  const checkboxStatus = req.query['checkboxStatus[]'];
+  if (checkboxStatus) {
+    console.log('yeah');
+  }
+  // const checkboxStatus = req.body.checkboxStatus;
+  res.render('dna-pipeline', { checkboxStatus });
+})
+
 router.post('/qc-check-2', (req, res) => {
   // stuff here
   res.redirect('dna-goalposts');

@@ -10,7 +10,7 @@
     <h1>Recommended Pipeline</h1>
     <h2>Select a goalpost for the end of your timeline</h2>
 
-    <form id="menuForm">
+    <form id="menuForm" action="/dna-pipeline" method="post">
         <% let count=0; for (let i=0; i < categories.length; i++) { %>
             <h3>
                 <%=categories[i] %>
@@ -25,6 +25,9 @@
                     <% } %>
             </div>
             <% } %>
+            <% checkboxStatus.forEach((value, index) => { %>
+                <input type="hidden" name="checkboxStatus[]" value="<%= value %>">
+            <% }); %>
 
                 <button type="submit">Generate Timeline</button>
     </form>

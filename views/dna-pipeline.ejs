@@ -27,8 +27,7 @@
                 <div>
                     <% for (let j=0; j < categoryOptions[i].length; j++) { count++; %>
                         <label>
-                            <input type="checkbox" name="option<%=count%>" <% if (checkboxStatus[count]) { %>checked<% }
-                                %>>
+                            <input type="range" name="option<%=count%>" min="0" max="1" step="1">
                                 <%= categoryOptions[i][j] %>
                         </label>
                         <% } %>
@@ -37,6 +36,18 @@
 
                     <button type="submit">Run Timeline</button>
     </form>
+
+    <script>
+        // Client-side JavaScript to handle slider changes
+        const form = document.getElementById('menuForm');
+        form.addEventListener('input', function(event) {
+            if (event.target.type === 'range') {
+                const index = parseInt(event.target.name.replace('option', ''), 10);
+                // Assuming a range from 0 to 1
+                checkboxStatus[index] = event.target.value == 1; // Convert to boolean
+            }
+        });
+    </script>
 
 </body>
 
