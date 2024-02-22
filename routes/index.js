@@ -20,6 +20,19 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+//TESTING THINGS
+
+router.get('/test', function (req, res, next) {
+  res.render('test', {title: "Test Title"});
+});
+
+router.post('/test-2', function (req, res, next) {
+  const booleanArrayString = req.body.booleanArray || '[]';
+  const receivedBooleanArray = JSON.parse(decodeURIComponent(booleanArrayString));
+
+  res.render('test-2', { receivedBooleanArray });
+});
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
   res.render('home');
@@ -29,11 +42,25 @@ router.get('/file-info', function (req, res, next) {
   res.render('file-info');
 });
 
-router.get('/test', function (req, res, next) {
-  res.render('test');
+router.get('/dna-goalposts', function (req, res, next) {
+  // Category titles
+  const categories = ["File Processing", "Statistics", "Summary", "Graphs", "Metrics", "Cleanup and Sequencing"];
+  // Options by category
+  const fileCategory = ["Trimming", "Alignment", "Convert to BAM File", "Cleanup BAM File"];
+  const statsCategory = ["Add or Replace Read Groups", "Bam Index Stats"];
+  const summaryCategory = ["Alignment Summary", "GC Bias Summary", "Insert Size Summary"];
+  const graphsCategory = ["Alignment Graph", "GC Bias Graphs", "Insert Size Graphs"];
+  const metricsCategory = ["Quality Yield Metrics", "Whole Genome Sequencing Metrics", "Targeted PCR Metrics"];
+  const cleanupCategory = ["Create Sequence Dictionary", "Mark Duplicates", "Sort Bam File", "Flag Stats", "Sequencing Depth", "Sequencing Coverage"];
+  // Assembled options by category
+  const categoryOptions = [fileCategory, statsCategory, summaryCategory, graphsCategory, metricsCategory, cleanupCategory];
+  // Checkbox status
+  const checkboxStatus = [false, true, true, false, false, false, false, false, false, false, false, false];
+
+  res.render('dna-goalposts', { categories, categoryOptions, checkboxStatus });
 });
 
-router.get('/dna-goalposts', (req, res) => {
+router.get('/dna-pipeline', function (req, res, next) {
   // Category titles
   const categories = ["File Processing", "Statistics", "Summary", "Graphs", "Metrics", "Cleanup and Sequencing"];
   // Options by category
@@ -47,9 +74,9 @@ router.get('/dna-goalposts', (req, res) => {
   const categoryOptions = [fileCategory, statsCategory, summaryCategory, graphsCategory, metricsCategory, cleanupCategory];
   // Checkbox status
   const checkboxStatus = [false, false, false, false, false, false, false, false, false, false, false, false];
-
-  res.render('dna-goalposts', { categories, categoryOptions, checkboxStatus });
-});
+  
+  res.render('dna-pipeline', { categories, categoryOptions, checkboxStatus });
+})
 
 router.post('/dna-pipeline', (req, res) => {
   // const categories = req.body.categories;

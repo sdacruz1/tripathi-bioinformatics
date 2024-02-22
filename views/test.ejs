@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tripathi Bioinformatics</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+    <h1>Test</h1>
+    <h2><%=title%></h2>
+
+    <% const booleanArray = [false, false, true]; %>
+
+    <form action="/test-2" method="post">
+        <input type="hidden" name="booleanArray" value="<%= encodeURIComponent(JSON.stringify(booleanArray)) %>">
+        <button type="submit">Go to Second View</button>
+    </form>
+
+</body>
+
+</html>
