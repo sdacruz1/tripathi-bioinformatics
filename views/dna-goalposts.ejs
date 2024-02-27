@@ -25,23 +25,57 @@
                     <% } %>
             </div>
             <% } %>
-            <% checkboxStatus.forEach((value, index) => { %>
-                <input type="hidden" name="checkboxStatus[]" value="<%= value %>">
-            <% }); %>
 
-                <button type="submit">Generate Timeline</button>
+                <!-- Embed the checkboxStatus array as a JSON object in a script tag -->
+                <%- '<script>' %>
+                    const checkboxStatus = <%= JSON.stringify(checkboxStatus) %>;
+
+                        // Client-side JavaScript to handle checkbox changes
+                        const form = document.getElementById('menuForm');
+
+                        form.addEventListener('change', function (event) {
+                        console.log('Checkbox clicked:', event.target.name, event.target.checked);
+                        if (event.target.type === 'checkbox') {
+                        const index = parseInt(event.target.name.replace('option', ''), 10);
+                        console.log('Before update:', checkboxStatus);
+                        checkboxStatus[index] = event.target.checked;
+                        console.log('After update:', checkboxStatus);
+                        }
+                        });
+
+                        form.addEventListener('submit', function (event) {
+                        event.preventDefault(); // Prevent the default form submission for now
+
+                        // Update checkboxStatus based on checkbox changes
+                        const checkboxes = document.querySelectorAll('[type="checkbox"]');
+                        checkboxes.forEach((checkbox, index) => {
+                        checkboxStatus[index + 1] = checkbox.checked;
+                        });
+
+                        // Log the updated checkboxStatus array
+                        console.log('Updated Checkbox Status:', checkboxStatus);
+
+                        // Update the hidden input value with the updated checkboxStatus array
+                        const optionArrayInput = document.querySelector('[name="optionArray"]');
+                        optionArrayInput.value = encodeURIComponent(JSON.stringify(checkboxStatus));
+
+                        // Log the form data before submission
+                        const formData = new FormData(form);
+                        console.log('Form Data:', formData);
+
+                        // Add any additional processing or handling here, if needed
+
+                        // Finally, submit the form
+                        form.submit();
+                        });
+                        <%- '</script>' %>
+
+                            // <input type="hidden" name="optionArray"
+                            //     value="<%= encodeURIComponent(JSON.stringify(checkboxStatus)) %>">
+                            <button type="submit">Generate Timeline</button>
     </form>
 
-    <script>
-        // Client-side JavaScript to handle checkbox changes
-        const form = document.getElementById('menuForm');
-        form.addEventListener('change', function (event) {
-            if (event.target.type === 'checkbox') {
-                const index = parseInt(event.target.name.replace('option', ''), 10);
-                checkboxStatus[index] = event.target.checked;
-            }
-        });
-    </script>
+
 
 </body>
 
