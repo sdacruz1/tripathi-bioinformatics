@@ -56,10 +56,8 @@ router.get('/dna-goalposts', function (req, res, next) {
     [false, false, false, false, false, false]];
 
   const categories = [files, stats, summary, graphs, metrics, cleanup];
-  // Checkbox status
-  const checkboxStatus = [false];
 
-  res.render('dna-goalposts', { categories, checkboxStatus });
+  res.render('dna-goalposts', { categories });
 });
 
 router.post('/dna-pipeline', function (req, res, next) {
