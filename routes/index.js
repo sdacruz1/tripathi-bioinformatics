@@ -30,21 +30,36 @@ router.get('/file-info', function (req, res, next) {
 });
 
 router.get('/dna-goalposts', function (req, res, next) {
-  // Category titles
-  const categories = ["File Processing", "Statistics", "Summary", "Graphs", "Metrics", "Cleanup and Sequencing"];
-  // Options by category
-  const fileCategory = ["Trimming", "Alignment", "Convert to BAM File", "Cleanup BAM File"];
-  const statsCategory = ["Add or Replace Read Groups", "Bam Index Stats"];
-  const summaryCategory = ["Alignment Summary", "GC Bias Summary", "Insert Size Summary"];
-  const graphsCategory = ["Alignment Graph", "GC Bias Graphs", "Insert Size Graphs"];
-  const metricsCategory = ["Quality Yield Metrics", "Whole Genome Sequencing Metrics", "Targeted PCR Metrics"];
-  const cleanupCategory = ["Create Sequence Dictionary", "Mark Duplicates", "Sort Bam File", "Flag Stats", "Sequencing Depth", "Sequencing Coverage"];
-  // Assembled options by category
-  const categoryOptions = [fileCategory, statsCategory, summaryCategory, graphsCategory, metricsCategory, cleanupCategory];
-  // Checkbox status
-  const checkboxStatus = [false, true, true, false, false, false, false, false, false, false, false, false];
+  // Categories
+  const files = ["File Processing",
+    ["Trimming", "Alignment", "Convert to BAM File", "Cleanup BAM File"],
+    [false, false, false, false]];
 
-  res.render('dna-goalposts', { categories, categoryOptions, checkboxStatus });
+  const stats = ["Statistics",
+    ["Add or Replace Read Groups", "Bam Index Stats"],
+    [false, false]];
+
+  const summary = ["Summary",
+    ["Alignment Summary", "GC Bias Summary", "Insert Size Summary"],
+    [false, false, false]];
+
+  const graphs = ["Graphs",
+    ["Alignment Graph", "GC Bias Graphs", "Insert Size Graphs"],
+    [false, false, false]];
+
+  const metrics = ["Metrics",
+    ["Quality Yield Metrics", "Whole Genome Sequencing Metrics", "Targeted PCR Metrics"],
+    [false, false, false]];
+
+  const cleanup = ["Cleanup and Sequencing",
+    ["Create Sequence Dictionary", "Mark Duplicates", "Sort Bam File", "Flag Stats", "Sequencing Depth", "Sequencing Coverage"],
+    [false, false, false, false, false, false]];
+
+  const categories = [files, stats, summary, graphs, metrics, cleanup];
+  // Checkbox status
+  const checkboxStatus = [false];
+
+  res.render('dna-goalposts', { categories, checkboxStatus });
 });
 
 router.post('/dna-pipeline', function (req, res, next) {
