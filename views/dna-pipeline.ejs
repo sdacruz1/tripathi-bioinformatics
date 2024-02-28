@@ -3,26 +3,38 @@
 
 <head>
     <title>Tripathi Bioinformatics</title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='/stylesheets/pipeline.css' />
 </head>
 
 <body>
     <h1>Recommended Pipeline</h1>
     <h2>Your recommended pipeline:</h2>
 
-    <%- '<script>' %>
-        console.log('Received Checkbox Status:', <%= JSON.stringify(selectedOptions) %>);
-    <%- '</script>' %>
+    <% for (let i=0; i < categories.length; i++) { %>
+        
+        <button type="button" class="collapsible" onclick="toggleCollapsible('section<%= i %>')">
+            <h3> <%=categories[i][0] %> </h3>
+        </button>
 
+        <div class="content" id="section<%= i %>">
+            <% for (let j=0; j < categories[i][1].length; j++) { %>
+                <label>
+                    <input type="checkbox" name="checkbox_<%= i %>_<%= j %>" <% if (categories[i][2][j]) { %>checked
+                    <% } %>>
+                        <%= categories[i][1][j] %>
+                </label>
+            <% } %>
+        </div>
+        <% } %>
 
-    <p>Received Boolean Array:</p>
-    <ul>
-        <% selectedOptions.forEach((value, index) => { %>
-            <li>Element <%= index + 1 %>: <%= value %></li>
-        <% }); %>
-    </ul>
-
-    
+        <%- '<script>' %>
+            console.log('Received :', JSON.parse('<%- JSON.stringify(categories) %>'));
+            // JavaScript to handle the toggling
+            function toggleCollapsible(sectionId) {
+                const collapsibleContent = document.getElementById(sectionId);
+                collapsibleContent.classList.toggle('active');
+            }
+        <%- '</script>' %>
 
 </body>
 

@@ -61,10 +61,10 @@ router.get('/dna-goalposts', function (req, res, next) {
 });
 
 router.post('/dna-pipeline', function (req, res, next) {
-  const optionArrayString = req.body.optionArray || '[]';
-  const selectedOptions = JSON.parse(decodeURIComponent(optionArrayString));
+  const categoriesString = req.body.categories || '[]';
+  const categories = JSON.parse(decodeURIComponent(categoriesString));
 
-  res.render('dna-pipeline', { selectedOptions });
+  res.render('dna-pipeline', { categories });
 });
 
 router.post('/qc-check-2', (req, res) => {

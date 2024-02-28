@@ -3,34 +3,71 @@
 
 <head>
     <title>Tripathi Bioinformatics</title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='/stylesheets/pipeline.css' />
 </head>
 
 <body>
     <h1>Recommended Pipeline</h1>
     <h2>Select a goalpost for the end of your timeline</h2>
 
-    <form id="menuForm" action="/dna-pipeline" method="post">
+    <form id="goalpostForm" action="/dna-pipeline" method="post">
         <% for (let i=0; i < categories.length; i++) { %>
-            <h3>
-                <%=categories[i][0] %>
-            </h3>
 
-            <div>
+            <button type="button" class="collapsible" onclick="toggleCollapsible('section<%= i %>')">
+                <h3> <%=categories[i][0] %> </h3>
+            </button>
+
+            <div class="content" id="section<%= i %>">
                 <% for (let j=0; j < categories[i][1].length; j++) { %>
                     <label>
-                        <input type="checkbox" name="<%= categories[i][1][j]%>" <% if (categories[i][2][j]) { %>checked<% } %>>
+                        <input type="checkbox" name="checkbox_<%= i %>_<%= j %>" <% if (categories[i][2][j]) { %>checked
+                        <% } %>>
                             <%= categories[i][1][j] %>
                     </label>
                     <% } %>
             </div>
             <% } %>
 
-            
+            <%- '<script>' %>
+                const form = document.getElementById('goalpostForm');
+                const categories = JSON.parse('<%- JSON.stringify(categories) %>');
+                console.log('Categories:', categories);
+        
+                form.addEventListener('change', function (event) {
+                    if (event.target.type === 'checkbox') {
+                        // Extract i and j from the checkbox name
+                        const checkboxName = event.target.name;
+                        const [, i, j] = checkboxName.split('_').map(Number);
+        
+                        // Set the correct array element accordingly
+                        categories[i][2][j] = event.target.checked;
+                    }
+                });
+        
+                form.addEventListener('submit', function(event) {
+                    // prevent submission for now
+                    event.preventDefault();
+
+                    // send the categories array as a hidden input
+                    const sendCategories = document.querySelector('[name="categories"]');
+                    sendCategories.value = encodeURIComponent(JSON.stringify(categories));
+        
+                    // Submit the form
+                    form.submit();
+                });
+
+                // JavaScript to handle the toggling
+                function toggleCollapsible(sectionId) {
+                    const collapsibleContent = document.getElementById(sectionId);
+                    collapsibleContent.classList.toggle('active');
+                }
+        
+            <%- '</script>' %>
+
+            <input type="hidden" name="categories" >
+
             <button type="submit">Generate Timeline</button>
-    </form>
-
-
+    </form>    
 
 </body>
 
