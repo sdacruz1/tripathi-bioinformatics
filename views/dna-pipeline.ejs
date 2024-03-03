@@ -65,10 +65,15 @@
                             <input type="checkbox" id="<%=curr_option[0]%>" <% if (curr_option[3]) { %>checked<% } %>>
                         <% } else { %>
                             <select id="<%=curr_option[0]%>">
-                                <% for (let l=0; l < curr_option[2].length; l++) {%>
-                                <option value="<%=curr_option[2][l]>%"><%=curr_option[2][l]%></option>
+                                <% for (let l=0; l < curr_option[2].length; l++) { %>
+                                <option value="<%=curr_option[2][l]%>"><%=curr_option[2][l]%></option>
+                                <% } %>
                             </select>
-                        <% }}} %>
+                        <% } %>
+
+                        <% } %>
+
+                        
 
                         <!-- Switch container visibilites -->
                         <button class="save-btn">Save</button>

@@ -68,7 +68,7 @@ router.get('/dna-goalposts', function (req, res, next) {
       ["Alignment", false, [
         ["Type of Alignment", "select", ["BWA mem", "Bowtie", "Bowtie 2"], []],
         ["Number of Mismatches", "number", [], [0]],
-        ["Discard Unpaired?", "checkbox", [], []],
+        ["Discard Unpaired", "checkbox", [], []],
       ], []],
 
       ["Convert to BAM File", false, [], []],
