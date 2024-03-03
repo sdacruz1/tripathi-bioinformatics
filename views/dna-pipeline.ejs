@@ -69,21 +69,22 @@
                                 <option value="<%=curr_option[2][l]%>"><%=curr_option[2][l]%></option>
                                 <% } %>
                             </select>
-                        <% } %>
-
-                        <% } %>
-
-                        
+                        <% } } %>
 
                         <!-- Switch container visibilites -->
-                        <button class="save-btn">Save</button>
+                        <button type="button" class="save-btn" onclick="saveButton('<%= i %>', '<%= j%>')">Save</button>
                     </div>
                 
                     <!-- The display parameters container. For each parameter, display the value in its array slot -->
-                    <div class="options-display hidden">
-                        <!-- Display options here after saving -->
+                    <div id="options_display_<%= i %>_<%= j %>" class="options-display hidden">
+                        <!-- Display options -->
+                        <% for (let k=0; k < categories[i][1][j][2].length; k++)  {
+                            let curr_option = categories[i][1][j][2][k]; %>
+                            <p><%=curr_option[0]%>:</p>
+                            <p id="option_<%= i %>_<%= j %>_<%= k %>_display"></p>
+                        <% } %>
                         <!-- Switch container visibilities -->
-                        <button class="edit-btn hidden">Edit</button>
+                        <button type="button" onclick="editButton('<%= i %>', '<%= j%>')" class="edit-btn">Edit</button>
                     </div>
                 
                     
@@ -95,6 +96,52 @@
         <%- '<script>' %>
             const form = document.getElementById('dnaPipelineForm');
             const categories = JSON.parse('<%- JSON.stringify(categories) %>');
+
+            function saveButton(index1, index2) {
+                // Save the selected values
+                const category = categories[index1][1][index2];
+                const optionsList = category[2];
+
+                for (let k = 0; k < optionsList.length; k ++) {
+                    option = optionsList[k];
+                    optionInput = document.getElementById(option[0]);
+                    optionDisplayTag = document.getElementById(('option_' + index1 + '_' + index2 + '_' + k + '_display'));
+                    switch(option[1]) {
+                        case "number":
+                            option[3] = optionInput.value;
+                            break;
+                        case "checkbox":
+                            option[3] = optionInput.checked;
+                            break;
+                        case "select":
+                            option[3] = optionInput.value;
+                            break;
+                        default:
+                            console.log("Not a valid input type");
+                    }
+                    optionDisplayTag.innerText = option[3].toString();
+                };
+
+                // Switch to the display div
+                const optionsId = 'options_' + index1 + '_' + index2;
+                const displayId = 'options_display_' + index1 + '_' + index2;
+                optionsDiv = document.getElementById(optionsId);
+                displayDiv = document.getElementById(displayId);
+
+                optionsDiv.classList.add('hidden');
+                displayDiv.classList.remove('hidden');
+            }
+
+            function editButton(index1, index2) {
+                // Switch to the options div
+                const optionsId = 'options_' + index1 + '_' + index2;
+                const displayId = 'options_display_' + index1 + '_' + index2;
+                optionsDiv = document.getElementById(optionsId);
+                displayDiv = document.getElementById(displayId);
+
+                displayDiv.classList.add('hidden');
+                optionsDiv.classList.remove('hidden');
+            }
     
             form.addEventListener('change', function (event) {
                 if (event.target.type === 'range') {
@@ -104,13 +151,18 @@
     
                     // Set the correct array element accordingly
                     categories[i][1][j][1] = (event.target.value == 1);
+
                     const elementId = 'options_' + i + '_' + j;
                     optionsDiv = document.getElementById(elementId);
 
+                    const displayId = 'options_display_' + i + '_' + j;
+                    displayDiv = document.getElementById(displayId);
+
                     if (categories[i][1][j][1]) {
-                        optionsDiv.classList.remove('hidden');
+                        displayDiv.classList.remove('hidden');
                     } else {
                         optionsDiv.classList.add('hidden');
+                        displayDiv.classList.add('hidden');
                     }
 
                     // console.log('Categories:', categories);
