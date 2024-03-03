@@ -20,9 +20,9 @@
             <div class="content" id="section<%= i %>">
                 <% for (let j=0; j < categories[i][1].length; j++) { %>
                     <label>
-                        <input type="checkbox" name="checkbox_<%= i %>_<%= j %>" <% if (categories[i][2][j]) { %>checked
+                        <input type="checkbox" name="checkbox_<%= i %>_<%= j %>" <% if (categories[i][1][j][1]) { %>checked
                         <% } %>>
-                            <%= categories[i][1][j] %>
+                            <%= categories[i][1][j][0] %>
                     </label>
                     <% } %>
             </div>
@@ -40,7 +40,7 @@
                         const [, i, j] = checkboxName.split('_').map(Number);
         
                         // Set the correct array element accordingly
-                        categories[i][2][j] = event.target.checked;
+                        categories[i][1][j][1] = event.target.checked;
                     }
                 });
         

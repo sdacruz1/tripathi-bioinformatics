@@ -4,11 +4,40 @@
 <head>
     <title>Tripathi Bioinformatics</title>
     <link rel='stylesheet' href='/stylesheets/pipeline.css' />
+    <style>
+        .container {
+            padding: 20px;
+            margin: 20px;
+            border: 1px solid #ccc;
+            width: 300px;
+        }
+
+        .options-container {
+            margin-top: 10px;
+        }
+
+        .options-container label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .edit-btn, .save-btn {
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
     <h1>Recommended Pipeline</h1>
     <h2>Your recommended pipeline:</h2>
+
+    <form id="dnaPipelineForm" action="/running" method="post">
+
 
     <% for (let i=0; i < categories.length; i++) { %>
         
@@ -18,23 +47,66 @@
 
         <div class="content" id="section<%= i %>">
             <% for (let j=0; j < categories[i][1].length; j++) { %>
-                <label>
-                    <input type="checkbox" name="checkbox_<%= i %>_<%= j %>" <% if (categories[i][2][j]) { %>checked
-                    <% } %>>
-                        <%= categories[i][1][j] %>
-                </label>
+                <div>
+                    <label>
+                        <input type="range" min="0" max="1" step="1" value="<%= categories[i][1][j][1] ? 1 : 0;%>" name="slider_<%= i %>_<%= j %>">
+                        <%= categories[i][1][j][0] %>
+                    </label>
+
+                    <!-- The set parameters container. For each parameter, make an input and save its value to the array slot -->
+                    <div class="options-container hidden">
+                        <label for="inputNumber">Number:</label>
+                        <input type="number" id="inputNumber" value="0">
+                        
+                        <label for="checkbox">Checkbox:</label>
+                        <input type="checkbox" id="checkbox">
+                        
+                        <label for="selectMenu">Select Menu:</label>
+                        <select id="selectMenu">
+                            <option value="option1">Option 1</option>
+                            <option value="option2">Option 2</option>
+                            <option value="option3">Option 3</option>
+                        </select>
+                        
+                        <!-- Switch container visibilites -->
+                        <button class="save-btn">Save</button>
+                    </div>
+                
+                    <!-- The display parameters container. For each parameter, display the value in its array slot -->
+                    <div class="options-display hidden">
+                        <!-- Display options here after saving -->
+                        <!-- Switch container visibilities -->
+                        <button class="edit-btn hidden">Edit</button>
+                    </div>
+                
+                    
+                </div>
             <% } %>
         </div>
         <% } %>
 
         <%- '<script>' %>
-            console.log('Received :', JSON.parse('<%- JSON.stringify(categories) %>'));
+            const form = document.getElementById('dnaPipelineForm');
+            const categories = JSON.parse('<%- JSON.stringify(categories) %>');
+    
+            form.addEventListener('change', function (event) {
+                if (event.target.type === 'range') {
+                    // Extract i and j from the slider name
+                    const sliderName = event.target.name;
+                    const [, i, j] = sliderName.split('_').map(Number);
+    
+                    // Set the correct array element accordingly
+                    categories[i][1][j][1] = (event.target.value == 1);;
+                    // console.log('Categories:', categories);
+                }
+            });
             // JavaScript to handle the toggling
             function toggleCollapsible(sectionId) {
                 const collapsibleContent = document.getElementById(sectionId);
                 collapsibleContent.classList.toggle('active');
             }
         <%- '</script>' %>
+    </form>
 
 </body>
 

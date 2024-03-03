@@ -30,30 +30,91 @@ router.get('/file-info', function (req, res, next) {
 });
 
 router.get('/dna-goalposts', function (req, res, next) {
+  // // Categories
+  // const files = ["File Processing",
+  //   ["Trimming", "Alignment", "Convert to BAM File", "Cleanup BAM File"],
+  //   [false, false, false, false]];
+
+  // const stats = ["Statistics",
+  //   ["Add or Replace Read Groups", "Bam Index Stats"],
+  //   [false, false]];
+
+  // const summary = ["Summary",
+  //   ["Alignment Summary", "GC Bias Summary", "Insert Size Summary"],
+  //   [false, false, false]];
+
+  // const graphs = ["Graphs",
+  //   ["Alignment Graph", "GC Bias Graphs", "Insert Size Graphs"],
+  //   [false, false, false]];
+
+  // const metrics = ["Metrics",
+  //   ["Quality Yield Metrics", "Whole Genome Sequencing Metrics", "Targeted PCR Metrics"],
+  //   [false, false, false]];
+
+  // const cleanup = ["Cleanup and Sequencing",
+  //   ["Create Sequence Dictionary", "Mark Duplicates", "Sort Bam File", "Flag Stats", "Sequencing Depth", "Sequencing Coverage"],
+  //   [false, false, false, false, false, false]];
+
   // Categories
+
   const files = ["File Processing",
-    ["Trimming", "Alignment", "Convert to BAM File", "Cleanup BAM File"],
-    [false, false, false, false]];
+    [
+      // name, toggle, options, file
+      ["Trimming", false, [
+        // name, input type, options, selected
+        ["Trim Type", "select", ["Adapter Trim", "Read Length Trim", "Quality Score Trim", "Duplicate Trim"], []]
+      ], []],
+
+      ["Alignment", false, [
+        ["Type of Alignment", "select", ["BWA mem", "Bowtie", "Bowtie 2"], []],
+        ["Number of Mismatches", "number", [], []],
+        ["Discard Unpaired?", "checkbox", [], []],
+      ], []],
+
+      ["Convert to BAM File", false, [], []],
+
+      ["Cleanup BAM File", false, [
+        ["Sort", "checkbox", [], []],
+        ["Index", "", [], []], /// ????
+      ], []],
+    ]];
 
   const stats = ["Statistics",
-    ["Add or Replace Read Groups", "Bam Index Stats"],
-    [false, false]];
+    [
+      ["Add or Replace Read Groups", false, [], []],
+      ["Bam Index Stats", false, [], []],
+    ]];
 
   const summary = ["Summary",
-    ["Alignment Summary", "GC Bias Summary", "Insert Size Summary"],
-    [false, false, false]];
+  [
+    ["Alignment Summary", false, [], []],
+    ["GC Bias Summary", false, [], []],
+    ["Insert Size Summary", false, [], []],
+  ]];
 
   const graphs = ["Graphs",
-    ["Alignment Graph", "GC Bias Graphs", "Insert Size Graphs"],
-    [false, false, false]];
+  [
+    ["Alignment Graph", false, [], []],
+    ["GC Bias Graphs", false, [], []],
+    ["Insert Size Graphs", false, [], []],
+  ]];
 
   const metrics = ["Metrics",
-    ["Quality Yield Metrics", "Whole Genome Sequencing Metrics", "Targeted PCR Metrics"],
-    [false, false, false]];
+  [
+    ["Quality Yield Metrics", false, [], []],
+    ["Whole Genome Sequencing Metrics", false, [], []],
+    ["Targeted PCR Metrics", false, [], []],
+  ]];
 
   const cleanup = ["Cleanup and Sequencing",
-    ["Create Sequence Dictionary", "Mark Duplicates", "Sort Bam File", "Flag Stats", "Sequencing Depth", "Sequencing Coverage"],
-    [false, false, false, false, false, false]];
+  [
+    ["Create Sequence Dictionary", false, [], []],
+    ["Mark Duplicates", false, [], []],
+    ["Sort Bam File", false, [], []],
+    ["Flag Stats", false, [], []],
+    ["Sequencing Depth", false, [], []],
+    ["Sequencing Coverage", false, [], []],
+  ]];
 
   const categories = [files, stats, summary, graphs, metrics, cleanup];
 
