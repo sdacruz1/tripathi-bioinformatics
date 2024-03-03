@@ -53,8 +53,13 @@
                         <%= categories[i][1][j][0] %>
                     </label>
 
+                    <!-- if there are no options for this setting, don't bother with all that -->
+                    <% if (categories[i][1][j][2].length == 0) { %>
+                        </div>
+                    <% continue; } %>
+
                     <!-- The set parameters container. For each parameter, make an input and save its value to the array slot -->
-                    <div id="options_<%= i %>_<%= j %>" class="options-container hidden">
+                    <div id="options_<%= i %>_<%= j %>" class="options-container <%= categories[i][1][j][1] ? '' : 'hidden' %>">
                         <% for (let k=0; k < categories[i][1][j][2].length; k++)  {
                             let curr_option = categories[i][1][j][2][k]; %>
                         <label for="<%=curr_option[0]%>"><%=curr_option[0]%>:</label>
@@ -165,15 +170,31 @@
                         displayDiv.classList.add('hidden');
                     }
 
-                    // console.log('Categories:', categories);
                 }
             });
+
+            form.addEventListener('submit', function(event) {
+                // prevent submission for now
+                event.preventDefault();
+
+                // send the categories array as a hidden input
+                const sendCategories = document.querySelector('[name="categories"]');
+                sendCategories.value = encodeURIComponent(JSON.stringify(categories));
+    
+                // Submit the form
+                form.submit();
+            });
+
+            
             // JavaScript to handle the toggling
             function toggleCollapsible(sectionId) {
                 const collapsibleContent = document.getElementById(sectionId);
                 collapsibleContent.classList.toggle('active');
             }
         <%- '</script>' %>
+
+        <input type="hidden" name="categories" >
+        <button><h2>Continue</h2></button>
     </form>
 
 </body>

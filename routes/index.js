@@ -30,33 +30,7 @@ router.get('/file-info', function (req, res, next) {
 });
 
 router.get('/dna-goalposts', function (req, res, next) {
-  // // Categories
-  // const files = ["File Processing",
-  //   ["Trimming", "Alignment", "Convert to BAM File", "Cleanup BAM File"],
-  //   [false, false, false, false]];
-
-  // const stats = ["Statistics",
-  //   ["Add or Replace Read Groups", "Bam Index Stats"],
-  //   [false, false]];
-
-  // const summary = ["Summary",
-  //   ["Alignment Summary", "GC Bias Summary", "Insert Size Summary"],
-  //   [false, false, false]];
-
-  // const graphs = ["Graphs",
-  //   ["Alignment Graph", "GC Bias Graphs", "Insert Size Graphs"],
-  //   [false, false, false]];
-
-  // const metrics = ["Metrics",
-  //   ["Quality Yield Metrics", "Whole Genome Sequencing Metrics", "Targeted PCR Metrics"],
-  //   [false, false, false]];
-
-  // const cleanup = ["Cleanup and Sequencing",
-  //   ["Create Sequence Dictionary", "Mark Duplicates", "Sort Bam File", "Flag Stats", "Sequencing Depth", "Sequencing Coverage"],
-  //   [false, false, false, false, false, false]];
-
   // Categories
-
   const files = ["File Processing",
     [
       // name, toggle, options, file
@@ -126,6 +100,13 @@ router.post('/dna-pipeline', function (req, res, next) {
   const categories = JSON.parse(decodeURIComponent(categoriesString));
 
   res.render('dna-pipeline', { categories });
+});
+
+router.post('/running', function (req, res, next) {
+  const categoriesString = req.body.categories || '[]';
+  const categories = JSON.parse(decodeURIComponent(categoriesString));
+
+  res.render('running', { categories });
 });
 
 router.post('/qc-check-2', (req, res) => {

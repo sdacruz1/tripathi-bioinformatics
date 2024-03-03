@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tripathi Bioinformatics</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+    <h1>Running Your Generated Timeline</h1>
+    <p>Please wait.</p>
+
+    <h2>Your Timeline:</h2>
+
+    <% for (let i=0; i < categories.length; i++) { %>
+        <div id="section<%= i %>">
+            <% for (let j=0; j < categories[i][1].length; j++) {
+                if (!categories[i][1][j][1]) { break; }
+                %>
+                    <div>
+                        <img class="status_img" id="status_img_<%= i %>_<%= j %>">
+                        <h3 class="status_text_none" id="status_text_<%= i %>_<%= j %>"></h3>
+                    </div>
+                    <div>
+                        <h3>
+                            <%= categories[i][1][j][0] %>
+                        </h3>
+
+                        <div id="selections_display_<%= i %>_<%= j %>" class="selections-display hidden">
+                            <!-- Display selections -->
+                            <% for (let k=0; k < categories[i][1][j][2].length; k++) { %>
+                                <p> <%=categories[i][1][j][2][k][0]%>: </p>
+                                <p id="option_<%= i %>_<%= j %>_<%= k %>_display"></p>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+        </div>
+        <% } %>
+
+<!-- Add a script that does each category item by item and sets the status_img and status_text class and fields as it completes -->
+
+</body>
+
+</html>
