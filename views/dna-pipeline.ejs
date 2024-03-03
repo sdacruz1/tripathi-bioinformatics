@@ -54,20 +54,22 @@
                     </label>
 
                     <!-- The set parameters container. For each parameter, make an input and save its value to the array slot -->
-                    <div class="options-container hidden">
-                        <label for="inputNumber">Number:</label>
-                        <input type="number" id="inputNumber" value="0">
-                        
-                        <label for="checkbox">Checkbox:</label>
-                        <input type="checkbox" id="checkbox">
-                        
-                        <label for="selectMenu">Select Menu:</label>
-                        <select id="selectMenu">
-                            <option value="option1">Option 1</option>
-                            <option value="option2">Option 2</option>
-                            <option value="option3">Option 3</option>
-                        </select>
-                        
+                    <div id="options_<%= i %>_<%= j %>" class="options-container hidden">
+                        <% for (let k=0; k < categories[i][1][j][2].length; k++)  {
+                            let curr_option = categories[i][1][j][2][k]; %>
+                        <label for="<%=curr_option[0]%>"><%=curr_option[0]%>:</label>
+
+                        <% if (curr_option[1] == "number") { %>
+                            <input type="number" id="<%=curr_option[0]%>" value="<%=curr_option[3]%>">
+                        <% } else if (curr_option[1] == "checkbox") { %>
+                            <input type="checkbox" id="<%=curr_option[0]%>" <% if (curr_option[3]) { %>checked<% } %>>
+                        <% } else { %>
+                            <select id="<%=curr_option[0]%>">
+                                <% for (let l=0; l < curr_option[2].length; l++) {%>
+                                <option value="<%=curr_option[2][l]>%"><%=curr_option[2][l]%></option>
+                            </select>
+                        <% }}} %>
+
                         <!-- Switch container visibilites -->
                         <button class="save-btn">Save</button>
                     </div>
@@ -96,7 +98,16 @@
                     const [, i, j] = sliderName.split('_').map(Number);
     
                     // Set the correct array element accordingly
-                    categories[i][1][j][1] = (event.target.value == 1);;
+                    categories[i][1][j][1] = (event.target.value == 1);
+                    const elementId = 'options_' + i + '_' + j;
+                    optionsDiv = document.getElementById(elementId);
+
+                    if (categories[i][1][j][1]) {
+                        optionsDiv.classList.remove('hidden');
+                    } else {
+                        optionsDiv.classList.add('hidden');
+                    }
+
                     // console.log('Categories:', categories);
                 }
             });
