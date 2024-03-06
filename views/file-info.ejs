@@ -4,43 +4,64 @@
 <head>
     <title>Tripathi Bioinformatics</title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
+    <style>
+        .input_type_buttons {
+            width: 10rem;
+            height: 4rem;
+            border-radius: 1rem;
+            background-color: khaki;
+        }
+
+        .centered {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
 </head>
 
-<body>
+<body class="centered">
     <h1>Bioinformatics File Information</h1>
 
     <!-- Input Type Buttons -->
     <h3>Select an Input Type</h3>
-    <button id="DNAButton">
-        <h4>DNA</h4>
-    </button>
-    <button id="RNAButton">
-        <h4>RNA</h4>
-    </button>
-    <br>
+    <div>
+        <button onclick="select_input_type('DNA')" class="input_type_buttons">
+            <h4>DNA</h4>
+        </button>
+        <button onclick="select_input_type('RNA')" class="input_type_buttons">
+            <h4>RNA</h4>
+        </button>
+    </div>
 
     <!-- Upload Main Files -->
-    <h3>Upload File(s)</h3>
-    <form id="mainFileForm" enctype="multipart/form-data">
-        <input type="file" name="file" id="Main_File_Uploader" multiple disabled>
-        <button type="button" onclick="processMainFile()">Confirm</button>
-    </form>
-    <p id="fileTypeInfo"></p>
+    <section id="file_uploader_section" hidden>
+        <h3>Upload File(s)</h3>
+        <form id="mainFileForm" enctype="multipart/form-data">
+            <input type="file" name="file" id="Main_File_Uploader" multiple disabled>
+            <button type="button" onclick="processMainFile()">Confirm</button>
+        </form>
+        <p id="fileTypeInfo"></p>
+    </section>
 
     <!-- Upload Adapter Files -->
-    <h3 id="adapterCheckHeading"></h3>
-    <form id="adapterFileForm" action="/adapter-file-upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" id="Adapter_File_Uploader" multiple disabled>
-        <button id="adapterUploadButton" type="submit">Confirm</button>
-    </form>
+    <section id="adapter_section" hidden>
+        <h3 id="adapterCheckHeading"></h3>
+        <form id="adapterFileForm" action="/adapter-file-upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" id="Adapter_File_Uploader" multiple disabled>
+            <button id="adapterUploadButton" type="submit">Confirm</button>
+        </form>
+    </section>
 
     <!-- Upload RNA Genome Files (Optional) -->
-    <h3>Reference Genome/Transcriptome</h3>
-    <form id="genomeFileForm" enctype="multipart/form-data">
-        <input type="file" name="file" id="RNA_Genome_Uploader" multiple disabled>
-        <button type="button" onclick="processGenomeFile()">Confirm</button>
-    </form>
-    <p id="genomeTypeInfo"></p>
+    <section id="rna_section" hidden>
+        <h3>Reference Genome/Transcriptome</h3>
+        <form id="genomeFileForm" enctype="multipart/form-data">
+            <input type="file" name="file" id="RNA_Genome_Uploader" multiple disabled>
+            <button type="button" onclick="processGenomeFile()">Confirm</button>
+        </form>
+        <p id="genomeTypeInfo"></p>
+    </section>
 
     <!-- Continue Button -->
     <form action="/qc-check-2" method="post">
@@ -59,33 +80,33 @@
         let input_type = '';
 
         // Get references to the buttons and the RNA Genome Uploader
-        const DNAbutton = document.getElementById('DNAButton');
-        const RNAbutton = document.getElementById('RNAButton');
         const RNA_Genome_Uploader = document.getElementById('RNA_Genome_Uploader');
+
+        // Get referneces to the sections
+        const fileSection = document.getElementById('file_uploader_section');
+        const adapterSection = document.getElementById('adapter_section');
+        const rnaSection = document.getElementById('rna_section');
 
         // Get references to the upload button and the file information text
         const Main_File_Uploader = document.getElementById('Main_File_Uploader');
         const fileTypeCheck = document.getElementById('fileTypeInfo');
 
-        // If DNA Button clicked
-        DNAbutton.addEventListener('click', function () {
-            // Set input type to DNA, enable the main upload, and disable the RNA Genome Uploader
-            input_type = 'DNA';
+        // INPUT TYPE BUTTONS
+
+        function select_input_type(type) {
+            input_type = type;
             Main_File_Uploader.disabled = false;
             RNA_Genome_Uploader.disabled = true;
-        });
-
-        // If RNA Button clicked
-        RNAbutton.addEventListener('click', function () {
-            // Set input type to RNA and enable the RNA Genome Uploader
-            input_type = 'RNA';
-            Main_File_Uploader.disabled = false;
-            RNA_Genome_Uploader.disabled = false;
-        });
+            fileSection.hidden = false;
+            if (type == 'RNA') {
+                rnaSection.hidden = false;
+            } else {
+                rnaSection.hidden = true;
+            }
+        };
 
 
         // ... MAIN FILE UPLOADER ... //
-
 
         // Get the Adapter objects
         hasAdapters = false;
@@ -147,9 +168,11 @@
 
                     // Set the adapter text/variable and uploader enabled settings accordingly
                     if (hasAdapters) {
+                        adapterSection.hidden = false;
                         ACHeading.textContent = 'Your data appears to have an adapter applied. Please upload an adapter file.'
                         adapterFileInput.disabled = false;
                     } else {
+                        adapterSection.hidden = false;
                         ACHeading.textContent = 'We found no adapters on your file.'
                         adapterFileInput.disabled = true;
                         // if input type is DNA and there are no adapters, enable the continue button
