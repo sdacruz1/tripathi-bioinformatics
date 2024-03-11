@@ -8,68 +8,147 @@
         .input_type_buttons {
             width: 10rem;
             height: 4rem;
+            border: none;
             border-radius: 1rem;
             background-color: khaki;
+            cursor: pointer;
+        }
+
+        .input_type_buttons:hover {
+            transition: 0.3s;
+            background-color: goldenrod;
         }
 
         .centered {
-            display: flex;
+            /* display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: center; */
+            padding: 4% 8%;
+            max-width: 75%;
+        }
+
+        .confirm_button {
+            border: none;
+            border-radius: 5px;
+            padding: 5px;
+            background-color: #02598A;
+            color: white;
+            cursor: pointer;
+        }
+
+        .continue_button {
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: khaki;
+            cursor: pointer;
+        }
+
+        .continue_button:disabled {
+            background-color:rgb(185, 183, 166);
+            cursor: not-allowed;
+        }
+
+        h3{
+            color: black;
         }
     </style>
 </head>
 
-<body class="centered">
-    <h1>Bioinformatics File Information</h1>
+<body>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <img style="margin-top: 2rem; width: 8rem; height: 8rem;" src="../uploads/Unchecked_Circle.png" alt="logo">
+        <h4>Select a Workflow to Get Started</h4>
+        <div>
+            <!-- Assuming your array is named 'myArray' and 'index' is the specified index -->
+            <% for (let i=0; i < toolbar.length; i++) { %>
+                <!-- Check if the current index is before or after the specified index -->
+                <div style="display: flex; align-items: center;">
 
-    <!-- Input Type Buttons -->
-    <h3>Select an Input Type</h3>
-    <div>
-        <button onclick="select_input_type('DNA')" class="input_type_buttons">
-            <h4>DNA</h4>
-        </button>
-        <button onclick="select_input_type('RNA')" class="input_type_buttons">
-            <h4>RNA</h4>
-        </button>
+                    <% if (i < index) { %>
+                        <!-- Print true image if before the specified index -->
+                        <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png"
+                            alt="Checked Circle">
+                        <% } else { %>
+                            <!-- Print false image if after or at the specified index -->
+                            <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png"
+                                alt="Unchecked Circle">
+                            <% } %>
+
+                                <!-- Print the text next to the image -->
+                                <p style="color: #02598A; margin-left: 10px;">
+                                    <%= toolbar[i] %>
+                                </p>
+                </div>
+
+                <!-- Line break after each iteration -->
+                <br>
+                <% } %>
+        </div>
     </div>
 
-    <!-- Upload Main Files -->
-    <section id="file_uploader_section" hidden>
-        <h3>Upload File(s)</h3>
-        <form id="mainFileForm" enctype="multipart/form-data">
-            <input type="file" name="file" id="Main_File_Uploader" multiple disabled>
-            <button type="button" onclick="processMainFile()">Confirm</button>
-        </form>
-        <p id="fileTypeInfo"></p>
-    </section>
+    <div class="centered">
+        <h1>Upload Files</h1>
+        
+        <br>
 
-    <!-- Upload Adapter Files -->
-    <section id="adapter_section" hidden>
-        <h3 id="adapterCheckHeading"></h3>
-        <form id="adapterFileForm" action="/adapter-file-upload" method="post" enctype="multipart/form-data">
-            <input type="file" name="file" id="Adapter_File_Uploader" multiple disabled>
-            <button id="adapterUploadButton" type="submit">Confirm</button>
-        </form>
-    </section>
+        <!-- Input Type Buttons -->
+        <h3>Select an Input Type</h3>
+        <div>
+            <button onclick="select_input_type('DNA')" class="input_type_buttons">
+                <h3 style="color: black;">DNA</h3>
+            </button>
+            <button onclick="select_input_type('RNA')" class="input_type_buttons">
+                <h3 style="color: black;">RNA</h3>
+            </button>
+        </div>
 
-    <!-- Upload RNA Genome Files (Optional) -->
-    <section id="rna_section" hidden>
-        <h3>Reference Genome/Transcriptome</h3>
-        <form id="genomeFileForm" enctype="multipart/form-data">
-            <input type="file" name="file" id="RNA_Genome_Uploader" multiple disabled>
-            <button type="button" onclick="processGenomeFile()">Confirm</button>
-        </form>
-        <p id="genomeTypeInfo"></p>
-    </section>
+        <br>
 
-    <!-- Continue Button -->
-    <form action="/qc-check-2" method="post">
-        <!-- can send the variables along as hidden values in this form -->
-        <button type="submit" id="file_info_continue_button" disabled>
-            <h3>Continue</h3>
-        </button>
-    </form>
+        <!-- Upload Main Files -->
+        <section id="file_uploader_section" hidden>
+            <h3>Upload File(s)</h3>
+            <br>
+            <form id="mainFileForm" enctype="multipart/form-data">
+                <input type="file" name="file" id="Main_File_Uploader" multiple disabled>
+                <button class="confirm_button" type="button" onclick="processMainFile()">Confirm</button>
+            </form>
+            <p id="fileTypeInfo"></p>
+            <br>
+        </section>
+
+        <!-- Upload Adapter Files -->
+        <section id="adapter_section" hidden>
+            <h3 id="adapterCheckHeading"></h3>
+            <br>
+            <form id="adapterFileForm" action="/adapter-file-upload" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" id="Adapter_File_Uploader" multiple disabled>
+                <button class="confirm_button" id="adapterUploadButton" type="submit">Confirm</button>
+            </form>
+            <br>
+        </section>
+
+        <!-- Upload RNA Genome Files (Optional) -->
+        <section id="rna_section" hidden>
+            <h3>Reference Genome/Transcriptome</h3>
+            <br>
+            <form id="genomeFileForm" enctype="multipart/form-data">
+                <input type="file" name="file" id="RNA_Genome_Uploader" multiple disabled>
+                <button class="confirm_button" type="button" onclick="processGenomeFile()">Confirm</button>
+            </form>
+            <p id="genomeTypeInfo"></p>
+            <br>
+        </section>
+
+        <!-- Continue Button -->
+        <form action="/qc-check-2" method="post">
+            <!-- can send the variables along as hidden values in this form -->
+            <button type="submit" class="continue_button" id="file_info_continue_button" disabled>
+                <h3>Continue</h3>
+            </button>
+        </form>
+    </div>
 
 
     <!-- ... LOGIC ... -->

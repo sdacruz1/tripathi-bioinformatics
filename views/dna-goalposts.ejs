@@ -4,71 +4,176 @@
 <head>
     <title>Tripathi Bioinformatics</title>
     <link rel='stylesheet' href='/stylesheets/pipeline.css' />
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <style>
+        /* Hide the default checkbox */
+        input[type="checkbox"] {
+            display: none;
+        }
+
+        /* Style the custom checkbox container */
+        .checkbox-container {
+            display: inline-block;
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        /* Style the custom checkbox itself */
+        .checkbox-container::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 12px;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        /* Style the checkmark when the checkbox is checked */
+        .checkbox-container input:checked + .checkmark::after {
+            content: '\2713'; /* Unicode checkmark character */
+            font-size: 16px;
+            color: #3498db;
+            position: absolute;
+            left: 6px;
+            top: 14px;
+        }
+
+        .goalpost_content {
+            padding: 4% 8%;
+            max-width: 75%;
+            text-align: left;
+        }
+
+        .collapsible {
+            background-color: white;
+        }
+
+        .content {
+            background-color: white;
+        }
+
+        .category_labels {
+            margin-left: 2rem;
+        }
+        
+        .goals_continue_button {
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: khaki;
+            cursor: pointer;
+            margin-top: 2rem;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Recommended Pipeline</h1>
-    <h2>Select a goalpost for the end of your timeline</h2>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <img style="margin-top: 2rem; width: 8rem; height: 8rem;" src="../uploads/Unchecked_Circle.png" alt="logo">
+        <h4>Select a Workflow to Get Started</h4>
+        <div>
+            <!-- Assuming your array is named 'myArray' and 'index' is the specified index -->
+            <% for (let i=0; i < toolbar.length; i++) { %>
+                <!-- Check if the current index is before or after the specified index -->
+                <div style="display: flex; align-items: center;">
 
-    <form id="goalpostForm" action="/dna-pipeline" method="post">
-        <% for (let i=0; i < categories.length; i++) { %>
+                    <% if (i < index) { %>
+                        <!-- Print true image if before the specified index -->
+                        <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png"
+                            alt="Checked Circle">
+                        <% } else { %>
+                            <!-- Print false image if after or at the specified index -->
+                            <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png"
+                                alt="Unchecked Circle">
+                            <% } %>
 
-            <button type="button" class="collapsible" onclick="toggleCollapsible('section<%= i %>')">
-                <h3> <%=categories[i][0] %> </h3>
-            </button>
+                                <!-- Print the text next to the image -->
+                                <p style="color: #02598A; margin-left: 10px;">
+                                    <%= toolbar[i] %>
+                                </p>
+                </div>
 
-            <div class="content" id="section<%= i %>">
-                <% for (let j=0; j < categories[i][1].length; j++) { %>
-                    <label>
-                        <input type="checkbox" name="checkbox_<%= i %>_<%= j %>" <% if (categories[i][1][j][1]) { %>checked
-                        <% } %>>
-                            <%= categories[i][1][j][0] %>
-                    </label>
-                    <% } %>
-            </div>
-            <% } %>
+                <!-- Line break after each iteration -->
+                <br>
+                <% } %>
+        </div>
+    </div>
 
-            <%- '<script>' %>
-                const form = document.getElementById('goalpostForm');
-                const categories = JSON.parse('<%- JSON.stringify(categories) %>');
-                console.log('Categories:', categories);
-        
-                form.addEventListener('change', function (event) {
-                    if (event.target.type === 'checkbox') {
-                        // Extract i and j from the checkbox name
-                        const checkboxName = event.target.name;
-                        const [, i, j] = checkboxName.split('_').map(Number);
-        
-                        // Set the correct array element accordingly
-                        categories[i][1][j][1] = event.target.checked;
-                    }
-                });
-        
-                form.addEventListener('submit', function(event) {
-                    // prevent submission for now
-                    event.preventDefault();
+    <div class="goalpost_content">
+        <h1>Recommended Pipeline</h1>
+        <h3 style="color:black;">Select a goalpost for the end of your timeline</h3>
 
-                    // send the categories array as a hidden input
-                    const sendCategories = document.querySelector('[name="categories"]');
-                    sendCategories.value = encodeURIComponent(JSON.stringify(categories));
-        
-                    // Submit the form
-                    form.submit();
-                });
+        <form id="goalpostForm" action="/dna-pipeline" method="post">
+            <% for (let i=0; i < categories.length; i++) { %>
 
-                // JavaScript to handle the toggling
-                function toggleCollapsible(sectionId) {
-                    const collapsibleContent = document.getElementById(sectionId);
-                    collapsibleContent.classList.toggle('active');
-                }
-        
-            <%- '</script>' %>
+                <button type="button" class="collapsible" onclick="toggleCollapsible('section<%= i %>')">
+                    <h3>
+                        <%=categories[i][0] %>
+                    </h3>
+                </button>
 
-            <input type="hidden" name="categories" >
+                <div class="content" id="section<%= i %>">
+                    <% for (let j=0; j < categories[i][1].length; j++) { %>
+                        <div style="display: flex;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" name="checkbox_<%= i %>_<%= j %>" <% if (categories[i][1][j][1]) {
+                                %>checked
+                            <% } %>>
+                            <span class="checkmark"></span>
+                                <h4 class="category_labels"><%= categories[i][1][j][0] %></h4>
+                        </label>
+                    </div>
+                        <% } %>
+                </div>
+                <% } %>
 
-            <button type="submit">Generate Timeline</button>
-    </form>    
+                    <%- '<script>' %>
+                        const form = document.getElementById('goalpostForm');
+                        const categories = JSON.parse('<%- JSON.stringify(categories) %>');
+                            console.log('Categories:', categories);
 
+                            form.addEventListener('change', function (event) {
+                            if (event.target.type === 'checkbox') {
+                            // Extract i and j from the checkbox name
+                            const checkboxName = event.target.name;
+                            const [, i, j] = checkboxName.split('_').map(Number);
+
+                            // Set the correct array element accordingly
+                            categories[i][1][j][1] = event.target.checked;
+                            }
+                            });
+
+                            form.addEventListener('submit', function(event) {
+                            // prevent submission for now
+                            event.preventDefault();
+
+                            // send the categories array as a hidden input
+                            const sendCategories = document.querySelector('[name="categories"]');
+                            sendCategories.value = encodeURIComponent(JSON.stringify(categories));
+
+                            // Submit the form
+                            form.submit();
+                            });
+
+                            // JavaScript to handle the toggling
+                            function toggleCollapsible(sectionId) {
+                            const collapsibleContent = document.getElementById(sectionId);
+                            collapsibleContent.classList.toggle('active');
+                            }
+
+                            <%- '</script>' %>
+
+                                <input type="hidden" name="categories">
+
+                                <button class="goals_continue_button" type="submit"><h3>Generate Timeline</h3></button>
+        </form>
+    </div>
 </body>
 
 </html>

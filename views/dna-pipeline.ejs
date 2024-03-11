@@ -4,6 +4,7 @@
 <head>
     <title>Tripathi Bioinformatics</title>
     <link rel='stylesheet' href='/stylesheets/pipeline.css' />
+    <link rel='stylesheet' href='/stylesheets/style.css' />
     <style>
         .container {
             padding: 20px;
@@ -22,6 +23,10 @@
         }
 
         .edit-btn, .save-btn {
+            border: none;
+            border-radius: 5px;
+            padding: 5px;
+            background-color: rgb(179, 222, 255);
             margin-top: 10px;
             cursor: pointer;
         }
@@ -29,12 +34,92 @@
         .hidden {
             display: none;
         }
+
+        .timeline_content {
+            padding: 4% 8%;
+            max-width: 75%;
+            text-align: left;
+        }
+
+        .collapsible {
+            background-color: white;
+        }
+
+        .content {
+            background-color: white;
+        }
+
+        .category_labels {
+            margin-left: 2rem;
+        }
+        
+        .goals_continue_button {
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: khaki;
+            cursor: pointer;
+            margin-top: 2rem;
+        }
+
+        .options-container, .options-display {
+            border: 4px solid #5a8096;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-left: 2rem;
+            max-width: 15rem;
+        }
+
+        .option_input {
+            margin-left: 1rem;
+        }
+
+        .pipeline_continue_button {
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: khaki;
+            cursor: pointer;
+            margin-top: 2rem;
+        }
     </style>
 </head>
 
 <body>
+    <div class="toolbar">
+        <img style="margin-top: 2rem; width: 8rem; height: 8rem;" src="../uploads/Unchecked_Circle.png" alt="logo">
+        <h4>Select a Workflow to Get Started</h4>
+        <div>
+            <!-- Assuming your array is named 'myArray' and 'index' is the specified index -->
+            <% for (let i=0; i < toolbar.length; i++) { %>
+                <!-- Check if the current index is before or after the specified index -->
+                <div style="display: flex; align-items: center;">
+
+                    <% if (i < index) { %>
+                        <!-- Print true image if before the specified index -->
+                        <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png"
+                            alt="Checked Circle">
+                        <% } else { %>
+                            <!-- Print false image if after or at the specified index -->
+                            <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png"
+                                alt="Unchecked Circle">
+                            <% } %>
+
+                                <!-- Print the text next to the image -->
+                                <p style="color: #02598A; margin-left: 10px;">
+                                    <%= toolbar[i] %>
+                                </p>
+                </div>
+
+                <!-- Line break after each iteration -->
+                <br>
+                <% } %>
+        </div>
+    </div>
+
+    <div class="timeline_content">
     <h1>Recommended Pipeline</h1>
-    <h2>Your recommended pipeline:</h2>
+    <h3 style="color:black;">Edit your timeline if necessary:</h3>
 
     <form id="dnaPipelineForm" action="/running" method="post">
 
@@ -49,8 +134,10 @@
             <% for (let j=0; j < categories[i][1].length; j++) { %>
                 <div>
                     <label>
+                        <div style="display: flex;">
                         <input type="range" min="0" max="1" step="1" value="<%= categories[i][1][j][1] ? 1 : 0;%>" name="slider_<%= i %>_<%= j %>">
-                        <%= categories[i][1][j][0] %>
+                        <h4 class="category_labels"><%= categories[i][1][j][0] %></h4>
+                    </div>
                     </label>
 
                     <!-- if there are no options for this setting, don't bother with all that -->
@@ -62,19 +149,25 @@
                     <div id="options_<%= i %>_<%= j %>" class="options-container <%= categories[i][1][j][1] ? '' : 'hidden' %>">
                         <% for (let k=0; k < categories[i][1][j][2].length; k++)  {
                             let curr_option = categories[i][1][j][2][k]; %>
+                            <div style="display: flex;">
                         <label for="<%=curr_option[0]%>"><%=curr_option[0]%>:</label>
 
                         <% if (curr_option[1] == "number") { %>
-                            <input type="number" id="<%=curr_option[0]%>" value="<%=curr_option[3]%>">
+                            <input class="option_input" type="number" id="<%=curr_option[0]%>" value="<%=curr_option[3]%>">
+                        <br>
                         <% } else if (curr_option[1] == "checkbox") { %>
-                            <input type="checkbox" id="<%=curr_option[0]%>" <% if (curr_option[3]) { %>checked<% } %>>
+                            <input class="option_input" type="checkbox" id="<%=curr_option[0]%>" <% if (curr_option[3]) { %>checked<% } %>>
+                        <br>
                         <% } else { %>
-                            <select id="<%=curr_option[0]%>">
+                            <select class="option_input" id="<%=curr_option[0]%>">
                                 <% for (let l=0; l < curr_option[2].length; l++) { %>
                                 <option value="<%=curr_option[2][l]%>"><%=curr_option[2][l]%></option>
                                 <% } %>
                             </select>
-                        <% } } %>
+                        <br>
+                        <% } %>
+                    </div>
+                        <% } %>
 
                         <!-- Switch container visibilites -->
                         <button type="button" class="save-btn" onclick="saveButton('<%= i %>', '<%= j%>')">Save</button>
@@ -85,8 +178,10 @@
                         <!-- Display options -->
                         <% for (let k=0; k < categories[i][1][j][2].length; k++)  {
                             let curr_option = categories[i][1][j][2][k]; %>
-                            <p><%=curr_option[0]%>:</p>
-                            <p id="option_<%= i %>_<%= j %>_<%= k %>_display"></p>
+                            <div style="display: flex;">
+                            <p style="color: #02598A;"><%=curr_option[0]%>:</p>
+                            <p style="margin-left: 1rem;" id="option_<%= i %>_<%= j %>_<%= k %>_display"></p>
+                        </div>
                         <% } %>
                         <!-- Switch container visibilities -->
                         <button type="button" onclick="editButton('<%= i %>', '<%= j%>')" class="edit-btn">Edit</button>
@@ -194,7 +289,8 @@
         <%- '</script>' %>
 
         <input type="hidden" name="categories" >
-        <button><h2>Continue</h2></button>
+        <button class="pipeline_continue_button"><h2>Continue</h2></button>
+        </div>
     </form>
 
 </body>

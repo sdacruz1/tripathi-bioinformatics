@@ -20,13 +20,16 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+const toolbar = ['Select a Workflow', 'Upload Files', 'Select Goalposts', 'Edit Timeline', 'Run Timeline'];
+
 /* GET home page. */
 router.get('/', function (req, res, next) {
-  res.render('home');
+  // Render the 'home' view with the myArray
+  res.render('home', { toolbar, index: 1 });
 });
 
 router.get('/file-info', function (req, res, next) {
-  res.render('file-info');
+  res.render('file-info', {toolbar, index: 2});
 });
 
 router.get('/dna-goalposts', function (req, res, next) {
@@ -49,7 +52,7 @@ router.get('/dna-goalposts', function (req, res, next) {
 
       ["Cleanup BAM File", false, [
         ["Sort", "checkbox", [], []],
-        ["Index", "", [], []], /// ????
+        ["Index", "checkbox", [], []], /// ????
       ], []],
     ]];
 
@@ -60,53 +63,53 @@ router.get('/dna-goalposts', function (req, res, next) {
     ]];
 
   const summary = ["Summary",
-  [
-    ["Alignment Summary", false, [], []],
-    ["GC Bias Summary", false, [], []],
-    ["Insert Size Summary", false, [], []],
-  ]];
+    [
+      ["Alignment Summary", false, [], []],
+      ["GC Bias Summary", false, [], []],
+      ["Insert Size Summary", false, [], []],
+    ]];
 
   const graphs = ["Graphs",
-  [
-    ["Alignment Graph", false, [], []],
-    ["GC Bias Graphs", false, [], []],
-    ["Insert Size Graphs", false, [], []],
-  ]];
+    [
+      ["Alignment Graph", false, [], []],
+      ["GC Bias Graphs", false, [], []],
+      ["Insert Size Graphs", false, [], []],
+    ]];
 
   const metrics = ["Metrics",
-  [
-    ["Quality Yield Metrics", false, [], []],
-    ["Whole Genome Sequencing Metrics", false, [], []],
-    ["Targeted PCR Metrics", false, [], []],
-  ]];
+    [
+      ["Quality Yield Metrics", false, [], []],
+      ["Whole Genome Sequencing Metrics", false, [], []],
+      ["Targeted PCR Metrics", false, [], []],
+    ]];
 
   const cleanup = ["Cleanup and Sequencing",
-  [
-    ["Create Sequence Dictionary", false, [], []],
-    ["Mark Duplicates", false, [], []],
-    ["Sort Bam File", false, [], []],
-    ["Flag Stats", false, [], []],
-    ["Sequencing Depth", false, [], []],
-    ["Sequencing Coverage", false, [], []],
-  ]];
+    [
+      ["Create Sequence Dictionary", false, [], []],
+      ["Mark Duplicates", false, [], []],
+      ["Sort Bam File", false, [], []],
+      ["Flag Stats", false, [], []],
+      ["Sequencing Depth", false, [], []],
+      ["Sequencing Coverage", false, [], []],
+    ]];
 
   const categories = [files, stats, summary, graphs, metrics, cleanup];
 
-  res.render('dna-goalposts', { categories });
+  res.render('dna-goalposts', { toolbar, index: 3, categories });
 });
 
 router.post('/dna-pipeline', function (req, res, next) {
   const categoriesString = req.body.categories || '[]';
   const categories = JSON.parse(decodeURIComponent(categoriesString));
 
-  res.render('dna-pipeline', { categories });
+  res.render('dna-pipeline', {toolbar, index:4, categories });
 });
 
 router.post('/running', function (req, res, next) {
   const categoriesString = req.body.categories || '[]';
   const categories = JSON.parse(decodeURIComponent(categoriesString));
 
-  res.render('running', { categories });
+  res.render('running', { toolbar, index: 5, categories });
 });
 
 router.post('/qc-check-2', (req, res) => {
@@ -116,19 +119,7 @@ router.post('/qc-check-2', (req, res) => {
 
 router.post('/file-information', function (req, res, next) {
   const mode = req.body.mode;
-
-  // Perform different actions based on the buttonType
-  if (mode === 'custom') {
-    // res.send('<h1>Custom</h1>');
-    res.render('file-info');
-    // res.render('index', {title: mode});
-  } else if (mode === 'recommended') {
-    // res.send('<h1>Recommended</h1>');
-    res.render('file-info');
-    // res.render('index', {title: mode});
-  } else {
-    res.send('<h1>Unknown button type</h1>');
-  }
+  res.render('file-info', {toolbar, index: 2});
 });
 
 router.post('/main-file-upload', upload.array('files'), (req, res) => {

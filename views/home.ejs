@@ -4,57 +4,116 @@
 <head>
     <title>Tripathi Bioinformatics</title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="stylesheet" href="https://use.typekit.net/azy2ine.css">
     <style>
+        
+        .home_content {
+            padding: 4% 8%;
+            max-width: 75%;
+            text-align: left;
+        }
+
         .file_info_option_button {
             width: 25rem;
             height: 10rem;
-            border-radius: 1rem;
-            background-color:khaki;
-            margin-right: 2rem;
+            border: none;
+            border-radius: 10px;
+            background-color: #EBE6BA;
             cursor: pointer;
+
+            font-family: "asap", sans-serif;
+            font-weight: 300;
+            font-style: normal;
         }
+
         .file_info_option_button:hover {
-            background-color: darkkhaki;
+            transition: 0.3s;
+            background-color: goldenrod;
         }
 
         .file_info_option_info {
-            width: 30rem;
-            font-size: 16px;
+            width: 24rem;
+            text-align: center;
+            margin-top: 2rem;
         }
 
         .file_info_form {
             display: flex;
+            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            margin-top: 2rem;
         }
     </style>
+
 </head>
 
-<body style="display: flex; flex-direction: column; align-items: center;">
-    <h1>Bioinformatics Landing Page</h1>
-    <p style="font-size: 20px;">Welcome! Please Select a Workflow:</p>
+<body>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <img style="margin-top: 2rem; width: 8rem; height: 8rem;" src="../uploads/Unchecked_Circle.png" alt="logo">
+        <h4>Select a Workflow to Get Started</h4>
+        <div>
+        <!-- Assuming your array is named 'myArray' and 'index' is the specified index -->
+        <% for (let i=0; i < toolbar.length; i++) { 
+            <!-- Check if the current index is before or after the specified index -->
+            if (i < index) { %>
+                <!-- Print true image if before the specified index -->
+                <div style="display: flex; align-items: center;">
+                <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png" alt="Checked Circle">
+            <% } else { %>
+                <!-- Print false image if after or at the specified index -->
+                <div style="display: flex; align-items: center;">
+                <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png" alt="Unchecked Circle">
+            <% } %>
 
-    <div style="display: flex; flex-direction: column; justify-content: center; align-items:center;">
-        <form action="/file-information" method="post" class="file_info_form">
-            <input type="hidden" name="mode" value="custom">
-            <button type="submit" class="file_info_option_button">
-                <div>
-                    <h2>Create My Own Pipeline</h2>
-                </div>
-            </button>
-            <p class="file_info_option_info">I have a moderate to advanced level of experience and I would like to customize my conversion
-                pipeline.</p>
-        </form>
+            <!-- Print the text next to the image -->
+            <p style="color: #02598A; margin-left: 10px;"><%= toolbar[i] %></p>
+            </div>
 
-        <form action="/file-information" method="post" class="file_info_form">
-            <input type="hidden" name="mode" value="recommended">
-            <button type="submit" class="file_info_option_button">
+            <!-- Line break after each iteration -->
+            <br>
+        <% } %>
+        </div>
+    </div>
+
+    <div class="home_content">
+
+        <h1>Welcome</h1>
+        <h2>to the Tripathi Labs Bioinformatics Processing Tool</h2>
+        <p>This program is designed to take your bio-informatics files from raw data to polished graphs, but you can
+            also start and end your processing journey anywhere in between. For more information on the steps involved
+            in our data processing pipeline, click here.</p>
+            
+        <br>
+        
+        <h3>Let's Get Started!</h3>
+        <p>Select a workflow based on your desired level of customization.</p>
+        
+        <br>
+        
+        <div style="display: flex; flex-direction: row; justify-content: space-between; align-items:center;">
+            <form action="/file-information" method="post" class="file_info_form">
+                <input type="hidden" name="mode" value="recommended">
                 <div>
-                    <h2>Use Recommended Pipeline</h2>
+                    <button type="submit" class="file_info_option_button">
+                        <h3 style="color: black;">Assisted Pipeline</h3>
+                    </button>
+                    <p class="file_info_option_info">I would like a pipeline to be <b>generated for me</b> based on my file
+                        format and preferences.</p>
                 </div>
-            </button>
-            <p class="file_info_option_info">I would like a pipeline to be generated for me based on my file format and preferences.</p>
-        </form>
+            </form>
+        
+            <form action="/file-information" method="post" class="file_info_form">
+                <input type="hidden" name="mode" value="custom">
+                <div>
+                    <button type="submit" class="file_info_option_button">
+                        <h3 style="color: black;">Custom Pipeline</h3>
+                    </button>
+                    <p class="file_info_option_info">I have a <b>moderate to advanced</b> level of experience and I would like
+                        to customize my conversion pipeline.</p>
+                </div>
+            </form>
+        </div>
     </div>
 
 </body>
