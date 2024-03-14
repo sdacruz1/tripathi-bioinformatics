@@ -37,6 +37,8 @@ router.get('/dna-goalposts', function (req, res, next) {
   const files = ["File Processing",
     [
       // name, toggle, options, file
+      ["Convert to FastQ", false, [], []],
+
       ["Trimming", false, [
         // name, input type, options, selected
         ["Trim Type", "select", ["Adapter Trim", "Read Length Trim", "Quality Score Trim", "Duplicate Trim"], []]
@@ -48,11 +50,13 @@ router.get('/dna-goalposts', function (req, res, next) {
         ["Discard Unpaired", "checkbox", [], []],
       ], []],
 
+      ["Demultiplex FastQ", false, [], []],
+
       ["Convert to BAM File", false, [], []],
 
       ["Cleanup BAM File", false, [
         ["Sort", "checkbox", [], []],
-        ["Index", "checkbox", [], []], /// ????
+        ["Index", "checkbox", [], []],
       ], []],
     ]];
 

@@ -59,32 +59,32 @@
     <!-- Toolbar -->
     <div class="toolbar">
         <img style="margin-top: 2rem; width: 8rem; height: 8rem;" src="../uploads/Unchecked_Circle.png" alt="logo">
-        <h4>Select a Workflow to Get Started</h4>
+        <h4>Upload Raw Data</h4>
         <div>
             <!-- Assuming your array is named 'myArray' and 'index' is the specified index -->
             <% for (let i=0; i < toolbar.length; i++) { %>
                 <!-- Check if the current index is before or after the specified index -->
                 <div style="display: flex; align-items: center;">
 
-                    <% if (i < index) { %>
-                        <!-- Print true image if before the specified index -->
-                        <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png"
-                            alt="Checked Circle">
-                        <% } else { %>
-                            <!-- Print false image if after or at the specified index -->
-                            <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png"
-                                alt="Unchecked Circle">
-                            <% } %>
+                <% if (i < index) { %>
+                    <!-- Print true image if before the specified index -->
+                    <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png"
+                        alt="Checked Circle">
+                <% } else { %>
+                    <!-- Print false image if after or at the specified index -->
+                    <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png"
+                        alt="Unchecked Circle">
+                <% } %>
 
-                                <!-- Print the text next to the image -->
-                                <p style="color: #02598A; margin-left: 10px;">
-                                    <%= toolbar[i] %>
-                                </p>
+                <!-- Print the text next to the image -->
+                <p style="color: #02598A; margin-left: 10px;">
+                    <%= toolbar[i] %>
+                </p>
                 </div>
 
                 <!-- Line break after each iteration -->
                 <br>
-                <% } %>
+            <% } %>
         </div>
     </div>
 
@@ -199,9 +199,10 @@
         // Get the continue button
         const continue_button = document.getElementById('file_info_continue_button');
 
+        function processMainFile() {
+            const Main_File_Uploader = document.getElementById('Main_File_Uploader');
+            const formData = new FormData();
 
-        // When a file is uploaded, display the detected file type
-        Main_File_Uploader.addEventListener('change', function () {
             const selectedFile = Main_File_Uploader.files[0];
 
             // Check and display the file type(s). If it's not a valid type, say so
@@ -212,23 +213,69 @@
                 // Check the file extension to determine the file type
                 if (fileExtension === 'bcl') {
                     fileTypeCheck.textContent = 'BCL file detected';
+                    // NOTE: come back to this, have to deal with folders
+                    // BCL2FastQ
+                    // Run FastQC
+                    // All allowed, nothing required
+                    InfoSteps = [1, 1, 1, 1, 1, 1];
+                    // NOTE: do i still do AT and multiplex bools?
                 } else if (fileExtension === 'fastq') {
                     fileTypeCheck.textContent = 'FastQ file detected';
+                    // Store it
+                    // Run FastQC
+                    // All is allowed
+                    InfoSteps = [1, 1, 1, 1, 1, 1];
+                    // Set the Adapter Trim bool and the multiplexed bool
+                    if (trimmed) {
+                        // this will change the trim settings. ASK about this!
+                    }
+                    if (!demultiplexed) {
+                        // set Demulitplexing to required
+                        InfoSteps[3] = 2;
+                    } 
+                    // Set the Adapter Trim bool and the multiplexed bool
                 } else if (fileExtension === 'fasta' || fileExtension === 'fast5') {
                     fileTypeCheck.textContent = 'FASTA and FAST5 file detected';
+                    // Store the file
+                    // Convert it to fastQ
+                    // run FastQC
+                    // All is allowed, Convert to FastQ is required
+                    InfoSteps = [2, 1, 1, 1, 1, 1];
+                    // Set the Adapter Trim bool and the multiplexed bool
+                    if (trimmed) {
+                        // this will change the trim settings. ASK about this!
+                    }
+                    if (!demultiplexed) {
+                        // set Demulitplexing to required
+                        InfoSteps[3] = 2;
+                    } 
+                    
                 } else if (fileExtension === 'bam') {
                     fileTypeCheck.textContent = 'BAM file detected';
+                    // BAM files don't need an adapter check, so we can skip the processing
+                    // Store the file
+                    // Set "Clean BAM File" as a required step, disable Trimming, Alignment, Demltiplexing, and Convert to BAM
+                        // convert to fastq?? disabled?
+                    InfoSteps = [0, 0, 0, 0, 0, 2];
+                    // if input type is DNA enable the continue button
+                    if (input_type === 'DNA') {
+                        continue_button.disabled = false;
+                    }
                 } else if (fileExtension === 'sam' || fileExtension === 'cram') {
                     fileTypeCheck.textContent = 'SAM and CRAM files detected';
+                    // SAMnCRAM files don't need an adapter check, so we can skip the processing
+                    // Store the file
+                    // Set "Convert to BAM" to required, "Clean BAM" on, and disable Trimming, Alignment and Demltiplexing
+                        // convert to fastq?? disabled?
+                    InfoSteps = [0, 0, 0, 0, 2, 1];
+                    // if input type is DNA enable the continue button
+                    if (input_type === 'DNA') {
+                        continue_button.disabled = false;
+                    }
                 } else {
                     fileTypeCheck.textContent = 'Unknown file type';
                 }
             }
-        });
-
-        function processMainFile() {
-            const Main_File_Uploader = document.getElementById('Main_File_Uploader');
-            const formData = new FormData();
 
             for (const file of Main_File_Uploader.files) {
                 formData.append('files', file);

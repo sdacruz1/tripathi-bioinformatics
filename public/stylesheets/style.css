@@ -54,8 +54,9 @@ a {
   align-items: center;
   text-align: center;
 
-  height: 100vh;
+  min-height: 100vh;
+  flex: 1;
   min-width: 25%;
-  width: 25%;
+  max-width: 25%;
   background-color: #EBE6BA;
 }
