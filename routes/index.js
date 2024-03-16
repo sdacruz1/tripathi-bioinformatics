@@ -126,9 +126,8 @@ router.post('/file-information', function (req, res, next) {
   res.render('file-info', {toolbar, index: 2});
 });
 
-router.post('/main-file-upload', upload.array('files'), (req, res) => {
-  const uploadedFile = req.files[0];
-  const secondFile = req.files[1];
+router.post('/run-fastqc', upload.single('file'), (req, res) => {
+  const uploadedFile = req.file;
 
   // Check if a file was uploaded
   if (!uploadedFile) {
@@ -142,11 +141,31 @@ router.post('/main-file-upload', upload.array('files'), (req, res) => {
   }
 
   // Run FastQC
+  const FastQCCommand = path.join(__dirname, '..', 'bio_modules', 'FastQC.app', 'Contents', 'MacOS', 'fastqc');
+  const FastQArgs = [uploadedFile.path];
 
-  const hasAdapters = false; // set this based on the result of the QC
+  const runFastQC = spawn(FastQCCommand, FastQArgs);
 
-  // return whether the file has adapters or not
-  res.json({ hasAdapters });
+  let outputData = '';
+
+  runFastQC.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runFastQC.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runFastQC.on('exit', (code) => {
+    console.log(`FastQC process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  const trimmed = false; // set this based on the result of the QC
+  const multiplexed = false;
+
+  res.json({ trimmed, multiplexed });
 
 });
 

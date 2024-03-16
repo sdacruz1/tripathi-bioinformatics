@@ -199,8 +199,7 @@
         // Get the continue button
         const continue_button = document.getElementById('file_info_continue_button');
 
-        function processMainFile() {
-            const Main_File_Uploader = document.getElementById('Main_File_Uploader');
+        function procesMainFile() {
             const formData = new FormData();
 
             const selectedFile = Main_File_Uploader.files[0];
@@ -223,6 +222,7 @@
                     fileTypeCheck.textContent = 'FastQ file detected';
                     // Store it
                     // Run FastQC
+                    
                     // All is allowed
                     InfoSteps = [1, 1, 1, 1, 1, 1];
                     // Set the Adapter Trim bool and the multiplexed bool
@@ -311,6 +311,68 @@
                 .catch(error => {
                     console.error('Error:', error);
                 });
+        }
+
+        function processMainFile () {
+            // Get the FastQ file
+            const fastQFile = Main_File_Uploader.files[0];
+
+            // If the file somehow doesn't exist, abort process
+            if (!fastQFile) {
+                return;
+            }
+
+            // Store the file path for later
+            // NOTE: Gotta actually put this somewhere
+            const filePath = fastQFile.path;
+
+            // Leave all of the steps on
+            InfoSteps = [1, 1, 1, 1, 1, 1];
+
+            // -- !!!!!!!!! Run FastQ !!!!!!!!! -- //
+
+            const formData = new FormData();
+            formData.append('file', fastQFile);
+
+            // Make an asynchronous request to the server using the Fetch API
+            fetch('/run-fastqc', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json()) // Assume the server sends JSON data
+                .then(data => {
+                    // ...  ADAPTERS ... //
+
+                    // Set the Adapter Trim bool and the multiplexed bool based on the response
+                    trimmed = data.trimmed;
+                    demultiplexed = data.demultiplexed;
+
+                    // Set the adapter text/variable and uploader enabled settings accordingly
+                    adapterSection.hidden = false;
+
+                    if (trimmed) {
+                        ACHeading.textContent = 'Your data appears to have an adapter applied. Please upload an adapter file.'
+                        adapterFileInput.disabled = false;
+                    } else {
+                        ACHeading.textContent = 'We found no adapters on your file.'
+                        adapterFileInput.disabled = true;
+                        // if input type is DNA and there are no adapters, enable the continue button
+                        if (input_type === 'DNA') {
+                            continue_button.disabled = false;
+                        }
+                    }
+
+                    if (!demultiplexed) {
+                        // set Demulitplexing to required
+                        InfoSteps[3] = 2;
+                    }
+
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+
+                // Then pass on trimmed, demultiplexed, the file name, and InfoSteps
         }
 
         // If an adapter file is uploaded...
