@@ -111,7 +111,11 @@
             <h3>Upload File(s)</h3>
             <br>
             <form id="mainFileForm" enctype="multipart/form-data">
-                <input type="file" name="file" id="Main_File_Uploader" multiple disabled>
+                <select id="directoryOption" onchange="changeInputType()">
+                    <option value="BCL">BCL</option>
+                    <option value="other">Other</option>
+                  </select>
+                <input type="file" name="file" id="Main_File_Uploader" webkitdirectory multiple disabled>
                 <button class="confirm_button" type="button" onclick="processMainFile()">Confirm</button>
             </form>
             <p id="fileTypeInfo"></p>
@@ -119,8 +123,8 @@
         </section>
 
         <!-- Upload Adapter Files -->
+        <h3 id="adapterCheckHeading"></h3>
         <section id="adapter_section" hidden>
-            <h3 id="adapterCheckHeading"></h3>
             <br>
             <form id="adapterFileForm" action="/adapter-file-upload" method="post" enctype="multipart/form-data">
                 <input type="file" name="file" id="Adapter_File_Uploader" multiple disabled>
@@ -199,141 +203,120 @@
         // Get the continue button
         const continue_button = document.getElementById('file_info_continue_button');
 
-        function procesMainFile() {
-            const formData = new FormData();
+        // Function to change main file input type based on dropdown selection
+        function changeInputType() {
+            const dropdown = document.getElementById('directoryOption');
 
-            const selectedFile = Main_File_Uploader.files[0];
+            if (dropdown.value === 'BCL') {
+                Main_File_Uploader.setAttribute('webkitdirectory', 'true');
+            } else {
+                Main_File_Uploader.removeAttribute('webkitdirectory');
+            }
+        }
 
-            // Check and display the file type(s). If it's not a valid type, say so
-            if (selectedFile) {
-                const fileName = selectedFile.name;
-                const fileExtension = fileName.split('.').pop().toLowerCase();
+        // @ processMainFile
+        // This function is called when the main data file is uploaded.
+        // It stores the file, determines its type, runs FastQC if applicable, then unlocks the next step.
+        function processMainFile() {
 
-                // Check the file extension to determine the file type
-                if (fileExtension === 'bcl') {
-                    fileTypeCheck.textContent = 'BCL file detected';
-                    // NOTE: come back to this, have to deal with folders
-                    // BCL2FastQ
-                    // Run FastQC
-                    // All allowed, nothing required
-                    InfoSteps = [1, 1, 1, 1, 1, 1];
-                    // NOTE: do i still do AT and multiplex bools?
-                } else if (fileExtension === 'fastq') {
-                    fileTypeCheck.textContent = 'FastQ file detected';
-                    // Store it
-                    // Run FastQC
-                    
-                    // All is allowed
-                    InfoSteps = [1, 1, 1, 1, 1, 1];
-                    // Set the Adapter Trim bool and the multiplexed bool
-                    if (trimmed) {
-                        // this will change the trim settings. ASK about this!
-                    }
-                    if (!demultiplexed) {
-                        // set Demulitplexing to required
-                        InfoSteps[3] = 2;
-                    } 
-                    // Set the Adapter Trim bool and the multiplexed bool
-                } else if (fileExtension === 'fasta' || fileExtension === 'fast5') {
-                    fileTypeCheck.textContent = 'FASTA and FAST5 file detected';
-                    // Store the file
-                    // Convert it to fastQ
-                    // run FastQC
-                    // All is allowed, Convert to FastQ is required
-                    InfoSteps = [2, 1, 1, 1, 1, 1];
-                    // Set the Adapter Trim bool and the multiplexed bool
-                    if (trimmed) {
-                        // this will change the trim settings. ASK about this!
-                    }
-                    if (!demultiplexed) {
-                        // set Demulitplexing to required
-                        InfoSteps[3] = 2;
-                    } 
-                    
-                } else if (fileExtension === 'bam') {
-                    fileTypeCheck.textContent = 'BAM file detected';
-                    // BAM files don't need an adapter check, so we can skip the processing
-                    // Store the file
-                    // Set "Clean BAM File" as a required step, disable Trimming, Alignment, Demltiplexing, and Convert to BAM
-                        // convert to fastq?? disabled?
+            // check for upload validity
+            if (Main_File_Uploader.files.length > 1) {
+                // provide error
+                console.log('Please select only one file or directory.');
+                return;
+            }
+            // If the file somehow doesn't exist, abort process
+            const uploadedFile = Main_File_Uploader.files[0];
+            if (!uploadedFile) {
+                return;
+            }
+            // Store the file path for later
+            // NOTE: Gotta actually put this somewhere
+            const filePath = uploadedFile.path;
+
+            if (uploadedFile.isDirectory) {
+                // If it's a directory, this should be a BCL folder.
+                fileTypeCheck.textContent = 'BCL files detected';
+                // handleBCL(file);
+                return;
+            }
+
+            // If it's not a directory, it's a file
+            // Determine the type
+            const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
+            fileTypeCheck.textContent = '.' + fileExtension + ' file detected';
+            let trimmed = false;
+            switch (fileExtension) {
+                case 'bam':
+                    // No processing, Cleaning BAM is required
                     InfoSteps = [0, 0, 0, 0, 0, 2];
                     // if input type is DNA enable the continue button
                     if (input_type === 'DNA') {
                         continue_button.disabled = false;
                     }
-                } else if (fileExtension === 'sam' || fileExtension === 'cram') {
-                    fileTypeCheck.textContent = 'SAM and CRAM files detected';
-                    // SAMnCRAM files don't need an adapter check, so we can skip the processing
-                    // Store the file
-                    // Set "Convert to BAM" to required, "Clean BAM" on, and disable Trimming, Alignment and Demltiplexing
-                        // convert to fastq?? disabled?
+                    return;
+                case 'sam':
+                    // No processing, Convert to BAM is required, Clean BAM is optional
                     InfoSteps = [0, 0, 0, 0, 2, 1];
                     // if input type is DNA enable the continue button
                     if (input_type === 'DNA') {
                         continue_button.disabled = false;
                     }
-                } else {
-                    fileTypeCheck.textContent = 'Unknown file type';
+                    return;
+                case 'fastq':
+                    // Leave all of the steps on
+                    InfoSteps = [1, 1, 1, 1, 1, 1];
+
+                    // run fastQC
+                    runFastQC(uploadedFile)
+                        .then(analysis => {
+                            // check for demultiplexing
+                            if (!analysis.demultiplexed) {
+                                // still multiplexed? Set Demultiplexing to required
+                                InfoSteps[3] = 2;
+                            }
+                        })
+                        .catch(error => {
+                            // Handle any errors
+                            console.error('Error analyzing file:', error);
+                        });
+                    break;
+                case 'fasta':
+                case 'fastq':
+                    // NOTE: Nothing yet, come back to this after meeting
+                    break;
+                default:
+                    // provide error
+                    console.log('Provided file is not one of the supported file types.');
+            }
+
+            // Set the adapter text/variable and uploader enabled settings accordingly
+
+            if (trimmed) {
+                adapterSection.hidden = false;
+                ACHeading.textContent = 'Your data appears to have an adapter applied. Please upload an adapter file.'
+                adapterFileInput.disabled = false;
+            } else {
+                ACHeading.textContent = 'We found no adapters on your file.'
+                adapterFileInput.disabled = true;
+                // if input type is DNA and there are no adapters, enable the continue button
+                if (input_type === 'DNA') {
+                    continue_button.disabled = false;
                 }
             }
 
-            for (const file of Main_File_Uploader.files) {
-                formData.append('files', file);
-            }
-
-            // Make an asynchronous request to the server using the Fetch API
-            fetch('/main-file-upload', {
-                method: 'POST',
-                body: formData,
-            })
-                .then(response => response.json()) // Assume the server sends JSON data
-                .then(data => {
-                    // ...  ADAPTERS ... //
-                    // Run FastQC on the files and check for adapters
-                    hasAdapters = data.hasAdapters;
-
-                    // Set the adapter text/variable and uploader enabled settings accordingly
-                    if (hasAdapters) {
-                        adapterSection.hidden = false;
-                        ACHeading.textContent = 'Your data appears to have an adapter applied. Please upload an adapter file.'
-                        adapterFileInput.disabled = false;
-                    } else {
-                        adapterSection.hidden = false;
-                        ACHeading.textContent = 'We found no adapters on your file.'
-                        adapterFileInput.disabled = true;
-                        // if input type is DNA and there are no adapters, enable the continue button
-                        if (input_type === 'DNA') {
-                            continue_button.disabled = false;
-                        }
-                    }
-
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
         }
 
-        function processMainFile () {
-            // Get the FastQ file
-            const fastQFile = Main_File_Uploader.files[0];
-
-            // If the file somehow doesn't exist, abort process
-            if (!fastQFile) {
-                return;
-            }
-
-            // Store the file path for later
-            // NOTE: Gotta actually put this somewhere
-            const filePath = fastQFile.path;
-
-            // Leave all of the steps on
-            InfoSteps = [1, 1, 1, 1, 1, 1];
-
-            // -- !!!!!!!!! Run FastQ !!!!!!!!! -- //
-
+        // @ runFastQC
+        // This function takes in a fastQ file and runs fastQC on that file
+        // Returns:
+        //      - a boolean that indicates whether the adapter is trimmed
+        //      - a boolean that indicates wether the fastQ file is demultiplexed
+        function runFastQC (fastQFile) {
             const formData = new FormData();
             formData.append('file', fastQFile);
 
+            return new Promise((resolve, reject) => {
             // Make an asynchronous request to the server using the Fetch API
             fetch('/run-fastqc', {
                 method: 'POST',
@@ -341,38 +324,14 @@
             })
                 .then(response => response.json()) // Assume the server sends JSON data
                 .then(data => {
-                    // ...  ADAPTERS ... //
-
-                    // Set the Adapter Trim bool and the multiplexed bool based on the response
-                    trimmed = data.trimmed;
-                    demultiplexed = data.demultiplexed;
-
-                    // Set the adapter text/variable and uploader enabled settings accordingly
-                    adapterSection.hidden = false;
-
-                    if (trimmed) {
-                        ACHeading.textContent = 'Your data appears to have an adapter applied. Please upload an adapter file.'
-                        adapterFileInput.disabled = false;
-                    } else {
-                        ACHeading.textContent = 'We found no adapters on your file.'
-                        adapterFileInput.disabled = true;
-                        // if input type is DNA and there are no adapters, enable the continue button
-                        if (input_type === 'DNA') {
-                            continue_button.disabled = false;
-                        }
-                    }
-
-                    if (!demultiplexed) {
-                        // set Demulitplexing to required
-                        InfoSteps[3] = 2;
-                    }
-
+                    // return the Adapter Trim bool and the multiplexed bool based on the response
+                    resolve({ trimmed: data.trimmed, demultiplexed: data.demultiplexed });
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                    reject(error);
                 });
-
-                // Then pass on trimmed, demultiplexed, the file name, and InfoSteps
+            });
         }
 
         // If an adapter file is uploaded...

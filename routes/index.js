@@ -135,11 +135,6 @@ router.post('/run-fastqc', upload.single('file'), (req, res) => {
     return;
   }
 
-  if (req.files.length > 2) {
-    res.status(400).send('Too many files uploaded');
-    return;
-  }
-
   // Run FastQC
   const FastQCCommand = path.join(__dirname, '..', 'bio_modules', 'FastQC.app', 'Contents', 'MacOS', 'fastqc');
   const FastQArgs = [uploadedFile.path];
@@ -163,9 +158,9 @@ router.post('/run-fastqc', upload.single('file'), (req, res) => {
 
   // Return the results as a JSON
   const trimmed = false; // set this based on the result of the QC
-  const multiplexed = false;
+  const demultiplexed = false;
 
-  res.json({ trimmed, multiplexed });
+  res.json({ trimmed, demultiplexed });
 
 });
 
