@@ -238,6 +238,8 @@
                 // If it's a directory, this should be a BCL folder.
                 fileTypeCheck.textContent = 'BCL files detected';
                 // handleBCL(file);
+                // Leave everything on
+                InfoSteps = [1, 1, 1, 1, 1, 1];
                 return;
             }
 
@@ -270,6 +272,7 @@
                     // run fastQC
                     runFastQC(uploadedFile)
                         .then(analysis => {
+                            trimmed = analysis.trimmed;
                             // check for demultiplexing
                             if (!analysis.demultiplexed) {
                                 // still multiplexed? Set Demultiplexing to required
@@ -282,7 +285,7 @@
                         });
                     break;
                 case 'fasta':
-                case 'fastq':
+                case 'fast5':
                     // NOTE: Nothing yet, come back to this after meeting
                     break;
                 default:
@@ -291,7 +294,6 @@
             }
 
             // Set the adapter text/variable and uploader enabled settings accordingly
-
             if (trimmed) {
                 adapterSection.hidden = false;
                 ACHeading.textContent = 'Your data appears to have an adapter applied. Please upload an adapter file.'
@@ -305,6 +307,37 @@
                 }
             }
 
+        }
+
+         // @ handleBCL
+        // This function takes in a BCL File folder, converts it to fastQ, runs fastQC, and returns trimming and multiplexing information
+        function handleBCL (BCLFile) {
+            const formData = new FormData();
+            formData.append('file', BCLFile);
+
+            // Run Bcl2FastQ
+            return new Promise((resolve, reject) => {
+            fetch('/run-bcl2fastq', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json()) // Assume the server sends JSON data
+                .then(data => {
+                    // Run fastQC on the returned file
+                    runFastQC(data.fastQFile)
+                        .then(analysis => {
+                            resolve({trimmed: analysis.trimmed, demultiplexed: analysis.demultiplexed});
+                        })
+                        .catch(error => {
+                            // Handle any errors
+                            console.error('Error analyzing file:', error);
+                        });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    reject(error);
+                });
+            });
         }
 
         // @ runFastQC
@@ -333,6 +366,8 @@
                 });
             });
         }
+
+       
 
         // If an adapter file is uploaded...
         // nothing to do! just send it to the backend

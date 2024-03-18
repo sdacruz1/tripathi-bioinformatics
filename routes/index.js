@@ -126,6 +126,42 @@ router.post('/file-information', function (req, res, next) {
   res.render('file-info', {toolbar, index: 2});
 });
 
+router.post('/run-bcl2fastq' , upload.single('file'), (req, res) => {
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run BCL 2 FastQ
+  const BCL2FastQCommand = path.join(__dirname, '..', 'bio_modules', 'bcl2fastq');
+  const BCL2FastQArgs = [' --runfolder-dir ' + uploadedFile.path + ' --output-dir ' + path.join(__dirname, '..', 'uploads', 'output') + ' --sample-sheet ' + path.join(uploadedFile.path, 'SampleSheet.csv') + ' --barcode-mismatches 1'];
+
+  const runBCL2FastQ = spawn(BCL2FastQCommand, BCL2FastQArgs);
+
+  let outputData = '';
+
+  runBCL2FastQ.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runBCL2FastQ.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runBCL2FastQ.on('exit', (code) => {
+    console.log(`BCL2FastQ process exited with code ${code}`);
+  });
+
+  // how to i give it exactly the file
+  res.json({ fastQfile:  path.join(__dirname, '..', 'uploads', 'output')});
+  // NOTE: recongifgure run-fastqc to take the file name
+
+});
+
 router.post('/run-fastqc', upload.single('file'), (req, res) => {
   const uploadedFile = req.file;
 
