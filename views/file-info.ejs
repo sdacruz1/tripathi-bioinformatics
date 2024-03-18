@@ -173,6 +173,8 @@
         // Get references to the upload button and the file information text
         const Main_File_Uploader = document.getElementById('Main_File_Uploader');
         const fileTypeCheck = document.getElementById('fileTypeInfo');
+        const typeDropdown = document.getElementById('directoryOption');
+
 
         // INPUT TYPE BUTTONS
 
@@ -205,9 +207,8 @@
 
         // Function to change main file input type based on dropdown selection
         function changeInputType() {
-            const dropdown = document.getElementById('directoryOption');
 
-            if (dropdown.value === 'BCL') {
+            if (typeDropdown.value === 'BCL') {
                 Main_File_Uploader.setAttribute('webkitdirectory', 'true');
             } else {
                 Main_File_Uploader.removeAttribute('webkitdirectory');
@@ -219,10 +220,24 @@
         // It stores the file, determines its type, runs FastQC if applicable, then unlocks the next step.
         function processMainFile() {
 
+            if (typeDropdown.value === 'BCL') {
+                // If it's a directory, this should be a BCL folder.
+                fileTypeCheck.textContent = 'BCL files detected';
+                handleBCL(Main_File_Uploader.files);
+                // Leave everything on
+                InfoSteps = [1, 1, 1, 1, 1, 1];
+                if (input_type === 'DNA') {
+                    continue_button.disabled = false;
+                } else {
+                    // NOTE: Return here for RNA
+                }
+                return;
+            }
+
             // check for upload validity
             if (Main_File_Uploader.files.length > 1) {
                 // provide error
-                console.log('Please select only one file or directory.');
+                console.log('Please select only one file.');
                 return;
             }
             // If the file somehow doesn't exist, abort process
@@ -233,15 +248,6 @@
             // Store the file path for later
             // NOTE: Gotta actually put this somewhere
             const filePath = uploadedFile.path;
-
-            if (uploadedFile.isDirectory) {
-                // If it's a directory, this should be a BCL folder.
-                fileTypeCheck.textContent = 'BCL files detected';
-                // handleBCL(file);
-                // Leave everything on
-                InfoSteps = [1, 1, 1, 1, 1, 1];
-                return;
-            }
 
             // If it's not a directory, it's a file
             // Determine the type
@@ -311,9 +317,11 @@
 
          // @ handleBCL
         // This function takes in a BCL File folder, converts it to fastQ, runs fastQC, and returns trimming and multiplexing information
-        function handleBCL (BCLFile) {
+        function handleBCL (BCLFiles) {
             const formData = new FormData();
-            formData.append('file', BCLFile);
+            for (const file of BCLFiles) {
+                formData.append('files', file);
+            }
 
             // Run Bcl2FastQ
             return new Promise((resolve, reject) => {
@@ -323,15 +331,16 @@
             })
                 .then(response => response.json()) // Assume the server sends JSON data
                 .then(data => {
+                    resolve();
                     // Run fastQC on the returned file
-                    runFastQC(data.fastQFile)
-                        .then(analysis => {
-                            resolve({trimmed: analysis.trimmed, demultiplexed: analysis.demultiplexed});
-                        })
-                        .catch(error => {
-                            // Handle any errors
-                            console.error('Error analyzing file:', error);
-                        });
+                    // runFastQC(data.fastQFile)
+                    //     .then(analysis => {
+                    //         resolve({trimmed: analysis.trimmed, demultiplexed: analysis.demultiplexed});
+                    //     })
+                    //     .catch(error => {
+                    //         // Handle any errors
+                    //         console.error('Error analyzing file:', error);
+                    //     });
                 })
                 .catch(error => {
                     console.error('Error:', error);

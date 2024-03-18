@@ -126,38 +126,60 @@ router.post('/file-information', function (req, res, next) {
   res.render('file-info', {toolbar, index: 2});
 });
 
-router.post('/run-bcl2fastq' , upload.single('file'), (req, res) => {
-  const uploadedFile = req.file;
+router.post('/run-bcl2fastq' , upload.array('files'), (req, res) => {
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  // =============== Handle the BCL File Folder ===============
+  const uploadedFiles = req.files;
+
+  // Check if the files were uploaded
+  if (!uploadedFiles || uploadedFiles.length === 0) {
+    return res.status(400).send('No files were uploaded.');
   }
 
-  // Run BCL 2 FastQ
-  const BCL2FastQCommand = path.join(__dirname, '..', 'bio_modules', 'bcl2fastq');
-  const BCL2FastQArgs = [' --runfolder-dir ' + uploadedFile.path + ' --output-dir ' + path.join(__dirname, '..', 'uploads', 'output') + ' --sample-sheet ' + path.join(uploadedFile.path, 'SampleSheet.csv') + ' --barcode-mismatches 1'];
+  // Create an empty directory to hold them in
+  const BCLdirectory = './../uploads/BCLFiles-' + Date.now();
+  if (!fs.existsSync(BCLdirectory)) {
+    fs.mkdirSync(BCLdirectory);
+  }
 
-  const runBCL2FastQ = spawn(BCL2FastQCommand, BCL2FastQArgs);
-
-  let outputData = '';
-
-  runBCL2FastQ.stdout.on('data', (data) => {
-    outputData += data;
-    console.log(`stdout: ${data}`);
+  // Move each uploaded file to the empty directory
+  uploadedFiles.forEach(file => {
+    const destinationPath = path.join(BCLdirectory, file.originalname);
+    fs.renameSync(file.path, destinationPath);
   });
 
-  runBCL2FastQ.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-  });
+  // =============== Run BCL To FastQ ===============
 
-  runBCL2FastQ.on('exit', (code) => {
-    console.log(`BCL2FastQ process exited with code ${code}`);
-  });
+  // Create an empty directory to hold the output
+  const OutputDirectory = './../uploads/output';
+  if (!fs.existsSync(OutputDirectory)) {
+    fs.mkdirSync(OutputDirectory);
+  }
 
-  // how to i give it exactly the file
-  res.json({ fastQfile:  path.join(__dirname, '..', 'uploads', 'output')});
+  // // Spawn the process
+  // const BCL2FastQCommand = path.join(__dirname, '..', 'bio_modules', 'FastQC.app', 'Contents', 'MacOS', 'bcl2fastq');
+  // const BCL2FastQArgs = [' --runfolder-dir ' + BCLdirectory + ' --output-dir ' + OutputDirectory
+  //                     + ' --sample-sheet ' + path.join(BCLdirectory, 'SampleSheet.csv') + ' --barcode-mismatches 1'];
+  // const runBCL2FastQ = spawn(BCL2FastQCommand, BCL2FastQArgs);
+
+  // let outputData = '';
+
+  // // Handle the terminal response
+  // runBCL2FastQ.stdout.on('data', (data) => {
+  //   outputData += data;
+  //   console.log(`stdout: ${data}`);
+  // });
+
+  // runBCL2FastQ.stderr.on('data', (data) => {
+  //   console.error(`stderr: ${data}`);
+  // });
+
+  // runBCL2FastQ.on('exit', (code) => {
+  //   console.log(`BCL2FastQ process exited with code ${code}`);
+  // });
+
+  // // Respond to the client
+  res.json({ fastQfile:  "nope"});
   // NOTE: recongifgure run-fastqc to take the file name
 
 });
