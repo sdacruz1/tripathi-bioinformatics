@@ -3,6 +3,7 @@
 
 <head>
     <title>Tripathi Bioinformatics</title>
+    <link rel="stylesheet" href="https://use.typekit.net/azy2ine.css">
     <link rel='stylesheet' href='/stylesheets/pipeline.css' />
     <link rel='stylesheet' href='/stylesheets/style.css' />
     <style>
@@ -86,36 +87,8 @@
 </head>
 
 <body>
-    <div class="toolbar">
-        <img style="margin-top: 2rem; width: 8rem; height: 8rem;" src="../uploads/Unchecked_Circle.png" alt="logo">
-        <h4>Select a Workflow to Get Started</h4>
-        <div>
-            <!-- Assuming your array is named 'myArray' and 'index' is the specified index -->
-            <% for (let i=0; i < toolbar.length; i++) { %>
-                <!-- Check if the current index is before or after the specified index -->
-                <div style="display: flex; align-items: center;">
-
-                    <% if (i < index) { %>
-                        <!-- Print true image if before the specified index -->
-                        <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png"
-                            alt="Checked Circle">
-                        <% } else { %>
-                            <!-- Print false image if after or at the specified index -->
-                            <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png"
-                                alt="Unchecked Circle">
-                            <% } %>
-
-                                <!-- Print the text next to the image -->
-                                <p style="color: #02598A; margin-left: 10px;">
-                                    <%= toolbar[i] %>
-                                </p>
-                </div>
-
-                <!-- Line break after each iteration -->
-                <br>
-                <% } %>
-        </div>
-    </div>
+    <!-- Toolbar -->
+    <%- include('partials/toolbar') %>
 
     <div class="timeline_content">
     <h1>Recommended Pipeline</h1>

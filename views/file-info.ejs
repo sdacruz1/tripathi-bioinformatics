@@ -3,6 +3,7 @@
 
 <head>
     <title>Tripathi Bioinformatics</title>
+    <link rel="stylesheet" href="https://use.typekit.net/azy2ine.css">
     <link rel='stylesheet' href='/stylesheets/style.css' />
     <style>
         .input_type_buttons {
@@ -57,36 +58,7 @@
 
 <body>
     <!-- Toolbar -->
-    <div class="toolbar">
-        <img style="margin-top: 2rem; width: 8rem; height: 8rem;" src="../uploads/Unchecked_Circle.png" alt="logo">
-        <h4>Upload Raw Data</h4>
-        <div>
-            <!-- Assuming your array is named 'myArray' and 'index' is the specified index -->
-            <% for (let i=0; i < toolbar.length; i++) { %>
-                <!-- Check if the current index is before or after the specified index -->
-                <div style="display: flex; align-items: center;">
-
-                <% if (i < index) { %>
-                    <!-- Print true image if before the specified index -->
-                    <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png"
-                        alt="Checked Circle">
-                <% } else { %>
-                    <!-- Print false image if after or at the specified index -->
-                    <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png"
-                        alt="Unchecked Circle">
-                <% } %>
-
-                <!-- Print the text next to the image -->
-                <p style="color: #02598A; margin-left: 10px;">
-                    <%= toolbar[i] %>
-                </p>
-                </div>
-
-                <!-- Line break after each iteration -->
-                <br>
-            <% } %>
-        </div>
-    </div>
+    <%- include('partials/toolbar') %>
 
     <div class="centered">
         <h1>Upload Files</h1>
@@ -146,7 +118,7 @@
         </section>
 
         <!-- Continue Button -->
-        <form id="continueForm" action="/qc-check-2" method="post">
+        <form id="continueForm" action="/dna-goalposts" method="post">
             <!-- Hidden input fields for variables -->
             <input type="hidden" name="infoSteps" id="infoStepsInput">
             <input type="hidden" name="uploadedFile" id="uploadedFileInput">
@@ -164,8 +136,10 @@
     <script>
 
         let InfoSteps = [0, 0, 0, 0, 0, 0];
-        let uploadedFile = null;
+        let uploadedFilePath = "";
         let UploadedFileType = "";
+
+        let uploadedFile;
 
         // ... INPUT TYPE BUTTONS ... //
 

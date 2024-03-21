@@ -24,9 +24,6 @@ const upload = multer({ storage: storage });
 
 //#region  ... Constants ...
 
-// The Toolbar
-const toolbar = ['Select a Workflow', 'Upload Files', 'Select Goalposts', 'Edit Timeline', 'Run Timeline'];
-
 // Categories
 let files = ["File Processing",
   [
@@ -88,14 +85,17 @@ let cleanup = ["Cleanup and Sequencing",
 
 let categories = [files, stats, summary, graphs, metrics, cleanup];
 
+// Program Mode
+let mode = "";
+
 // Stored Outputs
-let infoSteps;
-let uploadedFile;
-let uploadedFileType;
-let fastQConversion;
-let fastQCResults;
-let BAMFile;
-let Outputs;
+let infoSteps;          // An array that determines which file processing steps will be available in the timeline
+let uploadedFilePath;   // The path to the original file that was uploaded or the directory, if it was a BCL folder
+let uploadedFileType;   // A string representing the original uploaded file type
+let fastQConversion;    // The path to the fastQ file result of any conversions (BCL, FastA, Fast5)
+let fastQCResults;      // The path to the directory containing the results of running FastQC on the uploaded file
+let BAMFile;            // The path to the BAM file result of any conversions
+let Outputs;            // An object array holding the result of the steps in the actual timeline
 
 //#endregion
 
@@ -104,39 +104,40 @@ let Outputs;
 /* Home Page */
 router.get('/', function (req, res, next) {
   // Render the 'home' view
-  res.render('home', { toolbar, index: 1 });
+  res.render('home', { toolbar_index: 1 });
 });
 
 /* File Info */
 router.post('/file-information', function (req, res, next) {
-  const mode = req.body.mode;
-  res.render('file-info', {toolbar, index: 2});
+  // Set the mode
+  mode = req.body.mode;
+  res.render('file-info', { toolbar_index: 2});
 });
 
 /* DNA Goalposts */
 router.post('/dna-goalposts', function (req, res, next) {
-  // Get the data from the file info page
+  // Store the uploaded file and any conversions
   infoSteps = req.body.infoSteps;
-  uploadedFile = req.body.uploadedFile;
+  uploadedFilePath = req.body.uploadedFilePath;
   uploadedFileType = req.body.uploadedFileType;
+  // fastQConversion = req.body.fastQConversion;
+  // fastQCResults = req.body.fastQCResults;
 
-  res.render('dna-goalposts', { toolbar, index: 3, categories });
+  res.render('dna-goalposts', { toolbar_index: 3, categories });
 });
 
 /* DNA Pipeline */
 router.post('/dna-pipeline', function (req, res, next) {
-  const categoriesString = req.body.categories || '[]';
-  const categories = JSON.parse(decodeURIComponent(categoriesString));
+  categories = JSON.parse(decodeURIComponent(req.body.categories || '[]'));
 
-  res.render('dna-pipeline', {toolbar, index:4, categories });
+  res.render('dna-pipeline', { toolbar_index: 4, categories });
 });
 
 /* Running Page */
 router.post('/running', function (req, res, next) {
-  const categoriesString = req.body.categories || '[]';
-  const categories = JSON.parse(decodeURIComponent(categoriesString));
+  const categories = JSON.parse(decodeURIComponent(req.body.categories || '[]'));
 
-  res.render('running', { toolbar, index: 5, categories });
+  res.render('running', { toolbar_index: 5, categories });
 });
 
 //#endregion

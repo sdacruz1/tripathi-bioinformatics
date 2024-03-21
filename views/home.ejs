@@ -49,32 +49,7 @@
 
 <body>
     <!-- Toolbar -->
-    <div class="toolbar">
-        <img style="margin-top: 2rem; width: 8rem; height: 8rem;" src="../uploads/Unchecked_Circle.png" alt="logo">
-        <h4>Select a Workflow to Get Started</h4>
-        <div>
-        <!-- Assuming your array is named 'myArray' and 'index' is the specified index -->
-        <% for (let i=0; i < toolbar.length; i++) { 
-            <!-- Check if the current index is before or after the specified index -->
-            if (i < index) { %>
-                <!-- Print true image if before the specified index -->
-                <div style="display: flex; align-items: center;">
-                <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png" alt="Checked Circle">
-            <% } else { %>
-                <!-- Print false image if after or at the specified index -->
-                <div style="display: flex; align-items: center;">
-                <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png" alt="Unchecked Circle">
-            <% } %>
-
-            <!-- Print the text next to the image -->
-            <p style="color: #02598A; margin-left: 10px;"><%= toolbar[i] %></p>
-            </div>
-
-            <!-- Line break after each iteration -->
-            <br>
-        <% } %>
-        </div>
-    </div>
+    <%- include('partials/toolbar') %>
 
     <div class="home_content">
 
@@ -91,29 +66,22 @@
         
         <br>
         
-        <div style="display: flex; flex-direction: row; justify-content: space-between; align-items:center;">
-            <form action="/file-information" method="post" class="file_info_form">
-                <input type="hidden" name="mode" value="recommended">
-                <div>
-                    <button type="submit" class="file_info_option_button">
-                        <h3 style="color: black;">Assisted Pipeline</h3>
-                    </button>
-                    <p class="file_info_option_info">I would like a pipeline to be <b>generated for me</b> based on my file
-                        format and preferences.</p>
-                </div>
-            </form>
-        
-            <form action="/file-information" method="post" class="file_info_form">
-                <input type="hidden" name="mode" value="custom">
-                <div>
-                    <button type="submit" class="file_info_option_button">
-                        <h3 style="color: black;">Custom Pipeline</h3>
-                    </button>
-                    <p class="file_info_option_info">I have a <b>moderate to advanced</b> level of experience and I would like
-                        to customize my conversion pipeline.</p>
-                </div>
-            </form>
-        </div>
+        <form style="display: flex; flex-direction: row; justify-content: space-between; align-items:center;" action="/file-information" method="post" class="file_info_form">
+            <div>
+                <button type="submit" class="file_info_option_button" name="mode" value="recommended">
+                    <h3 style="color: black;">Assisted Pipeline</h3>
+                </button>
+                <p class="file_info_option_info">I would like a pipeline to be <b>generated for me</b> based on my file
+                    format and preferences.</p>
+            </div>
+            <div>
+                <button type="submit" class="file_info_option_button" name="mode" value="custom">
+                    <h3 style="color: black;">Custom Pipeline</h3>
+                </button>
+                <p class="file_info_option_info">I have a <b>moderate to advanced</b> level of experience and I would like
+                    to customize my conversion pipeline.</p>
+            </div>
+        </form>
     </div>
 
 </body>
