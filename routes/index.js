@@ -85,8 +85,9 @@ let cleanup = ["Cleanup and Sequencing",
 
 let categories = [files, stats, summary, graphs, metrics, cleanup];
 
-// Program Mode
+// Program Mode and Input Type
 let mode = "";
+let inputType = "";
 
 // Stored Outputs
 let infoSteps;          // An array that determines which file processing steps will be available in the timeline
@@ -117,6 +118,7 @@ router.post('/file-information', function (req, res, next) {
 /* DNA Goalposts */
 router.post('/dna-goalposts', function (req, res, next) {
   // Store the uploaded file and any conversions
+  inputType = req.body.inputType;
   infoSteps = req.body.infoSteps;
   uploadedFilePath = req.body.uploadedFilePath;
   uploadedFileType = req.body.uploadedFileType;
