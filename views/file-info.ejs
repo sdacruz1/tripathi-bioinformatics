@@ -146,9 +146,14 @@
         </section>
 
         <!-- Continue Button -->
-        <form action="/qc-check-2" method="post">
-            <!-- can send the variables along as hidden values in this form -->
-            <button type="submit" class="continue_button" id="file_info_continue_button" disabled>
+        <form id="continueForm" action="/qc-check-2" method="post">
+            <!-- Hidden input fields for variables -->
+            <input type="hidden" name="infoSteps" id="infoStepsInput">
+            <input type="hidden" name="uploadedFile" id="uploadedFileInput">
+            <input type="hidden" name="uploadedFileType" id="uploadedFileTypeInput">
+        
+            <!-- Continue button -->
+            <button type="button" class="continue_button" id="file_info_continue_button" disabled onclick="submitForm()">
                 <h3>Continue</h3>
             </button>
         </form>
@@ -157,6 +162,11 @@
 
     <!-- ... LOGIC ... -->
     <script>
+
+        let InfoSteps = [0, 0, 0, 0, 0, 0];
+        let uploadedFile = null;
+        let UploadedFileType = "";
+
         // ... INPUT TYPE BUTTONS ... //
 
         // Define the input type
@@ -226,6 +236,7 @@
                 handleBCL(Main_File_Uploader.files);
                 // Leave everything on
                 InfoSteps = [1, 1, 1, 1, 1, 1];
+                UploadedFileType = 'BCL';
                 if (input_type === 'DNA') {
                     continue_button.disabled = false;
                 } else {
@@ -241,7 +252,7 @@
                 return;
             }
             // If the file somehow doesn't exist, abort process
-            const uploadedFile = Main_File_Uploader.files[0];
+            uploadedFile = Main_File_Uploader.files[0];
             if (!uploadedFile) {
                 return;
             }
@@ -258,6 +269,8 @@
                 case 'bam':
                     // No processing, Cleaning BAM is required
                     InfoSteps = [0, 0, 0, 0, 0, 2];
+                    UploadedFileType = 'BAM';
+                    
                     // if input type is DNA enable the continue button
                     if (input_type === 'DNA') {
                         continue_button.disabled = false;
@@ -266,6 +279,7 @@
                 case 'sam':
                     // No processing, Convert to BAM is required, Clean BAM is optional
                     InfoSteps = [0, 0, 0, 0, 2, 1];
+                    UploadedFileType = 'SAM';
                     // if input type is DNA enable the continue button
                     if (input_type === 'DNA') {
                         continue_button.disabled = false;
@@ -274,6 +288,7 @@
                 case 'fastq':
                     // Leave all of the steps on
                     InfoSteps = [1, 1, 1, 1, 1, 1];
+                    UploadedFileType = 'FastQ';
 
                     // run fastQC
                     runFastQC(uploadedFile)
@@ -315,7 +330,7 @@
 
         }
 
-         // @ handleBCL
+        // @ handleBCL
         // This function takes in a BCL File folder, converts it to fastQ, runs fastQC, and returns trimming and multiplexing information
         function handleBCL (BCLFiles) {
             const formData = new FormData();
@@ -332,7 +347,9 @@
                 .then(response => response.json()) // Assume the server sends JSON data
                 .then(data => {
                     resolve();
-                    // Run fastQC on the returned file
+                    // // store the folder of the original file
+                    // uploadedFile = data.BCLfolder;
+                    // // Run fastQC on the returned file
                     // runFastQC(data.fastQFile)
                     //     .then(analysis => {
                     //         resolve({trimmed: analysis.trimmed, demultiplexed: analysis.demultiplexed});
@@ -413,6 +430,23 @@
                 .catch(error => {
                     console.error('Error:', error);
                 });
+        }
+
+
+        // Continue button submit form
+        function submitForm() {
+
+            // Set the values of the hidden input fields
+            document.getElementById('infoStepsInput').value = JSON.stringify(InfoSteps);
+            document.getElementById('uploadedFileInput').value = uploadedFile;
+            document.getElementById('uploadedFileTypeInput').value = UploadedFileType;
+
+            // console.log("InfoSteps: ", InfoSteps);
+            // console.log("uploadedFile: ", uploadedFile);
+            // console.log("uploadedFileType: ", UploadedFileType);
+
+            // Submit the form
+            document.getElementById('continueForm').submit();
         }
 
     </script>
