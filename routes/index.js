@@ -146,6 +146,39 @@ router.post('/running', function (req, res, next) {
 
 //#region  ... Utility ...
 
+// Store Files
+// Uploads an array of files. If there is only one, just returns the path
+// If there are multiple, puts them in a directory and sends that
+router.post('/store-files', upload.array('files'), (req, res) => {
+  const uploadedFiles = req.files;
+
+  // Check if the files were uploaded
+  if (!uploadedFiles || uploadedFiles.length === 0) {
+    return res.status(400).send('No files were uploaded.');
+  }
+
+  // If it's just one file, send the new path to that
+  if (uploadedFiles.length === 1) {
+    const singleFilePath = path.join('./uploads/', uploadedFiles[0].filename);
+    return res.status(200).send({ storedPath: singleFilePath });
+  }
+
+  // Create an empty directory to hold them in
+  const BCLdirectory = './uploads/BCLFiles-' + Date.now();
+  if (!fs.existsSync(BCLdirectory)) {
+    fs.mkdirSync(BCLdirectory);
+  }
+
+  // Move each uploaded file to the empty directory
+  uploadedFiles.forEach(file => {
+    const destinationPath = path.join(BCLdirectory, file.originalname);
+    fs.renameSync(file.path, destinationPath);
+  });
+
+  // Send the path to the directory
+  return res.status(200).send({ storedPath: BCLdirectory });
+});
+
 // Run BCL2FastQ
 // Expects the contents of a BCL File
 router.post('/run-bcl2fastq' , upload.array('files'), (req, res) => {
