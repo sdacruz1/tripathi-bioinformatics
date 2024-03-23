@@ -7,7 +7,7 @@ body {
 h1 {
   font-size: 34px;
   font-weight: 600;
-  color:#02598A;
+  color:#b985d9;
 }
 
 h2 {
@@ -20,7 +20,7 @@ h3 {
   font-size: 20px;
   font-weight: 600;
   margin: 10px 0rem;
-  color:#02598A;
+  color:#b985d9;
 }
 
 h4 {
@@ -36,7 +36,7 @@ p {
 }
 
 b {
-  color:#02598A;
+  color:#b985d9;
 }
 
 a {
@@ -58,5 +58,5 @@ a {
   flex: 1;
   min-width: 25%;
   max-width: 25%;
-  background-color: #EBE6BA;
+  background-color: #FFBE0F;
 }

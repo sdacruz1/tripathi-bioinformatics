@@ -27,7 +27,7 @@
             border: none;
             border-radius: 5px;
             padding: 5px;
-            background-color: rgb(179, 222, 255);
+            background-color: #b985d9;
             margin-top: 10px;
             cursor: pointer;
         }
@@ -58,13 +58,13 @@
             border: none;
             border-radius: 10px;
             padding: 10px;
-            background-color: khaki;
+            background-color: #FFBE0F;
             cursor: pointer;
             margin-top: 2rem;
         }
 
         .options-container, .options-display {
-            border: 4px solid #5a8096;
+            border: 4px solid #b985d9;
             border-radius: 10px;
             padding: 1rem;
             margin-left: 2rem;
@@ -79,7 +79,7 @@
             border: none;
             border-radius: 10px;
             padding: 10px;
-            background-color: khaki;
+            background-color: #FFBE0F;
             cursor: pointer;
             margin-top: 2rem;
         }
@@ -104,7 +104,10 @@
         </button>
 
         <div class="content" id="section<%= i %>">
-            <% for (let j=0; j < categories[i][1].length; j++) { %>
+            <% for (let j=0; j < categories[i][1].length; j++) { 
+                if (categories[i][0] === "File Processing") {
+                    if (infoSteps[j] === 0) { continue; }
+                } %>
                 <div>
                     <label>
                         <div style="display: flex;">
@@ -152,7 +155,7 @@
                         <% for (let k=0; k < categories[i][1][j][2].length; k++)  {
                             let curr_option = categories[i][1][j][2][k]; %>
                             <div style="display: flex;">
-                            <p style="color: #02598A;"><%=curr_option[0]%>:</p>
+                            <p style="color: #b985d9;"><%=curr_option[0]%>:</p>
                             <p style="margin-left: 1rem;" id="option_<%= i %>_<%= j %>_<%= k %>_display"></p>
                         </div>
                         <% } %>
@@ -262,7 +265,7 @@
         <%- '</script>' %>
 
         <input type="hidden" name="categories" >
-        <button class="pipeline_continue_button"><h2>Continue</h2></button>
+        <button class="pipeline_continue_button"><h3 style="color: black">Continue</h3></button>
         </div>
     </form>
 

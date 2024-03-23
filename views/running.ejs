@@ -13,63 +13,40 @@
         }
 
         .info_box {
-            border: 4px solid #5a8096;
+            border: 4px solid #b985d9;
             border-radius: 10px;
             padding: 1rem;
             margin-left: 2rem;
             max-width: 15rem;
         }
+
+        .status_img {
+            width: 2rem;
+            height: 2rem;
+        }
     </style>
 </head>
 
 <body>
-    <div class="toolbar">
-        <img style="margin-top: 2rem; width: 8rem; height: 8rem;" src="../uploads/Unchecked_Circle.png" alt="logo">
-        <h4>Select a Workflow to Get Started</h4>
-        <div>
-            <!-- Assuming your array is named 'myArray' and 'index' is the specified index -->
-            <% for (let i=0; i < toolbar.length; i++) { %>
-                <!-- Check if the current index is before or after the specified index -->
-                <div style="display: flex; align-items: center;">
-
-                    <% if (i < index) { %>
-                        <!-- Print true image if before the specified index -->
-                        <img style="width: 2rem; height: 2rem;" src="../uploads/Checked_Circle.png"
-                            alt="Checked Circle">
-                        <% } else { %>
-                            <!-- Print false image if after or at the specified index -->
-                            <img style="width: 2rem; height: 2rem;" src="../uploads/Unchecked_Circle.png"
-                                alt="Unchecked Circle">
-                            <% } %>
-
-                                <!-- Print the text next to the image -->
-                                <p style="color: #02598A; margin-left: 10px;">
-                                    <%= toolbar[i] %>
-                                </p>
-                </div>
-
-                <!-- Line break after each iteration -->
-                <br>
-                <% } %>
-        </div>
-    </div>
+    <!-- Toolbar -->
+    <%- include('partials/toolbar') %>
 
     <div class="running_content">
     <h1>Running Your Generated Timeline</h1>
-    <h3>Please wait.</h3>
+    <h3 style="color: black">Please wait.</h3>
 
     <h4>Your Timeline:</h4>
 
     <% for (let i=0; i < categories.length; i++) { %>
         <div id="section<%= i %>">
             <% for (let j=0; j < categories[i][1].length; j++) {
-                if (!categories[i][1][j][1]) { break; }
-                %>
-                    <div>
-                        <img class="status_img" id="status_img_<%= i %>_<%= j %>">
-                        <h3 class="status_text_none" id="status_text_<%= i %>_<%= j %>"></h3>
+                if (!categories[i][1][j][1]) { continue; } %>
+                <div style="display: flex;">
+                    <div style="width: 4rem; margin-right: 1rem;" >
+                        <img class="status_img" id="status_img_<%= i %>_<%= j %>" src="../uploads/Unchecked_Circle.png">
+                        <h3 class="status_text_none" id="status_text_<%= i %>_<%= j %>">Waiting</h3>
                     </div>
-                    <div  class="info_box">
+                    <div class="info_box">
                         <h3>
                             <%= categories[i][1][j][0] %>
                         </h3>
@@ -78,18 +55,274 @@
                             <!-- Display selections -->
                             <% for (let k=0; k < categories[i][1][j][2].length; k++) { %>
                                 <div style="display: flex;">
-                                <p style="color: #02598A;"> <%=categories[i][1][j][2][k][0]%>: </p>
+                                <p style="color: #b985d9;"> <%=categories[i][1][j][2][k][0]%>: </p>
                                 <p style="margin-left: 1rem;" id="option_<%= i %>_<%= j %>_<%= k %>_display"><%=categories[i][1][j][2][k][3]%></p>
                                 <br></div>
                             <% } %>
                         </div>
                     </div>
-                <% } %>
+                </div>
+                    <br>
+            <% } %>
         </div>
         <% } %>
     </div>
 
-<!-- Add a script that does each category item by item and sets the status_img and status_text class and fields as it completes -->
+    <!-- Add a script that does each category item by item and sets the status_img and status_text class and fields as it completes -->
+    <script>
+
+        const categories = JSON.parse('<%- JSON.stringify(categories) %>');
+        console.log("Categories: ", categories);
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // The DOM content has been fully loaded, including stylesheets, images, etc.
+            console.log('View content has finished rendering');
+            // Call your function here
+            runCommands();
+        });
+
+        // === File Processing ===
+
+        // Trimming
+        const trimmingRequest = () => {
+                if (categories[0][1][1][1]) {
+                    return fetch('/trimming', { method: 'POST'})
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            // Handle Response
+                            console.log('Trimming response:', data);
+                            setStatus(0, 1, 'done');
+                            setStatus(0, 2, 'running');
+                        })
+                        .catch(error => {
+                            console.error('Error during trimming request:', error);
+                        });
+                } else {
+                    // Return a resolved promise if this command is not needed
+                    return Promise.resolve();
+                }
+            };
+
+        // Alignment
+        const alignmentRequest = () => {
+            if (categories[0][1][2][1]) {
+            return fetch('/alignment', { method: 'POST'})
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Handle Response
+                    console.log('Alignment response:', data);
+                    setStatus(0, 2, 'done');
+                    setStatus(0, 4, 'running');
+
+                })
+                .catch(error => {
+                    console.error('Error during alignment request:', error);
+                });
+            } else {
+                // Return a resolved promise if this command is not needed
+                return Promise.resolve();
+            }
+        };
+
+        //      Convert to BAM File
+        const convertToBamRequest = () => {
+            if (categories[0][1][4][1]) {
+                fetch('/convert-to-bam', { method: 'POST'})
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    }) // Assume the server sends JSON data
+                    .then(data => {
+                        // Handle Response
+                        console.log('Convert To Bam response:', data);
+                        setStatus(0, 4, 'done');
+                        setStatus(0, 5, 'running');
+                    })
+                    .catch(error => {
+                            // Handle different types of errors (e.g., network error, server error)
+                            if (error instanceof SyntaxError) {
+                                console.error('Invalid JSON response');
+                                // Handle non-JSON response (e.g., HTML error page)
+                            } else {
+                                console.error('Network or server error');
+                                // Handle other types of errors (e.g., network error, server error)
+                            }
+                    });
+                } else {
+                // Return a resolved promise if this command is not needed
+                return Promise.resolve();
+            }
+        };
+
+        //      Cleanup BAM File
+
+        //          Index
+        const indexBamRequest = () => {
+            if (categories[0][1][5][1] && categories[0][1][5][2][0][3]) {
+            fetch('/index-bam', { method: 'POST'})
+                .then(response => response.json()) // Assume the server sends JSON data
+                .then(data => {
+                    // Handle Response
+                    console.log('Index Bam response:', data);
+                    if (!categories[0][1][5][2][1][3]) {
+                        setStatus(0, 5, 'done');
+                        setStatus(2, 0, 'running');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            } else {
+                // Return a resolved promise if this command is not needed
+                return Promise.resolve();
+            }
+        };
+
+        //          Sort
+        const sortBamRequest = () => {
+            if (categories[0][1][5][1] && categories[0][1][5][2][1][3]) {
+            fetch('/sort-bam', { method: 'POST'})
+                .then(response => response.json()) // Assume the server sends JSON data
+                .then(data => {
+                    // Handle Response
+                    console.log('Sort Bam response:', data);
+                    setStatus(0, 5, 'done');
+                    setStatus(2, 0, 'running');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            } else {
+                // Return a resolved promise if this command is not needed
+                return Promise.resolve();
+            }
+        };
+        
+        // === Graphs and Analysis ===
+
+        //      Alignment
+        const alignmentDataRequest = () => {
+            if (categories[2][1][0][1]) {
+            fetch('/alignment-data', { method: 'POST'})
+                    .then(response => response.json()) // Assume the server sends JSON data
+                    .then(data => {
+                        // Handle Response
+                        console.log('Alignment Data response:', data);
+                        setStatus(2, 0, 'done');
+                        setStatus(2, 1, 'running');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            } else {
+                // Return a resolved promise if this command is not needed
+                return Promise.resolve();
+            }
+        };
+
+        //      GC Bias
+        const GCBiasDataRequest = () => {
+            if (categories[2][1][1][1]) {
+            fetch('/gc-bias-data', { method: 'POST'})
+                .then(response => response.json()) // Assume the server sends JSON data
+                .then(data => {
+                    // Handle Response
+                    console.log('GCBias Data response:', data);
+                    setStatus(2, 1, 'done');
+                    setStatus(2, 2, 'running');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            } else {
+                // Return a resolved promise if this command is not needed
+                return Promise.resolve();
+            }
+        };
+
+        //      Insert Size
+        const insertSizeDataRequest = () => {
+            if (categories[2][1][2][1]) {
+            fetch('/insert-size-data', { method: 'POST'})
+                .then(response => response.json()) // Assume the server sends JSON data
+                .then(data => {
+                    // Handle Response
+                    console.log('Insert Size Data response:', data);
+                    setStatus(2, 2, 'done');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            } else {
+                // Return a resolved promise if this command is not needed
+                return Promise.resolve();
+            }
+        };
+
+        function runCommands() {
+            // Chain the requests
+
+            setStatus(0, 0, 'done');
+
+            trimmingRequest()
+                .then(() => alignmentRequest())
+                .then(() => {
+                    setStatus(0, 3, 'done');
+                    return convertToBamRequest();
+                })
+                .then(() => indexBamRequest())
+                .then(() => sortBamRequest())
+                .then(() => {
+                    setStatus(1, 0, 'done');
+                    setStatus(1, 1, 'done');
+                    return alignmentDataRequest();
+                })
+                .then(() => GCBiasDataRequest())
+                .then(() => insertSizeDataRequest())
+                .then(() => {
+                    // All requests have been completed
+                    console.log('All requests completed');
+                }); 
+        }
+
+        function setStatus(i, j, status) {
+            const imageElement = document.getElementById(`status_img_${i}_${j}`);
+            const textElement = document.getElementById(`status_text_${i}_${j}`);
+
+            if (imageElement === null || textElement === null) {
+                return;
+            }
+
+            switch (status) {
+                case 'running':
+                    imageElement.src = "../uploads/Hourglass.png";
+                    textElement.textContent = 'Running';
+                    break;
+                case 'done':
+                    imageElement.src = '../uploads/Checked_Circle.png';
+                    textElement.textContent = 'Done';
+                    break;
+                default:
+                    // Handle unknown status
+                    break;
+            }
+        }
+
+            
+    </script>
 
 </body>
 

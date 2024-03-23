@@ -11,7 +11,7 @@
             height: 4rem;
             border: none;
             border-radius: 1rem;
-            background-color: khaki;
+            background-color: #FFBE0F;
             cursor: pointer;
         }
 
@@ -32,7 +32,7 @@
             border: none;
             border-radius: 5px;
             padding: 5px;
-            background-color: #02598A;
+            background-color: #7503b0;
             color: white;
             cursor: pointer;
         }
@@ -41,7 +41,7 @@
             border: none;
             border-radius: 10px;
             padding: 10px;
-            background-color: khaki;
+            background-color: #FFBE0F;
             cursor: pointer;
         }
 
@@ -264,7 +264,7 @@
             }
 
             // Store it
-            storeFiles(uploadedFile)
+            storeFiles(Main_File_Uploader.files)
                 .then(fileStorage => {
                     uploadedFilePath = fileStorage.storedPath;
                 })
@@ -276,7 +276,6 @@
             // If it's not a directory, it's a file
             // Determine the type
             const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
-            fileTypeCheck.textContent = '.' + fileExtension + ' file detected';
             switch (fileExtension) {
                 case 'bam':
                     // No processing, Cleaning BAM is required
@@ -452,6 +451,10 @@
         }
         // and set up a listener to activate the continue button if input type is DNA
         adapterUploadButton.addEventListener('click', function () {
+            if (input_type === 'DNA') {
+                continue_button.disabled = false;
+            }
+        });
 
         /** @ storeFiles
          * 
@@ -463,7 +466,7 @@
         function storeFiles(files) {
             const fileFormData = new FormData();
 
-            for (const file of adapterFileInput.files) {
+            for (const file of files) {
                 fileFormData.append('files', file);
             }
 
@@ -484,10 +487,6 @@
                     });
             });
         }
-            if (input_type === 'DNA') {
-                continue_button.disabled = false;
-            }
-        });
 
         // NOTE: Come back to this after RNA
         // If a genome file is uploaded...
