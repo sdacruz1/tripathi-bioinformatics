@@ -12,11 +12,22 @@
 
     <!-- Get passed an array of output images and titles -->
     <!-- For each array element, display the title and the image -->
+    <% for (let i=0; i < visual_outputs.length; i++) { %>
+        <img class="visual_img" src=<%=visual_outputs[i].img %> alt=<%=visual_outputs[i].label %> >
+        <p class="visual_label"><%=visual_outputs[i].label %></p>
+        <br>
+    <% } %>
 
-    <!-- button to open download menu -->
+    <!-- Download Menu -->
     <!-- foreach downloadable item, make a checkbox and title -->
+    <% for (let j=0; j < downloadable_content.length; j++) { %>
+        <input type="checkbox" name="downloadable_checkbox_<%= j %>" <% if (downloadable_content[j].enabled) { %>checked<% } %>>
+        <p><%=downloadable_content[j].label</p>
+        <br>
+    <% } %>
     <!-- when checkbox changes, toggle bool array of download or not (or just add it to a list) -->
     <!-- When download button pressed, run download on each item -->
+    
     
 </body>
 

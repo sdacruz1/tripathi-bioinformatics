@@ -65,7 +65,12 @@
                     <br>
             <% } %>
         </div>
-        <% } %>
+    <% } %>
+
+    <form id="runningForm" action="/output" method="post">
+        <button class="running_continue_button"><h3 style="color: black" disabled>Continue</h3></button>
+    </form>
+
     </div>
 
     <!-- Add a script that does each category item by item and sets the status_img and status_text class and fields as it completes -->
@@ -295,6 +300,8 @@
                 .then(() => {
                     // All requests have been completed
                     console.log('All requests completed');
+                    continueButton = document.getElementById('running_continue_button');
+                    continueButton.disabled = false;
                 }); 
         }
 
