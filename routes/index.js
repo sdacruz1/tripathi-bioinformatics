@@ -96,7 +96,20 @@ let uploadedFileType;   // A string representing the original uploaded file type
 let fastQConversion;    // The path to the fastQ file result of any conversions (BCL, FastA, Fast5)
 let fastQCResults;      // The path to the directory containing the results of running FastQC on the uploaded file
 let BAMFile;            // The path to the BAM file result of any conversions
-let Outputs;            // An object array holding the result of the steps in the actual timeline
+let downloadable_content = [  // An object array holding the result of the steps in the actual timeline
+  {
+      enabled: true,
+      has_visual_component: false,
+      label: "Test Object 1",
+      content: "/path/to/file1.txt"
+  },
+  {
+      enabled: false,
+      has_visual_component: true,
+      label: "Test Object 2",
+      content: "../uploads/Checked_Circle.png"
+  },
+];
 
 //#endregion
 
@@ -140,6 +153,12 @@ router.post('/running', function (req, res, next) {
   const categories = JSON.parse(decodeURIComponent(req.body.categories || '[]'));
 
   res.render('running', { toolbar_index: 5, categories });
+});
+
+/* Output Page */
+router.get('/output', function (req, res, next) {
+  // Render the 'output' view
+  res.render('output', { downloadable_content, toolbar_index: 5 });
 });
 
 //#endregion

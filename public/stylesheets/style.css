@@ -60,3 +60,12 @@ a {
   max-width: 25%;
   background-color: #FFEB0F;
 }
+
+.continue_button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  background-color: #FFEB0F;
+  cursor: pointer;
+  margin-top: 2rem;
+}

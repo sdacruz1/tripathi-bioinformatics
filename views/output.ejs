@@ -5,28 +5,127 @@
     <title>Tripathi Bioinformatics</title>
     <link rel="stylesheet" href="https://use.typekit.net/azy2ine.css">
     <link rel='stylesheet' href='/stylesheets/style.css' />
+    <style>
+        .output_content {
+            padding: 4% 8%;
+            width: 75%;
+            /* width: 100%; */
+            text-align: left;
+        }
+
+        .download_menu {
+            min-width: 20%;
+            margin: 10px;
+            border: 5px solid #7F03B0;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .downloadable_checkbox_label {
+            margin-left: 1rem;
+        }
+
+        .visual_img {
+            max-width: 20rem;
+            max-height: 20rem;
+        }
+
+        .visual_div {
+            margin: 1rem;
+        }
+    </style>
 </head>
 
 <body>
+    <!-- Toolbar -->
+    <%- include('partials/toolbar') %>
+
+    <div class="output_content">
+    <!-- Get passed an array of content -->
     <h1>Output</h1>
 
-    <!-- Get passed an array of output images and titles -->
-    <!-- For each array element, display the title and the image -->
-    <% for (let i=0; i < visual_outputs.length; i++) { %>
-        <img class="visual_img" src=<%=visual_outputs[i].img %> alt=<%=visual_outputs[i].label %> >
-        <p class="visual_label"><%=visual_outputs[i].label %></p>
+    <!-- Visual Content Display -->
+    <% for (let i=0; i < downloadable_content.length; i++) { 
+        if (!downloadable_content[i].has_visual_component) { continue; }
+        %>
+        <div class="visual_div">
+            <img class="visual_img" src=<%=downloadable_content[i].content %> alt=<%=downloadable_content[i].label %> >
+            <p class="visual_label"><%=downloadable_content[i].label %></p>
+        </div>
         <br>
     <% } %>
+    </div>
 
     <!-- Download Menu -->
-    <!-- foreach downloadable item, make a checkbox and title -->
-    <% for (let j=0; j < downloadable_content.length; j++) { %>
-        <input type="checkbox" name="downloadable_checkbox_<%= j %>" <% if (downloadable_content[j].enabled) { %>checked<% } %>>
-        <p><%=downloadable_content[j].label</p>
-        <br>
-    <% } %>
+    <div class="download_menu">
+        <!-- foreach downloadable item, make a checkbox and show the title -->
+        <% for (let j=0; j < downloadable_content.length; j++) { %>
+            <div style="display: flex;">
+                <input class="downloadable_checkbox_label" type="checkbox" name="downloadable_checkbox_<%= j %>" <% if (downloadable_content[j].enabled) { %>checked<% } %>>
+                <p class="downloadable_checkbox_label"><%=downloadable_content[j].label%></p>
+            </div>
+            <br>
+        <% } %>
+        
+        <!-- Download Button -->
+        <button class="continue_button" onclick="downloadResults()">
+            <h3 style="color: black;">Download Results</h3>
+        </button>
+    </div>
+
+
     <!-- when checkbox changes, toggle bool array of download or not (or just add it to a list) -->
     <!-- When download button pressed, run download on each item -->
+    <script>
+        const downloadable_content = JSON.parse('<%- JSON.stringify(downloadable_content) %>');
+
+        // Checkbox logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            
+            checkboxes.forEach((checkbox, index) => {
+                checkbox.addEventListener('change', function() {
+                    downloadable_content[index].enabled = this.checked;
+                    console.log('Toggled enabled for item ' + index + ': ' + downloadable_content[index].enabled);
+                });
+            });
+        });
+
+        // Download Logic
+        function downloadResults() {
+            // Filter the downloadable_content array to get only enabled items
+            const enabledItems = downloadable_content.filter(item => item.enabled);
+
+            // Loop through the enabled items and create download links
+            enabledItems.forEach((item, index) => {
+                // Create a download link
+                const downloadLink = document.createElement('a');
+                downloadLink.href = item.content; // Set the href to the file path
+
+                // Extract the filename from the file path
+                const fileName = item.content.split('/').pop();
+                downloadLink.download = fileName; // Set the download attribute to the filename
+                downloadLink.style.display = 'none'; // Hide the download link
+
+                // Append the download link to the document body and trigger the download
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+
+                // Clean up by removing the download link from the DOM after download
+                setTimeout(() => {
+                    document.body.removeChild(downloadLink);
+                }, 100);
+            });
+        }
+
+        // Function to get file extension from content
+        function getFileExtension(content) {
+            const extension = content.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i);
+            return extension ? extension[0].replace('.', '') : '';
+        }
+    </script>
     
     
 </body>
