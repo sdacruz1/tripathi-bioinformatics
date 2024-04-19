@@ -156,9 +156,14 @@ router.post('/running', function (req, res, next) {
 });
 
 /* Output Page */
-router.get('/output', function (req, res, next) {
+router.post('/output', function (req, res, next) {
   // Render the 'output' view
   res.render('output', { downloadable_content, toolbar_index: 5 });
+});
+
+/* Test Page */
+router.get('/test-commands', function (req, res, next) {
+  res.render('test-commands', { toolbar_index: 1 });
 });
 
 //#endregion
@@ -328,6 +333,50 @@ router.get('/cleanup', (req, res) => {
 
 
 // ======= COMMANDS ======= //
+
+
+router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => {
+  // Specific Variables
+  let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
+  let editMode = 'overwrite_all';
+  // let editMode = 'overwrite_all'; // overwrite_all or orphan_only depending on user selected mode
+  // let newReadGroupLine = req.line; // This is the string that will be replaced/added to the file
+  let outputFile = 'RG_bam.bam';
+
+  // File
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Add or Replace Read Groups
+  const RGCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const RGArgs = ['addreplacerg', '-r', newReadGroupLine, '-m', editMode, '-u', '-o', outputFile, uploadedFile.path];
+
+  const runRG = spawn(RGCommand, RGArgs);
+
+  let outputData = '';
+
+  runRG.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runRG.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runRG.on('exit', (code) => {
+    console.log(`Add or Replace Read Groups process exited with code ${code}`);
+  });
+
+  res.json({ });
+
+});
+
 
 // // TEMPORARY vvvvvv
 
