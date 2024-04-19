@@ -334,6 +334,126 @@ router.get('/cleanup', (req, res) => {
 
 // ======= COMMANDS ======= //
 
+router.post('/convert-to-bam-file', (req, res) => {
+  // Variables
+  let name_of_output_file_bam = 'ConvertedToBAM.bam';
+
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Command
+  // samtools view -bS <path to sam file> > <name of output file>.bam
+  const ConvertToBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const ConvertToBamArgs = ['view', '-bS', uploadedFile.path, '>', name_of_output_file_bam];
+
+  const runConvertToBam = spawn(ConvertToBamCommand, ConvertToBamArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runConvertToBam.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runConvertToBam.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runConvertToBam.on('exit', (code) => {
+    console.log(`runConvertToBam process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  // Need to find and return the path of the output: Aligned SAM file in same directory
+  res.json({ });
+
+});
+
+router.post('/sort-bam-file', (req, res) => {
+  // Variables
+  let name_of_output_file = 'SortedBAM.bam';
+
+  // File
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Command
+  // samtools sort <path to bam file> -o <name of output file>
+  const SortBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const SortBamArgs = ['sort', uploadedFile.path, ' -o ', name_of_output_file];
+
+  const runSortBam = spawn(SortBamCommand, SortBamArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runSortBam.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runSortBam.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runSortBam.on('exit', (code) => {
+    console.log(`runSortBam process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  // Need to find and return the path of the output: Aligned SAM file in same directory
+  res.json({ });
+
+});
+
+router.post('/index-bam-file', (req, res) => {
+
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Command
+  // samtools index <path to sorted bam file>
+  const IndexBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const IndexBamArgs = ['index', uploadedFile.path];
+
+  const runIndexBam = spawn(IndexBamCommand, IndexBamArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runIndexBam.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runIndexBam.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runIndexBam.on('exit', (code) => {
+    console.log(`runIndexBam process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  res.json({ });
+
+});
 
 router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => {
   // Specific Variables
@@ -377,92 +497,469 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
 
 });
 
+router.post('/bam-index-stats', (req, res) => {
+  const uploadedFile = req.file;
 
-// // TEMPORARY vvvvvv
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
 
-router.post('/trimming', (req, res) => {
-  console.log("Began 'Trimming'...");
-  console.log("Completed 'Trimming'...");
-  setTimeout(() => {
-    res.json({ message: 'Trimming completed successfully.' });
-  }, 1000);
+  // Run Command
+  // samtools idxstats in.bam
+  const BamIndexStatsCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const BamIndexStatsArgs = ['idxstats', uploadedFile.path];
+
+  const runBamIndexStats = spawn(BamIndexStatsCommand, BamIndexStatsArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runBamIndexStats.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runBamIndexStats.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runBamIndexStats.on('exit', (code) => {
+    console.log(`BamIndexStats process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  res.json({ });
+
 });
 
-router.post('/alignment', (req, res) => {
-  console.log("Began 'Alignment'...");
-   
-  console.log("Running 'Alignment'...");
-   
-  console.log("Completed 'Alignment'...");
-  setTimeout(() => {
-    res.json({ message: 'Alignment completed successfully.' });
-  }, 2000);
+router.post('/alignment-summary', (req, res) => {
+  // Variables
+  let path_to_reference_fastA = '';
+  let chosenRef = req.ref;
+  switch (chosenRef) {
+    case 'Staphylococcus_aureus':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'pig':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'hiv':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'mouse':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'human':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'ecoli':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+  }
+
+
+  let output_file_name_txt = 'AlignmentSummary.txt';
+
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Command
+  // java -jar picard.jar CollectAlignmentSummaryMetrics R=<path to reference fasta> I=<path the sorted BAM file> O=<output file name.txt>
+  const AlignmentDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
+  const AlignmentDataArgs = ['-jar', 'picard.jar', 'CollectAlignmentSummaryMetrics', 'R=', path_to_reference_fastA, 'I=', uploadedFile.path, 'O=', output_file_name_txt];
+
+  const runAlignmentData = spawn(AlignmentDataCommand, AlignmentDataArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runAlignmentData.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runAlignmentData.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runAlignmentData.on('exit', (code) => {
+    console.log(`runAlignmentData process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  res.json({ });
+
 });
 
-router.post('/convert-to-bam', (req, res) => {
-  console.log("Began 'Convert to BAM File'...");
-  
-  console.log("Running 'Convert to BAM File'...");
-   
-  console.log("Completed 'Convert to BAM File'...");
+router.post('/gc-bias-summary', (req, res) => {
+  // Variables
+  let output_GC_bias_metrics_txt = 'GC_BIAS_Metrics.txt';
+  let GC_bias_outputchart_pdf = 'GC_BIAS_OutputChart.pdf';
+  let GC_Bias_summary_output_txt = 'GC_BIAS_SummaryOutput.txt';
 
-    setTimeout(() => {
-      res.json({ message: 'Convert to BAM File process completed successfully.' });
-    }, 3000);
-  
-});
+  let path_to_reference_fastA = '';
+  let chosenRef = req.ref;
+  switch (chosenRef) {
+    case 'Staphylococcus_aureus':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'pig':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'hiv':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'mouse':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'human':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'ecoli':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+  }
 
-router.post('/sort-bam', (req, res) => {
-  console.log("Began 'Sort BAM File'...");
+  const uploadedFile = req.file;
 
-  console.log("Running 'Sort BAM File'...");
-   
-  console.log("Completed 'Sort BAM File'...");
-  setTimeout(() => {
-    res.json({ message: 'Sort BAM File process completed successfully.' });
-  }, 4000);
-});
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
 
-router.post('/index-bam', (req, res) => {
-  console.log("Began 'Index BAM File'...");
-   
-  console.log("Running 'Index BAM File'...");
-   
-  console.log("Completed 'Index BAM File'...");
-  res.json({ message: 'Index BAM File process completed successfully.' });
-});
+  // Run Command
+  // java -jar picard.jar CollectGcBiasMetrics -I <path to sorted BAM> -O <output GC bias metrics.txt> -CHART <GC bias ouputchart.pdf> -S <GC Bias summary output.txt> -R <reference fasta>
+  const GCBiasDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
+  const GCBiasDataArgs = ['-jar', 'picard.jar', 'CollectGcBiasMetrics', '-I', uploadedFile.path, '-O', output_GC_bias_metrics_txt, '-CHART' + GC_bias_outputchart_pdf, '-S', GC_Bias_summary_output_txt + '-R', + path_to_reference_fastA];
 
-router.post('/alignment-data', (req, res) => {
-  console.log("Began 'Alignment Data'...");
-   
-  console.log("Running 'Alignment Data'...");
-   
-  console.log("Completed 'Alignment Data'...");
-  res.json({ message: 'Alignment Data process completed successfully.' });
-});
+  const runGCBiasData = spawn(GCBiasDataCommand, GCBiasDataArgs);
 
-router.post('/gc-bias-data', (req, res) => {
-  console.log("Began 'GC Bias Data'...");
-   
-  console.log("Running 'GC Bias Data'...");
-   
-  console.log("Completed 'GC Bias Data'...");
-  res.json({ message: 'GC Bias Data process completed successfully.' });
+  // Handle Response
+  let outputData = '';
+
+  runGCBiasData.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runGCBiasData.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runGCBiasData.on('exit', (code) => {
+    console.log(`runGCBiasData process exited with code ${code}`);
+  });
+
+
+  // Return the results as a JSON
+  res.json({ });
+
 });
 
 router.post('/insert-size-data', (req, res) => {
-  console.log("Began 'Insert Size Data'...");
-   
-  console.log("Running 'Insert Size Data'...");
-   
-  console.log("Completed 'Insert Size Data'...");
-  res.json({ message: 'Insert Size Data process completed successfully.' });
+  // Variables
+  let output_raw_data_txt = 'Insert_Size_RawData.txt';
+  let output_histogram_name_pdf = 'Insert_Size_Histogram.pdf';
+
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+
+  // Run Command
+  // java -jar picard.jar CollectInsertSizeMetrics -I <path to sorted bam> -O <output raw data.txt> -H <output histogram name.pdf> M=.5
+  const InsertSizeDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
+  const InsertSizeDataArgs = ['-jar', 'picard.jar', 'CollectInsertSizeMetrics', '-I', uploadedFile.path,
+                          '-O', output_raw_data_txt, '-H' + output_histogram_name_pdf, 'M=.5'];
+
+  const InsertSizeData = spawn(InsertSizeDataCommand, InsertSizeDataArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  InsertSizeData.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  InsertSizeData.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  InsertSizeData.on('exit', (code) => {
+    console.log(`InsertSizeData process exited with code ${code}`);
+  });
+
+
+  // Return the results as a JSON
+  res.json({ });
+
+});
+
+router.post('/create-seq-dict', (req, res) => {
+
+  let path_to_reference_fastA = '';
+  let chosenRef = req.ref;
+  switch (chosenRef) {
+    case 'Staphylococcus_aureus':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'pig':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'hiv':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'mouse':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'human':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+    case 'ecoli':
+      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
+      break;
+  }
+
+  // Run Command
+  // samtools dict ref.fasta|ref.fasta.gz
+  const SeqDictCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const SeqDictArgs = ['idxstats', path_to_reference_fastA.path];
+
+  const runSeqDict = spawn(SeqDictCommand, SeqDictArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runSeqDict.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runSeqDict.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runSeqDict.on('exit', (code) => {
+    console.log(`SeqDict process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  res.json({ });
+
+});
+
+router.post('/flag-stats', (req, res) => {
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Command
+  // samtools flagstat in.sam|in.bam|in.cram
+  const FlagStatsCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const FlagStatsArgs = ['flagstat', uploadedFile.path];
+
+  const runFlagStats = spawn(FlagStatsCommand, FlagStatsArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runFlagStats.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runFlagStats.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runFlagStats.on('exit', (code) => {
+    console.log(`FlagStats process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  res.json({ });
+
+});
+
+router.post('/seq-depth', (req, res) => {
+  let output_file_name = "Seq_Depth.txt"
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Command
+  // samtools depth -o FILE in.sam|in.bam
+  const SeqDepthCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const SeqDepthArgs = ['depth', '-o', output_file_name, uploadedFile.path];
+
+  const runSeqDepth = spawn(SeqDepthCommand, SeqDepthArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runSeqDepth.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runSeqDepth.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runSeqDepth.on('exit', (code) => {
+    console.log(`SeqDepth process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  res.json({ });
+
+});
+
+router.post('/seq-coverage', (req, res) => {
+  let output_file_name = "Seq_Depth.txt"
+  let isVisual = req.visual ? '-m' : '';
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Command
+  // samtools coverage -o <output file name> [-m] in.sam|in.bam
+  const SeqCovCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
+  const SeqCovArgs = ['coverage', '-o', output_file_name, isVisual, uploadedFile.path];
+
+  const runSeqCov = spawn(SeqCovCommand, SeqCovArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runSeqCov.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runSeqCov.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runSeqCov.on('exit', (code) => {
+    console.log(`SeqCoverage process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  res.json({ });
+
 });
 
 
+//#region  ... Temporary Dummy Requests ...
 
-// // TEMPORARY ^^^^^^
+// router.post('/trimming', (req, res) => {
+//   console.log("Began 'Trimming'...");
+//   console.log("Completed 'Trimming'...");
+//   setTimeout(() => {
+//     res.json({ message: 'Trimming completed successfully.' });
+//   }, 1000);
+// });
 
+// router.post('/alignment', (req, res) => {
+//   console.log("Began 'Alignment'...");
+   
+//   console.log("Running 'Alignment'...");
+   
+//   console.log("Completed 'Alignment'...");
+//   setTimeout(() => {
+//     res.json({ message: 'Alignment completed successfully.' });
+//   }, 2000);
+// });
+
+// router.post('/convert-to-bam', (req, res) => {
+//   console.log("Began 'Convert to BAM File'...");
+  
+//   console.log("Running 'Convert to BAM File'...");
+   
+//   console.log("Completed 'Convert to BAM File'...");
+
+//     setTimeout(() => {
+//       res.json({ message: 'Convert to BAM File process completed successfully.' });
+//     }, 3000);
+  
+// });
+
+// router.post('/sort-bam', (req, res) => {
+//   console.log("Began 'Sort BAM File'...");
+
+//   console.log("Running 'Sort BAM File'...");
+   
+//   console.log("Completed 'Sort BAM File'...");
+//   setTimeout(() => {
+//     res.json({ message: 'Sort BAM File process completed successfully.' });
+//   }, 4000);
+// });
+
+// router.post('/index-bam', (req, res) => {
+//   console.log("Began 'Index BAM File'...");
+   
+//   console.log("Running 'Index BAM File'...");
+   
+//   console.log("Completed 'Index BAM File'...");
+//   res.json({ message: 'Index BAM File process completed successfully.' });
+// });
+
+// router.post('/alignment-data', (req, res) => {
+//   console.log("Began 'Alignment Data'...");
+   
+//   console.log("Running 'Alignment Data'...");
+   
+//   console.log("Completed 'Alignment Data'...");
+//   res.json({ message: 'Alignment Data process completed successfully.' });
+// });
+
+// router.post('/gc-bias-data', (req, res) => {
+//   console.log("Began 'GC Bias Data'...");
+   
+//   console.log("Running 'GC Bias Data'...");
+   
+//   console.log("Completed 'GC Bias Data'...");
+//   res.json({ message: 'GC Bias Data process completed successfully.' });
+// });
+
+// router.post('/insert-size-data', (req, res) => {
+//   console.log("Began 'Insert Size Data'...");
+   
+//   console.log("Running 'Insert Size Data'...");
+   
+//   console.log("Completed 'Insert Size Data'...");
+//   res.json({ message: 'Insert Size Data process completed successfully.' });
+// });
+
+ //#endregion TEMPORARY ^^^^
+
+// NOTE: REMAINING TO IMPLEMENT
 
 // router.post('/trimming', (req, res) => {
 
@@ -549,217 +1046,7 @@ router.post('/insert-size-data', (req, res) => {
 
 // });
 
-// router.post('/convert-to-bam-file', (req, res) => {
-//   // Variables
-//   let path_to_sam_file = '';
-//   let name_of_output_file_bam = '';
-
-//   // Run Command
-//   // samtools view -bS <path to sam file> > <name of output file>.bam
-//   const ConvertToBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-//   const ConvertToBamArgs = ['view -bS' + ' ' + path_to_sam_file + ' ' + name_of_output_file_bam + '.bam'];
-
-//   const runConvertToBam = spawn(ConvertToBamCommand, ConvertToBamArgs);
-
-//   // Handle Response
-//   let outputData = '';
-
-//   runConvertToBam.stdout.on('data', (data) => {
-//     outputData += data;
-//     console.log(`stdout: ${data}`);
-//   });
-
-//   runConvertToBam.stderr.on('data', (data) => {
-//     console.error(`stderr: ${data}`);
-//   });
-
-//   runConvertToBam.on('exit', (code) => {
-//     console.log(`runConvertToBam process exited with code ${code}`);
-//   });
-
-//   // Return the results as a JSON
-//   // Need to find and return the path of the output: Aligned SAM file in same directory
-//   res.json({ });
-
-// });
-
-// router.post('/sort-bam-file', (req, res) => {
-//   // Variables
-//   let path_to_bam_file = '';
-//   let name_of_output_file = '';
-
-//   // Run Command
-//   // samtools sort <path to bam file> -o <name of output file>
-//   const SortBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-//   const SortBamArgs = ['sort' + ' ' + path_to_bam_file + ' -o ' + name_of_output_file];
-
-//   const runSortBam = spawn(SortBamCommand, SortBamArgs);
-
-//   // Handle Response
-//   let outputData = '';
-
-//   runSortBam.stdout.on('data', (data) => {
-//     outputData += data;
-//     console.log(`stdout: ${data}`);
-//   });
-
-//   runSortBam.stderr.on('data', (data) => {
-//     console.error(`stderr: ${data}`);
-//   });
-
-//   runSortBam.on('exit', (code) => {
-//     console.log(`runSortBam process exited with code ${code}`);
-//   });
-
-//   // Return the results as a JSON
-//   // Need to find and return the path of the output: Aligned SAM file in same directory
-//   res.json({ });
-
-// });
-
-// router.post('/index-bam-file', (req, res) => {
-//   // Variables
-//   let path_to_sorted_bam_file = '';
-
-//   // Run Command
-//   // samtools index <path to sorted bam file>
-//   const IndexBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-//   const IndexBamArgs = ['index ' + path_to_sorted_bam_file];
-
-//   const runIndexBam = spawn(IndexBamCommand, IndexBamArgs);
-
-//   // Handle Response
-//   let outputData = '';
-
-//   runIndexBam.stdout.on('data', (data) => {
-//     outputData += data;
-//     console.log(`stdout: ${data}`);
-//   });
-
-//   runIndexBam.stderr.on('data', (data) => {
-//     console.error(`stderr: ${data}`);
-//   });
-
-//   runIndexBam.on('exit', (code) => {
-//     console.log(`runIndexBam process exited with code ${code}`);
-//   });
-
-//   // Return the results as a JSON
-//   res.json({ });
-
-// });
-
-// router.post('/alignment-data', (req, res) => {
-//   // Variables
-//   let path_to_reference_fastA = '';
-//   let path_to_sorted_BAM_file = '';
-//   let output_file_name_txt = '';
-
-//   // Run Command
-//   // java -jar picard.jar CollectAlignmentSummaryMetrics R=<path to reference fasta> I=<path the sorted BAM file> O=<output file name.txt>
-//   const AlignmentDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-//   const AlignmentDataArgs = ['-jar picard.jar CollectAlignmentSummaryMetrics R=' + path_to_reference_fastA +
-//                             ' I=' + path_to_sorted_BAM_file + ' O=' + output_file_name_txt + '.txt'];
-
-//   const runAlignmentData = spawn(AlignmentDataCommand, AlignmentDataArgs);
-
-//   // Handle Response
-//   let outputData = '';
-
-//   runAlignmentData.stdout.on('data', (data) => {
-//     outputData += data;
-//     console.log(`stdout: ${data}`);
-//   });
-
-//   runAlignmentData.stderr.on('data', (data) => {
-//     console.error(`stderr: ${data}`);
-//   });
-
-//   runAlignmentData.on('exit', (code) => {
-//     console.log(`runAlignmentData process exited with code ${code}`);
-//   });
-
-//   // Return the results as a JSON
-//   res.json({ });
-
-// });
-
-// router.post('/gc-bias-data', (req, res) => {
-//   // Variables
-//   let path_to_sorted_BAM = '';
-//   let output_GC_bias_metrics_txt = '';
-//   let GC_bias_outputchart_pdf = '';
-//   let GC_Bias_summary_output_txt = '';
-//   let path_to_reference_fastA = '';
-
-//   // Run Command
-//   // java -jar picard.jar CollectGcBiasMetrics -I <path to sorted BAM> -O <output GC bias metrics.txt> -CHART <GC bias ouputchart.pdf> -S <GC Bias summary output.txt> -R <reference fasta>
-//   const GCBiasDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-//   const GCBiasDataArgs = ['-jar picard.jar CollectGcBiasMetrics -I ' + path_to_sorted_BAM +
-//                           ' -O ' + output_GC_bias_metrics_txt + '.txt -CHART ' + GC_bias_outputchart_pdf +
-//                           '.pdf -S ' + GC_Bias_summary_output_txt + '.txt -R ' + path_to_reference_fastA];
-
-//   const runGCBiasData = spawn(GCBiasDataCommand, GCBiasDataArgs);
-
-//   // Handle Response
-//   let outputData = '';
-
-//   runGCBiasData.stdout.on('data', (data) => {
-//     outputData += data;
-//     console.log(`stdout: ${data}`);
-//   });
-
-//   runGCBiasData.stderr.on('data', (data) => {
-//     console.error(`stderr: ${data}`);
-//   });
-
-//   runGCBiasData.on('exit', (code) => {
-//     console.log(`runGCBiasData process exited with code ${code}`);
-//   });
-
-
-//   // Return the results as a JSON
-//   res.json({ });
-
-// });
-
-// router.post('/insert-size-data', (req, res) => {
-//   // Variables
-//   let path_to_sorted_BAM = '';
-//   let output_raw_data_txt = '';
-//   let output_histogram_name_pdf = '';
-
-
-//   // Run Command
-//   // java -jar picard.jar CollectInsertSizeMetrics -I <path to sorted bam> -O <output raw data.txt> -H <output histogram name.pdf> M=.5
-//   const InsertSizeDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-//   const InsertSizeDataArgs = ['-jar picard.jar CollectInsertSizeMetrics -I ' + path_to_sorted_BAM +
-//                           ' -O ' + output_raw_data_txt + '.txt -H ' + output_histogram_name_pdf +
-//                           '.pdf M=.5'];
-
-//   const InsertSizeData = spawn(InsertSizeDataCommand, InsertSizeDataArgs);
-
-//   // Handle Response
-//   let outputData = '';
-
-//   InsertSizeData.stdout.on('data', (data) => {
-//     outputData += data;
-//     console.log(`stdout: ${data}`);
-//   });
-
-//   InsertSizeData.stderr.on('data', (data) => {
-//     console.error(`stderr: ${data}`);
-//   });
-
-//   InsertSizeData.on('exit', (code) => {
-//     console.log(`InsertSizeData process exited with code ${code}`);
-//   });
-
-
-//   // Return the results as a JSON
-//   res.json({ });
-
-// });
+// Mark Dup
 
 
 
