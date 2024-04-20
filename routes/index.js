@@ -837,7 +837,7 @@ router.post('/seq-depth', (req, res) => {
 });
 
 router.post('/seq-coverage', (req, res) => {
-  let output_file_name = "Seq_Depth.txt"
+  let output_file_name = "Seq_Depth.txt";
   let isVisual = req.visual ? '-m' : '';
   const uploadedFile = req.file;
 
@@ -871,6 +871,201 @@ router.post('/seq-coverage', (req, res) => {
   });
 
   // Return the results as a JSON
+  res.json({ });
+
+});
+
+router.post('/mark-remove-duplicates', (req, res) => {
+  let output_bam_file_name = "MarkedDuplicatesBAM.bam";
+  let output_metrics_file_name = "DuplicateMetrics.txt";
+  let removeDupes = '';
+  if (req.remove === 'yes') {
+    removeDupes = '--REMOVE_DUPLICATES';
+  } else if (req.remove === 'select') {
+    removeDupes = '--REMOVE_SEQUENCING_DUPLICATES';
+  }
+  let removeDupHelper = (str === '') ? '' : 'true';
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Command
+  // NOTE: Bam file must be sorted
+  // java -jar picard.jar MarkDuplicates -I <input bam file> -O <output bam with marked duplicates> -M <output metrics for marked duplicates> [--REMOVE_SEQUENCING_DUPLICATES | REMOVE_SEQUENCING_DUPLICATES  <true]
+  const MarkRemDupCommand = path.join(__dirname, '..', 'bio_modules', 'java');
+  const MarkRemDupArgs = ['-jar', 'picard.jar', 'MarkDuplicates', '-I', uploadedFile.path, '-O', output_bam_file_name, '-M', output_metrics_file_name, removeDupes, removeDupHelper];
+
+  const runMarkRemDup = spawn(MarkRemDupCommand, MarkRemDupArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runMarkRemDup.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runMarkRemDup.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runMarkRemDup.on('exit', (code) => {
+    console.log(`Mark/Remove Duplicates process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  res.json({ });
+
+});
+
+router.post('/trimming', (req, res) => {
+
+  // Variables
+  let path_to_Fastq_Read1 = '';
+  let path_to_Fastq_Read2 = '';
+  let output_paired_Read1 = 'output_paired_Read1.fastq.gz';
+  let output_unpaired_Read1 = 'output_unpaired_Read1.fastq.gz';
+  let output_paired_Read2 = 'output_paired_Read2.fastq.gz';
+  let output_unpaired_Read2 = 'output_unpaired_Read2.fastq.gz';
+
+  // Choices
+  let adapt = [];
+  let read_length = [];
+  let quality_score = [];
+
+  if (req.adapter_trim) {
+    adapt = [('ILLUMINACLIP:' + AdapterFile.path + ':2:30:2')];
+  }
+
+  if (req.read_length_trim) {
+    read_length = ['MINLEN: ' + req.minlen];
+  }
+
+  if (!(req.quality_score_trim.length === 0)) {
+    if (req.quality_score_trim === 'window') {
+      quality_score = ['SLIDINGWINDOW:' + req.windowSize + ':' + req.quality];
+    } else if (req.quality_score_trim === 'leading') {
+      quality_score = ['LEADING:' + req.quality];
+    } else if (req.quality_score_trim === 'trailing') {
+      quality_score = ['TRAILING:' + req.quality];
+    }
+  }
+
+  if (!req.adapter_trim && !req.read_length_trim && (req.quality_score_trim.length === 0)) {
+    console.log("Error! At least one trim mode must be specified");
+    return;
+  }
+
+
+  // Run Command
+  // java -jar trimmomatic-0.39.jar PE <Read1 Fastq(.gz)> <Read2 Fastq(.gz)> <desired name of paired output file R1>
+  // <desired name of unpaired output file R1> <desired name of paired output file R2> <desired name of unpaired output file R2>
+
+  // -- Adapter Trim
+  // ILLUMINACLIP:<adapter fasta file>:<seed mismatches>:<palindrome clip threshold>:<simple clip threshold>
+  //      Seed mismatches: max mismatch count that will still count as  matchduring initial seed alignment step (ie if set to 1 and there is a 1 bp difference between the adapter and the sequence it will count it as a match and identify it as a potential adapter; default to 2)
+  //      Palindrome Clip threshhold: how accurate the match between two reads for palindrome read alignment (default to 30)
+  //      Simple Clip threshhold: max mismatch count that will still count as  match (ie if set to 1 and there is a 1 bp difference between the adapter and the sequence it will count it as a match and cut default to 2)
+
+  // -- Read Length Trim
+  // MINLEN: <minimum length a read must be to not be cut>
+
+  // -- Quality Score Trim
+  // SLIDINGWINDOW:<windowSize>:<RequiredQuality>   ---- looks at average quality score of a window of specified length. If the average is below the specific quality score it will cut from 3' end until the average is above the threshold. Once it is above, the window will move one position to create a new window, starting the process again
+  // LEADING:<quality>   ---- cuts reads until it reaches a read above the quality score specified starting from the 5' end
+  // TRAILING:<quality>  ---- cuts reads until it reaches a read above the quality score specified starting from the 3' end
+
+  // .push(...array) will append the contents of the array onto the trimArgs array, and will append nothing if empty, so that we can choose 1 or more trim modes
+  const TrimCommand = path.join(__dirname, '..', 'bio_modules', 'java');
+  const TrimArgs = ['-jar', 'trimmomatic-0.39.jar', 'PE', path_to_Fastq_Read1, path_to_Fastq_Read2,
+                  output_paired_Read1, output_unpaired_Read1, output_paired_Read2, output_unpaired_Read2].push(...adapt).push(...read_length).push(...quality_score);
+
+  const runTrim = spawn(TrimCommand, TrimArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runTrim.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runTrim.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runTrim.on('exit', (code) => {
+    console.log(`runTrim process exited with code ${code}`);
+  });
+
+  // Prepare the data you want to send back as JSON
+  const responseData = {
+    status: 'success',
+    message: 'Trimming completed successfully',
+    output: outputData, // Include any relevant output data
+  };
+
+  // Send the JSON response
+  res.json(responseData);
+
+});
+
+router.post('/alignment', (req, res) => {
+
+  // Variables
+  let reference_file_name = '';
+  let Read1_FastQ_file = '';
+  let Read2_FastQ_file = '';
+  let name_of_output_file = 'AlignedSAM.sam';
+
+  // Run Command
+  let AlignmentCommand =' ';
+  let AlignmentArgs = [];
+
+  // --- BWA MEM
+  // bwa mem <reference file name> <Read1 FastQ file (paired file from trimming)> <Read2 FastQ file (paired file from trimming)> > <name of output file>.sam
+  if (req.type === 'bwa') {
+    AlignmentCommand = path.join(__dirname, '..', 'bio_modules', 'bwa');
+    AlignmentArgs = ['mem', reference_file_name, Read1_FastQ_file, Read2_FastQ_file, '>', name_of_output_file];
+  }
+  // --- BOWTIE
+  // bowtie [options]* -x <ebwt> {-1 <m1> -2 <m2> | --12 <r> | --interleaved <i> | <s>} -S <output sam file>
+  else if (req.type === 'bowtie') {
+    AlignmentCommand = path.join(__dirname, '..', 'bio_modules', 'bowtie');
+    AlignmentArgs = ['-x', req.ref, '--12', 'r', uploadedFiles[0].path + ', ' + uploadedFiles[1].path , '-S', name_of_output_file];
+  } 
+  // --- BOWTIE2
+  // bowtie2 [options]* -x <bt2-idx> {-1 <m1> -2 <m2> | -U <r> | --interleaved <i> | b <bam>} -S [<sam>]
+  else {
+    AlignmentCommand = path.join(__dirname, '..', 'bio_modules', 'bowtie2');
+    // NOTE: Can come back later and add the option to run this on a fastQ file if I do the m1 m2 option instead
+    AlignmentArgs = ['-x', req.ref, 'b', uploadedFiles[0].path, '-S', name_of_output_file];
+  } 
+  
+  const runAlignment = spawn(AlignmentCommand, AlignmentArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runAlignment.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runAlignment.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+  });
+
+  runAlignment.on('exit', (code) => {
+    console.log(`runAlignment process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  // Need to find and return the path of the output: Aligned SAM file in same directory
   res.json({ });
 
 });
@@ -958,97 +1153,6 @@ router.post('/seq-coverage', (req, res) => {
 // });
 
  //#endregion TEMPORARY ^^^^
-
-// NOTE: REMAINING TO IMPLEMENT
-
-// router.post('/trimming', (req, res) => {
-
-//   // Variables
-//   let path_to_Fastq_Read1 = '';
-//   let path_to_Fastq_Read2 = '';
-//   let name_of_output_paired_trimmed_file_Read1 = '';
-//   let name_of_output_paired_trimmed_file_Read2 = '';
-//   let name_of_output_unpaired_Read1 = '';
-//   let name_of_output_unpaired_Read2 = '';
-
-//   // Run Command
-//   const TrimCommand = path.join(__dirname, '..', 'bio_modules', 'TrimmomaticPE');
-//   const TrimArgs = ['-phred33 '
-//                   + path_to_Fastq_Read1 + ' ' + path_to_Fastq_Read2
-//                   + ' ' + name_of_output_paired_trimmed_file_Read1 + ' ' + name_of_output_unpaired_Read1
-//                   + ' ' + name_of_output_paired_trimmed_file_Read2 + ' ' + name_of_output_unpaired_Read2
-//                   + ' ILLUMINACLIP:NexteraPE-PE.fa:2:30:10'];
-
-//   const runTrim = spawn(TrimCommand, TrimArgs);
-
-//   // Handle Response
-//   let outputData = '';
-
-//   runTrim.stdout.on('data', (data) => {
-//     outputData += data;
-//     console.log(`stdout: ${data}`);
-//   });
-
-//   runTrim.stderr.on('data', (data) => {
-//     console.error(`stderr: ${data}`);
-//   });
-
-//   runTrim.on('exit', (code) => {
-//     console.log(`runTrim process exited with code ${code}`);
-//   });
-
-//   // Prepare the data you want to send back as JSON
-//   const responseData = {
-//     status: 'success',
-//     message: 'Trimming completed successfully',
-//     output: outputData, // Include any relevant output data
-//   };
-
-//   // Send the JSON response
-//   res.json(responseData);
-
-// });
-
-// router.post('/alignment', (req, res) => {
-
-//   // Variables
-//   let reference_file_name = '';
-//   let Read1_FastQ_file = '';
-//   let Read2_FastQ_file = '';
-//   let name_of_output_file = '';
-
-//   // Run Command
-//   // bwa mem <reference file name> <Read1 FastQ file (paired file from trimming)> <Read2 FastQ file (paired file from trimming)> > <name of output file>.sam
-//   const AlignmentCommand = path.join(__dirname, '..', 'bio_modules', 'bwa');
-//   const AlignmentArgs = ['mem' + ' ' + reference_file_name + ' ' + Read1_FastQ_file + ' ' + Read2_FastQ_file + ' > ' + name_of_output_file + '.sam'];
-
-//   const runAlignment = spawn(AlignmentCommand, AlignmentArgs);
-
-//   // Handle Response
-//   let outputData = '';
-
-//   runAlignment.stdout.on('data', (data) => {
-//     outputData += data;
-//     console.log(`stdout: ${data}`);
-//   });
-
-//   runAlignment.stderr.on('data', (data) => {
-//     console.error(`stderr: ${data}`);
-//   });
-
-//   runAlignment.on('exit', (code) => {
-//     console.log(`runAlignment process exited with code ${code}`);
-//   });
-
-//   // Return the results as a JSON
-//   // Need to find and return the path of the output: Aligned SAM file in same directory
-//   res.json({ });
-
-// });
-
-// Mark Dup
-
-
 
 //#endregion
 
