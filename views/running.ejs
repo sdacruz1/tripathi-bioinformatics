@@ -43,7 +43,7 @@
                 if (!categories[i][1][j][1]) { continue; } %>
                 <div style="display: flex;">
                     <div style="width: 4rem; margin-right: 1rem;" >
-                        <img class="status_img" id="status_img_<%= i %>_<%= j %>" src="../uploads/Unchecked_Circle.png">
+                        <img class="status_img" id="status_img_<%= i %>_<%= j %>" src="../uploads/images/Unchecked_Circle.png">
                         <h3 class="status_text_none" id="status_text_<%= i %>_<%= j %>">Waiting</h3>
                     </div>
                     <div class="info_box">
@@ -315,11 +315,11 @@
 
             switch (status) {
                 case 'running':
-                    imageElement.src = "../uploads/Hourglass.png";
+                    imageElement.src = "../uploads/images/Hourglass.png";
                     textElement.textContent = 'Running';
                     break;
                 case 'done':
-                    imageElement.src = '../uploads/Checked_Circle.png';
+                    imageElement.src = '../uploads/images/Checked_Circle.png';
                     textElement.textContent = 'Done';
                     break;
                 default:

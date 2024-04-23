@@ -482,9 +482,11 @@ router.post('/alignment', upload.single('file'), (req, res) => {
 
 });
 
+// Below here, results are sending to downloadable_content
+
 router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
   // Variables
-  let name_of_output_file_bam = 'ConvertedToBAM.bam';
+  let name_of_output_file_bam = path.join(__dirname, '..', 'uploads', 'output', 'ConvertedToBAM.bam');
 
   const uploadedFile = req.file;
 
@@ -517,6 +519,14 @@ router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
     console.log(`runConvertToBam process exited with code ${code}`);
   });
 
+  // Make a downloadable_content entry for it
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Converted BAM File',
+    content: name_of_output_file_bam,
+  });
+
   // Return the results as a JSON
   // Need to find and return the path of the output: Aligned SAM file in same directory
   res.json({ });
@@ -524,8 +534,10 @@ router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
 });
 
 router.post('/sort-bam-file', upload.single('file'), (req, res) => {
+  // If you were not sent a bam file, use: path.join(__dirname, '..', 'uploads', 'output', 'ConvertedToBAM.bam');
+
   // Variables
-  let name_of_output_file = 'SortedBAM.bam';
+  let outputFile = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
 
   // File
   const uploadedFile = req.file;
@@ -539,7 +551,7 @@ router.post('/sort-bam-file', upload.single('file'), (req, res) => {
   // Run Command
   // samtools sort <path to bam file> -o <name of output file>
   const SortBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const SortBamArgs = ['sort', uploadedFile.path, '-o', name_of_output_file];
+  const SortBamArgs = ['sort', uploadedFile.path, '-o', outputFile];
 
   const runSortBam = spawn(SortBamCommand, SortBamArgs);
 
@@ -557,6 +569,14 @@ router.post('/sort-bam-file', upload.single('file'), (req, res) => {
 
   runSortBam.on('exit', (code) => {
     console.log(`runSortBam process exited with code ${code}`);
+  });
+
+  // Make a downloadable_content entry for it
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Sorted BAM',
+    content: outputFile,
   });
 
   // Return the results as a JSON
@@ -578,7 +598,7 @@ router.post('/index-bam-file', upload.single('file'), (req, res) => {
   // Run Command
   // samtools index <path to sorted bam file>
   const IndexBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const IndexBamArgs = ['index', uploadedFile.path];
+  const IndexBamArgs = ['index', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam')];
 
   const runIndexBam = spawn(IndexBamCommand, IndexBamArgs);
 
@@ -598,6 +618,22 @@ router.post('/index-bam-file', upload.single('file'), (req, res) => {
     console.log(`runIndexBam process exited with code ${code}`);
   });
 
+  let indexPath = '';
+  // Check if it made a .bai or .csi index file
+  if (fs.existsSync(path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam.bai'))) {
+    indexPath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam.bai');
+  } else {
+    indexPath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam.csi');
+  }
+
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'BAM Index',
+    content: indexPath,
+  });
+
   // Return the results as a JSON
   res.json({ });
 
@@ -609,7 +645,7 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
   let editMode = 'overwrite_all';
   // let editMode = 'overwrite_all'; // overwrite_all or orphan_only depending on user selected mode
   // let newReadGroupLine = req.line; // This is the string that will be replaced/added to the file
-  let outputFile = 'RG_bam.bam';
+  let outputFile = path.join(__dirname, '..', 'uploads', 'output', 'RG_bam.bam');
 
   // File
   const uploadedFile = req.file;
@@ -641,6 +677,14 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
     console.log(`Add or Replace Read Groups process exited with code ${code}`);
   });
 
+  // Make a downloadable_content entry for it
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Read Groups Added/Replaced BAM',
+    content: outputFile,
+  });
+
   res.json({ });
 
 });
@@ -657,7 +701,7 @@ router.post('/bam-index-stats', upload.single('file'), (req, res) => {
   // Run Command
   // samtools idxstats in.bam
   const BamIndexStatsCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const BamIndexStatsArgs = ['idxstats', uploadedFile.path];
+  const BamIndexStatsArgs = ['idxstats', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam')];
 
   const runBamIndexStats = spawn(BamIndexStatsCommand, BamIndexStatsArgs);
 
@@ -674,7 +718,24 @@ router.post('/bam-index-stats', upload.single('file'), (req, res) => {
   });
 
   runBamIndexStats.on('exit', (code) => {
-    console.log(`BamIndexStats process exited with code ${code}`);
+    console.log(`runIndexBam process exited with code ${code}`);
+
+    // Write outputData to a text file
+    fs.writeFile(path.join(__dirname, '..', 'uploads', 'output', 'BAM_Index_Stats.txt'), outputData, (err) => {
+      if (err) {
+          console.error('Error writing file:', err);
+          return;
+      }
+      console.log('stdout data written to BAM_Index_Stats.txt');
+    });
+  });
+
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'BAM Index Stats',
+    content: path.join(__dirname, '..', 'uploads', 'output', 'BAM_Index_Stats.txt'),
   });
 
   // Return the results as a JSON
@@ -684,31 +745,10 @@ router.post('/bam-index-stats', upload.single('file'), (req, res) => {
 
 router.post('/alignment-summary', upload.single('file'), (req, res) => {
   // Variables
-  let path_to_reference_fastA = '';
   let chosenRef = req.ref;
-  switch (chosenRef) {
-    case 'Staphylococcus_aureus':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'pig':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'hiv':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'mouse':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'human':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'ecoli':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-  }
+  let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
 
-
-  let output_file_name_txt = 'AlignmentSummary.txt';
+  let output_file_name_txt = path.join(__dirname, '..', 'uploads', 'output', 'AlignmentSummary.txt');
 
   const uploadedFile = req.file;
 
@@ -721,7 +761,7 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
   // Run Command
   // java -jar picard.jar CollectAlignmentSummaryMetrics R=<path to reference fasta> I=<path the sorted BAM file> O=<output file name.txt>
   const AlignmentDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-  const AlignmentDataArgs = ['-jar', 'picard.jar', 'CollectAlignmentSummaryMetrics', 'R=', path_to_reference_fastA, 'I=', uploadedFile.path, 'O=', output_file_name_txt];
+  const AlignmentDataArgs = ['-jar', 'picard.jar', 'CollectAlignmentSummaryMetrics', 'R=', path_to_reference_fastA, 'I=', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'), 'O=', output_file_name_txt];
 
   const runAlignmentData = spawn(AlignmentDataCommand, AlignmentDataArgs);
 
@@ -741,6 +781,14 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
     console.log(`runAlignmentData process exited with code ${code}`);
   });
 
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Alignment Summary',
+    content: output_file_name_txt,
+  });
+
   // Return the results as a JSON
   res.json({ });
 
@@ -748,32 +796,12 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
 
 router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
   // Variables
-  let output_GC_bias_metrics_txt = 'GC_BIAS_Metrics.txt';
-  let GC_bias_outputchart_pdf = 'GC_BIAS_OutputChart.pdf';
-  let GC_Bias_summary_output_txt = 'GC_BIAS_SummaryOutput.txt';
+  let output_GC_bias_metrics_txt = path.join(__dirname, '..', 'uploads', 'output', 'GC_BIAS_Metrics.txt');
+  let GC_bias_outputchart_pdf = path.join(__dirname, '..', 'uploads', 'output', 'GC_BIAS_OutputChart.pdf');
+  let GC_Bias_summary_output_txt = path.join(__dirname, '..', 'uploads', 'output','GC_BIAS_SummaryOutput.txt');
 
-  let path_to_reference_fastA = '';
   let chosenRef = req.ref;
-  switch (chosenRef) {
-    case 'Staphylococcus_aureus':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'pig':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'hiv':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'mouse':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'human':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'ecoli':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-  }
+  let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
 
   const uploadedFile = req.file;
 
@@ -786,7 +814,7 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
   // Run Command
   // java -jar picard.jar CollectGcBiasMetrics -I <path to sorted BAM> -O <output GC bias metrics.txt> -CHART <GC bias ouputchart.pdf> -S <GC Bias summary output.txt> -R <reference fasta>
   const GCBiasDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-  const GCBiasDataArgs = ['-jar', 'picard.jar', 'CollectGcBiasMetrics', '-I', uploadedFile.path, '-O', output_GC_bias_metrics_txt, '-CHART' + GC_bias_outputchart_pdf, '-S', GC_Bias_summary_output_txt + '-R', + path_to_reference_fastA];
+  const GCBiasDataArgs = ['-jar', 'picard.jar', 'CollectGcBiasMetrics', '-I', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'), '-O', output_GC_bias_metrics_txt, '-CHART' + GC_bias_outputchart_pdf, '-S', GC_Bias_summary_output_txt + '-R', + path_to_reference_fastA];
 
   const runGCBiasData = spawn(GCBiasDataCommand, GCBiasDataArgs);
 
@@ -806,6 +834,28 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
     console.log(`runGCBiasData process exited with code ${code}`);
   });
 
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'GC Bias Metrics',
+    content: output_GC_bias_metrics_txt,
+  });
+
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: true,
+    label: 'GC Bias Output Chart',
+    content: GC_bias_outputchart_pdf,
+  });
+
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'GC Bias Summary Output',
+    content: GC_Bias_summary_output_txt,
+  });
+
 
   // Return the results as a JSON
   res.json({ });
@@ -814,8 +864,8 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
 
 router.post('/insert-size-data', upload.single('file'), (req, res) => {
   // Variables
-  let output_raw_data_txt = 'Insert_Size_RawData.txt';
-  let output_histogram_name_pdf = 'Insert_Size_Histogram.pdf';
+  let output_raw_data_txt = path.join(__dirname, '..', 'uploads', 'output', 'Insert_Size_RawData.txt');
+  let output_histogram_name_pdf = path.join(__dirname, '..', 'uploads', 'output', 'Insert_Size_Histogram.pdf');
 
   const uploadedFile = req.file;
 
@@ -829,7 +879,7 @@ router.post('/insert-size-data', upload.single('file'), (req, res) => {
   // Run Command
   // java -jar picard.jar CollectInsertSizeMetrics -I <path to sorted bam> -O <output raw data.txt> -H <output histogram name.pdf> M=.5
   const InsertSizeDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-  const InsertSizeDataArgs = ['-jar', 'picard.jar', 'CollectInsertSizeMetrics', '-I', uploadedFile.path,
+  const InsertSizeDataArgs = ['-jar', 'picard.jar', 'CollectInsertSizeMetrics', '-I', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'),
                           '-O', output_raw_data_txt, '-H' + output_histogram_name_pdf, 'M=.5'];
 
   const InsertSizeData = spawn(InsertSizeDataCommand, InsertSizeDataArgs);
@@ -850,6 +900,21 @@ router.post('/insert-size-data', upload.single('file'), (req, res) => {
     console.log(`InsertSizeData process exited with code ${code}`);
   });
 
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Insert Size Raw Data',
+    content: output_GC_bias_metrics_txt,
+  });
+
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: true,
+    label: 'Insert Size Histogram',
+    content: output_GC_bias_metrics_txt,
+  });
+
 
   // Return the results as a JSON
   res.json({ });
@@ -858,33 +923,15 @@ router.post('/insert-size-data', upload.single('file'), (req, res) => {
 
 router.post('/create-seq-dict', (req, res) => {
 
-  let path_to_reference_fastA = '';
   let chosenRef = req.ref;
-  switch (chosenRef) {
-    case 'Staphylococcus_aureus':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'pig':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'hiv':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'mouse':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'human':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-    case 'ecoli':
-      path_to_reference_fastA = ''; // NOTE: Set this to the right ref path
-      break;
-  }
+  let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
+
+  let outputFile = path.join(__dirname, '..', 'uploads', 'output', 'SeqDict.txt');
 
   // Run Command
-  // samtools dict ref.fasta|ref.fasta.gz
+  // samtools dict ref.fasta|ref.fasta.gz -o <output file name>
   const SeqDictCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const SeqDictArgs = ['idxstats', path_to_reference_fastA.path];
+  const SeqDictArgs = ['idxstats', path_to_reference_fastA.path, '-o', outputFile];
 
   const runSeqDict = spawn(SeqDictCommand, SeqDictArgs);
 
@@ -902,6 +949,14 @@ router.post('/create-seq-dict', (req, res) => {
 
   runSeqDict.on('exit', (code) => {
     console.log(`SeqDict process exited with code ${code}`);
+  });
+
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Sequence Dictionary',
+    content: outputFile,
   });
 
   // Return the results as a JSON
@@ -939,6 +994,23 @@ router.post('/flag-stats', upload.single('file'), (req, res) => {
 
   runFlagStats.on('exit', (code) => {
     console.log(`FlagStats process exited with code ${code}`);
+
+    // Write outputData to a text file
+    fs.writeFile(path.join(__dirname, '..', 'uploads', 'output', 'Flag_Stats.txt'), outputData, (err) => {
+      if (err) {
+          console.error('Error writing file:', err);
+          return;
+      }
+      console.log('stdout data written to Flag_Stats.txt');
+    });
+  });
+
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Flag Stats',
+    content: path.join(__dirname, '..', 'uploads', 'output', 'Flag_Stats.txt'),
   });
 
   // Return the results as a JSON
@@ -947,7 +1019,7 @@ router.post('/flag-stats', upload.single('file'), (req, res) => {
 });
 
 router.post('/seq-depth', upload.single('file'), (req, res) => {
-  let output_file_name = "Seq_Depth.txt"
+  let output_file_name = path.join(__dirname, '..', 'uploads', 'output', 'Seq_Depth.txt');
   const uploadedFile = req.file;
 
   // Check if a file was uploaded
@@ -979,13 +1051,21 @@ router.post('/seq-depth', upload.single('file'), (req, res) => {
     console.log(`SeqDepth process exited with code ${code}`);
   });
 
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Sequence Depth Data',
+    content: output_file_name,
+  });
+
   // Return the results as a JSON
   res.json({ });
 
 });
 
 router.post('/seq-coverage', upload.single('file'), (req, res) => {
-  let output_file_name = "Seq_Depth.txt";
+  let output_file_name = path.join(__dirname, '..', 'uploads', 'output', 'Seq_Coverage.txt');
   let isVisual = req.visual ? '-m' : '';
   const uploadedFile = req.file;
 
@@ -1018,14 +1098,22 @@ router.post('/seq-coverage', upload.single('file'), (req, res) => {
     console.log(`SeqCoverage process exited with code ${code}`);
   });
 
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: req.visual,
+    label: req.visual ? 'Sequence Coverage Histogram' : 'Sequence Coverage Data',
+    content: output_file_name,
+  });
+
   // Return the results as a JSON
   res.json({ });
 
 });
 
 router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
-  let output_bam_file_name = "MarkedDuplicatesBAM.bam";
-  let output_metrics_file_name = "DuplicateMetrics.txt";
+  let output_bam_file_name = path.join(__dirname, '..', 'uploads', 'output', 'MarkedDuplicatesBAM.bam');
+  let output_metrics_file_name = path.join(__dirname, '..', 'uploads', 'output', 'DuplicateMetrics.txt');
   let removeDupes = '';
   if (req.remove === 'yes') {
     removeDupes = '--REMOVE_DUPLICATES';
@@ -1063,6 +1151,21 @@ router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
 
   runMarkRemDup.on('exit', (code) => {
     console.log(`Mark/Remove Duplicates process exited with code ${code}`);
+  });
+
+  // Make a downloadable_content entry for the results
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Marked Duplicates BAM',
+    content: output_bam_file_name,
+  });
+
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Duplicate Metrics',
+    content: output_metrics_file_name,
   });
 
   // Return the results as a JSON
