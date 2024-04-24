@@ -339,10 +339,10 @@ router.post('/trimming', upload.single('file'), (req, res) => {
   // Variables
   let path_to_Fastq_Read1 = '';
   let path_to_Fastq_Read2 = '';
-  let output_paired_Read1 = 'output_paired_Read1.fastq.gz';
-  let output_unpaired_Read1 = 'output_unpaired_Read1.fastq.gz';
-  let output_paired_Read2 = 'output_paired_Read2.fastq.gz';
-  let output_unpaired_Read2 = 'output_unpaired_Read2.fastq.gz';
+  let output_paired_Read1 = path.join(__dirname, '..', 'uploads', 'output', 'output_paired_Read1.fastq.gz');
+  let output_unpaired_Read1 = path.join(__dirname, '..', 'uploads', 'output', 'output_unpaired_Read1.fastq.gz');
+  let output_paired_Read2 = path.join(__dirname, '..', 'uploads', 'output', 'output_paired_Read2.fastq.gz');
+  let output_unpaired_Read2 = path.join(__dirname, '..', 'uploads', 'output', 'output_unpaired_Read2.fastq.gz');
 
   // Choices
   let adapt = [];
@@ -392,8 +392,8 @@ router.post('/trimming', upload.single('file'), (req, res) => {
   // TRAILING:<quality>  ---- cuts reads until it reaches a read above the quality score specified starting from the 3' end
 
   // .push(...array) will append the contents of the array onto the trimArgs array, and will append nothing if empty, so that we can choose 1 or more trim modes
-  const TrimCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-  const TrimArgs = ['-jar', 'trimmomatic-0.39.jar', 'PE', path_to_Fastq_Read1, path_to_Fastq_Read2,
+  const TrimCommand = 'java';
+  const TrimArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'trimmomatic-0.39.jar'), 'PE', path_to_Fastq_Read1, path_to_Fastq_Read2,
                   output_paired_Read1, output_unpaired_Read1, output_paired_Read2, output_unpaired_Read2].push(...adapt).push(...read_length).push(...quality_score);
 
   const runTrim = spawn(TrimCommand, TrimArgs);
@@ -421,6 +421,43 @@ router.post('/trimming', upload.single('file'), (req, res) => {
     output: outputData, // Include any relevant output data
   };
 
+  // Make a downloadable_content entry for each file that exists
+  if (fs.existsSync(output_paired_Read1)) {
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Trimming Paired Read 1',
+      content: output_paired_Read1,
+    });
+  }
+
+  if (fs.existsSync(output_unpaired_Read1)) {
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Trimming Unpaired Read 1',
+      content: output_unpaired_Read1,
+    });
+  }
+
+  if (fs.existsSync(output_paired_Read2)) {
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Trimming Paired Read 2',
+      content: output_paired_Read2,
+    });
+  }
+
+  if (fs.existsSync(output_unpaired_Read2)) {
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Trimming Unpaired Read 2',
+      content: output_unpaired_Read2,
+    });
+  }
+
   // Send the JSON response
   res.json(responseData);
 
@@ -432,7 +469,7 @@ router.post('/alignment', upload.single('file'), (req, res) => {
   let reference_file_name = '';
   let Read1_FastQ_file = '';
   let Read2_FastQ_file = '';
-  let name_of_output_file = 'AlignedSAM.sam';
+  let name_of_output_file = path.join(__dirname, '..', 'uploads', 'output', 'AlignedSAM.sam');
 
   // Run Command
   let AlignmentCommand =' ';
@@ -476,13 +513,19 @@ router.post('/alignment', upload.single('file'), (req, res) => {
     console.log(`runAlignment process exited with code ${code}`);
   });
 
+  // Make a downloadable_content entry for it
+  downloadable_content.push({
+    enabled: false,
+    has_visual_component: false,
+    label: 'Aligned SAM File: ' + req.type,
+    content: name_of_output_file,
+  });
+
   // Return the results as a JSON
   // Need to find and return the path of the output: Aligned SAM file in same directory
   res.json({ });
 
 });
-
-// Below here, results are sending to downloadable_content
 
 router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
   // Variables
@@ -745,25 +788,25 @@ router.post('/bam-index-stats', upload.single('file'), (req, res) => {
 
 router.post('/alignment-summary', upload.single('file'), (req, res) => {
   // Variables
-  let chosenRef = req.ref;
+  let chosenRef = '';
+  chosenRef = req.body.ref;
   let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
-
+  
   let output_file_name_txt = path.join(__dirname, '..', 'uploads', 'output', 'AlignmentSummary.txt');
 
-  const uploadedFile = req.file;
+  // const uploadedFile = req.file;
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
-  }
+  // // Check if a file was uploaded
+  // if (!uploadedFile) {
+  //   res.status(400).send('No file uploaded');
+  //   return;
+  // }
 
   // Run Command
   // java -jar picard.jar CollectAlignmentSummaryMetrics R=<path to reference fasta> I=<path the sorted BAM file> O=<output file name.txt>
-  const AlignmentDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-  const AlignmentDataArgs = ['-jar', 'picard.jar', 'CollectAlignmentSummaryMetrics', 'R=', path_to_reference_fastA, 'I=', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'), 'O=', output_file_name_txt];
+  const AlignmentDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectAlignmentSummaryMetrics', 'R=', path_to_reference_fastA, 'I=', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'), 'O=', output_file_name_txt];
 
-  const runAlignmentData = spawn(AlignmentDataCommand, AlignmentDataArgs);
+  const runAlignmentData = spawn('java', AlignmentDataArgs);
 
   // Handle Response
   let outputData = '';
@@ -800,7 +843,8 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
   let GC_bias_outputchart_pdf = path.join(__dirname, '..', 'uploads', 'output', 'GC_BIAS_OutputChart.pdf');
   let GC_Bias_summary_output_txt = path.join(__dirname, '..', 'uploads', 'output','GC_BIAS_SummaryOutput.txt');
 
-  let chosenRef = req.ref;
+  let chosenRef = '';
+  chosenRef = req.body.ref;
   let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
 
   const uploadedFile = req.file;
@@ -813,8 +857,8 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
 
   // Run Command
   // java -jar picard.jar CollectGcBiasMetrics -I <path to sorted BAM> -O <output GC bias metrics.txt> -CHART <GC bias ouputchart.pdf> -S <GC Bias summary output.txt> -R <reference fasta>
-  const GCBiasDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-  const GCBiasDataArgs = ['-jar', 'picard.jar', 'CollectGcBiasMetrics', '-I', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'), '-O', output_GC_bias_metrics_txt, '-CHART' + GC_bias_outputchart_pdf, '-S', GC_Bias_summary_output_txt + '-R', + path_to_reference_fastA];
+  const GCBiasDataCommand = 'java';
+  const GCBiasDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectGcBiasMetrics', '-I', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'), '-O', output_GC_bias_metrics_txt, '-CHART' + GC_bias_outputchart_pdf, '-S', GC_Bias_summary_output_txt + '-R', + path_to_reference_fastA];
 
   const runGCBiasData = spawn(GCBiasDataCommand, GCBiasDataArgs);
 
@@ -878,8 +922,8 @@ router.post('/insert-size-data', upload.single('file'), (req, res) => {
 
   // Run Command
   // java -jar picard.jar CollectInsertSizeMetrics -I <path to sorted bam> -O <output raw data.txt> -H <output histogram name.pdf> M=.5
-  const InsertSizeDataCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-  const InsertSizeDataArgs = ['-jar', 'picard.jar', 'CollectInsertSizeMetrics', '-I', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'),
+  const InsertSizeDataCommand = 'java';
+  const InsertSizeDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectInsertSizeMetrics', '-I', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'),
                           '-O', output_raw_data_txt, '-H' + output_histogram_name_pdf, 'M=.5'];
 
   const InsertSizeData = spawn(InsertSizeDataCommand, InsertSizeDataArgs);
@@ -923,7 +967,8 @@ router.post('/insert-size-data', upload.single('file'), (req, res) => {
 
 router.post('/create-seq-dict', (req, res) => {
 
-  let chosenRef = req.ref;
+  let chosenRef = '';
+  chosenRef = req.body.ref;
   let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
 
   let outputFile = path.join(__dirname, '..', 'uploads', 'output', 'SeqDict.txt');
@@ -1132,8 +1177,8 @@ router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
   // Run Command
   // NOTE: Bam file must be sorted
   // java -jar picard.jar MarkDuplicates -I <input bam file> -O <output bam with marked duplicates> -M <output metrics for marked duplicates> [--REMOVE_SEQUENCING_DUPLICATES | REMOVE_SEQUENCING_DUPLICATES  <true]
-  const MarkRemDupCommand = path.join(__dirname, '..', 'bio_modules', 'java');
-  const MarkRemDupArgs = ['-jar', 'picard.jar', 'MarkDuplicates', '-I', uploadedFile.path, '-O', output_bam_file_name, '-M', output_metrics_file_name, removeDupes, removeDupHelper];
+  const MarkRemDupCommand = 'java';
+  const MarkRemDupArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'MarkDuplicates', '-I', uploadedFile.path, '-O', output_bam_file_name, '-M', output_metrics_file_name, removeDupes, removeDupHelper];
 
   const runMarkRemDup = spawn(MarkRemDupCommand, MarkRemDupArgs);
 
