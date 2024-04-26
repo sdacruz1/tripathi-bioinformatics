@@ -102,7 +102,8 @@
             enabledItems.forEach((item, index) => {
                 // Create a download link
                 const downloadLink = document.createElement('a');
-                downloadLink.href = item.content; // Set the href to the file path
+                console.log(item.content);
+                downloadLink.href = '../output/' + item.content; // Set the href to the file path
 
                 // Extract the filename from the file path
                 const fileName = item.content.split('/').pop();

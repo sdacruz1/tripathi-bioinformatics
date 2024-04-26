@@ -9,6 +9,9 @@ var router = express.Router();
 router.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded images statically
+router.use('/images', express.static('images'));
+router.use('/output', express.static('output'));
+router.use('/ref_genomes', express.static('ref_genomes'));
 router.use('/uploads', express.static('uploads'));
 
 // Set up Multer for file uploads
@@ -100,14 +103,14 @@ let downloadable_content = [  // An object array holding the result of the steps
   {
       enabled: true,
       has_visual_component: false,
-      label: "Test Object 1",
-      content: "/path/to/file1.txt"
+      label: "Test Object BAM",
+      content: "../output/SortedBAM.bam"
   },
   {
       enabled: false,
       has_visual_component: true,
       label: "Test Object 2",
-      content: "../uploads/Checked_Circle.png"
+      content: "../images/Checked_Circle.png"
   },
 ];
 
@@ -157,6 +160,12 @@ router.post('/running', function (req, res, next) {
 
 /* Output Page */
 router.post('/output', function (req, res, next) {
+  // Render the 'output' view
+  res.render('output', { downloadable_content, toolbar_index: 5 });
+});
+
+/* Output Page */
+router.get('/output', function (req, res, next) {
   // Render the 'output' view
   res.render('output', { downloadable_content, toolbar_index: 5 });
 });
@@ -230,7 +239,7 @@ router.post('/run-bcl2fastq' , upload.array('files'), (req, res) => {
   // =============== Run BCL To FastQ ===============
 
   // Create an empty directory to hold the output
-  const OutputDirectory = './uploads/output';
+  const OutputDirectory = './uploads/bclFile';
   if (!fs.existsSync(OutputDirectory)) {
     fs.mkdirSync(OutputDirectory);
   }
@@ -339,10 +348,10 @@ router.post('/trimming', upload.single('file'), (req, res) => {
   // Variables
   let path_to_Fastq_Read1 = '';
   let path_to_Fastq_Read2 = '';
-  let output_paired_Read1 = path.join(__dirname, '..', 'uploads', 'output', 'output_paired_Read1.fastq.gz');
-  let output_unpaired_Read1 = path.join(__dirname, '..', 'uploads', 'output', 'output_unpaired_Read1.fastq.gz');
-  let output_paired_Read2 = path.join(__dirname, '..', 'uploads', 'output', 'output_paired_Read2.fastq.gz');
-  let output_unpaired_Read2 = path.join(__dirname, '..', 'uploads', 'output', 'output_unpaired_Read2.fastq.gz');
+  let output_paired_Read1 = path.join(__dirname, '..', 'output', 'output_paired_Read1.fastq.gz');
+  let output_unpaired_Read1 = path.join(__dirname, '..', 'output', 'output_unpaired_Read1.fastq.gz');
+  let output_paired_Read2 = path.join(__dirname, '..', 'output', 'output_paired_Read2.fastq.gz');
+  let output_unpaired_Read2 = path.join(__dirname, '..', 'output', 'output_unpaired_Read2.fastq.gz');
 
   // Choices
   let adapt = [];
@@ -427,7 +436,7 @@ router.post('/trimming', upload.single('file'), (req, res) => {
       enabled: false,
       has_visual_component: false,
       label: 'Trimming Paired Read 1',
-      content: output_paired_Read1,
+      content: 'output_paired_Read1.fastq.gz',
     });
   }
 
@@ -436,7 +445,7 @@ router.post('/trimming', upload.single('file'), (req, res) => {
       enabled: false,
       has_visual_component: false,
       label: 'Trimming Unpaired Read 1',
-      content: output_unpaired_Read1,
+      content: 'output_unpaired_Read1.fastq.gz',
     });
   }
 
@@ -445,7 +454,7 @@ router.post('/trimming', upload.single('file'), (req, res) => {
       enabled: false,
       has_visual_component: false,
       label: 'Trimming Paired Read 2',
-      content: output_paired_Read2,
+      content: 'output_paired_Read2.fastq.gz',
     });
   }
 
@@ -454,7 +463,7 @@ router.post('/trimming', upload.single('file'), (req, res) => {
       enabled: false,
       has_visual_component: false,
       label: 'Trimming Unpaired Read 2',
-      content: output_unpaired_Read2,
+      content: 'output_unpaired_Read2.fastq.gz',
     });
   }
 
@@ -469,7 +478,7 @@ router.post('/alignment', upload.single('file'), (req, res) => {
   let reference_file_name = '';
   let Read1_FastQ_file = '';
   let Read2_FastQ_file = '';
-  let name_of_output_file = path.join(__dirname, '..', 'uploads', 'output', 'AlignedSAM.sam');
+  let name_of_output_file = path.join(__dirname, '..', 'output', 'AlignedSAM.sam');
 
   // Run Command
   let AlignmentCommand =' ';
@@ -518,7 +527,7 @@ router.post('/alignment', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'Aligned SAM File: ' + req.type,
-    content: name_of_output_file,
+    content: 'AlignedSAM.sam',
   });
 
   // Return the results as a JSON
@@ -529,13 +538,14 @@ router.post('/alignment', upload.single('file'), (req, res) => {
 
 router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
   // Variables
-  let name_of_output_file_bam = path.join(__dirname, '..', 'uploads', 'output', 'ConvertedToBAM.bam');
+  let name_of_output_file_bam = path.join(__dirname, '..', 'output', 'ConvertedToBAM.bam');
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'AlignedSAM.sam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'AlignedSAM.sam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -571,7 +581,7 @@ router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'Converted BAM File',
-    content: name_of_output_file_bam,
+    content: 'AlignedSAM.sam',
   });
 
   // Return the results as a JSON
@@ -582,13 +592,15 @@ router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
 
 router.post('/sort-bam-file', upload.single('file'), (req, res) => {
   // Variables
-  let outputFile = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let outputFile = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
+  console.log(outputFile);
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'ConvertedToBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'ConvertedToBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -624,7 +636,7 @@ router.post('/sort-bam-file', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'Sorted BAM',
-    content: outputFile,
+    content: 'SortedBAM.bam'
   });
 
   // Return the results as a JSON
@@ -637,9 +649,10 @@ router.post('/index-bam-file', upload.single('file'), (req, res) => {
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -672,10 +685,10 @@ router.post('/index-bam-file', upload.single('file'), (req, res) => {
 
   let indexPath = '';
   // Check if it made a .bai or .csi index file
-  if (fs.existsSync(path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam.bai'))) {
-    indexPath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam.bai');
+  if (fs.existsSync(path.join(__dirname, '..', 'output', 'SortedBAM.bam.bai'))) {
+    indexPath = 'SortedBAM.bam.bai';
   } else {
-    indexPath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam.csi');
+    indexPath = 'SortedBAM.bam.csi';
   }
 
   // Make a downloadable_content entry for the results
@@ -697,13 +710,14 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
   let editMode = 'overwrite_all';
   // let editMode = 'overwrite_all'; // overwrite_all or orphan_only depending on user selected mode
   // let newReadGroupLine = req.line; // This is the string that will be replaced/added to the file
-  let outputFile = path.join(__dirname, '..', 'uploads', 'output', 'RG_bam.bam');
+  let outputFile = path.join(__dirname, '..', 'output', 'RG_bam.bam');
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -737,7 +751,7 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
     enabled: false,
     has_visual_component: false,
     label: 'Read Groups Added/Replaced BAM',
-    content: outputFile,
+    content: 'RG_bam.bam',
   });
 
   res.json({ });
@@ -747,9 +761,10 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
 router.post('/bam-index-stats', upload.single('file'), (req, res) => {
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -780,7 +795,7 @@ router.post('/bam-index-stats', upload.single('file'), (req, res) => {
     console.log(`runIndexBam process exited with code ${code}`);
 
     // Write outputData to a text file
-    fs.writeFile(path.join(__dirname, '..', 'uploads', 'output', 'BAM_Index_Stats.txt'), outputData, (err) => {
+    fs.writeFile(path.join(__dirname, '..', 'output', 'BAM_Index_Stats.txt'), outputData, (err) => {
       if (err) {
           console.error('Error writing file:', err);
           return;
@@ -794,7 +809,7 @@ router.post('/bam-index-stats', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'BAM Index Stats',
-    content: path.join(__dirname, '..', 'uploads', 'output', 'BAM_Index_Stats.txt'),
+    content: 'BAM_Index_Stats.txt',
   });
 
   // Return the results as a JSON
@@ -808,13 +823,14 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
   chosenRef = req.body.ref;
   let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef, chosenRef + '.fna');
 
-  let output_file_name_txt = path.join(__dirname, '..', 'uploads', 'output', 'AlignmentSummary.txt');
+  let output_file_name_txt = path.join(__dirname, '..', 'output', 'AlignmentSummary.txt');
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -849,7 +865,7 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'Alignment Summary',
-    content: output_file_name_txt,
+    content: 'AlignmentSummary.txt',
   });
 
   // Return the results as a JSON
@@ -859,9 +875,9 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
 
 router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
   // Variables
-  let output_GC_bias_metrics_txt = path.join(__dirname, '..', 'uploads', 'output', 'GC_BIAS_Metrics.txt');
-  let GC_bias_outputchart_pdf = path.join(__dirname, '..', 'uploads', 'output', 'GC_BIAS_OutputChart.pdf');
-  let GC_Bias_summary_output_txt = path.join(__dirname, '..', 'uploads', 'output','GC_BIAS_SummaryOutput.txt');
+  let output_GC_bias_metrics_txt = path.join(__dirname, '..', 'output', 'GC_BIAS_Metrics.txt');
+  let GC_bias_outputchart_pdf = path.join(__dirname, '..', 'output', 'GC_BIAS_OutputChart.pdf');
+  let GC_Bias_summary_output_txt = path.join(__dirname, '..', 'output','GC_BIAS_SummaryOutput.txt');
 
   let chosenRef = '';
   chosenRef = req.body.ref;
@@ -869,9 +885,10 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -907,21 +924,21 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'GC Bias Metrics',
-    content: output_GC_bias_metrics_txt,
+    content: 'GC_BIAS_Metrics.txt'
   });
 
   downloadable_content.push({
     enabled: false,
     has_visual_component: true,
     label: 'GC Bias Output Chart',
-    content: GC_bias_outputchart_pdf,
+    content: 'GC_BIAS_OutputChart.pdf',
   });
 
   downloadable_content.push({
     enabled: false,
     has_visual_component: false,
     label: 'GC Bias Summary Output',
-    content: GC_Bias_summary_output_txt,
+    content: 'GC_BIAS_SummaryOutput.txt',
   });
 
 
@@ -932,14 +949,15 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
 
 router.post('/insert-size-data', upload.single('file'), (req, res) => {
   // Variables
-  let output_raw_data_txt = path.join(__dirname, '..', 'uploads', 'output', 'Insert_Size_RawData.txt');
-  let output_histogram_name_pdf = path.join(__dirname, '..', 'uploads', 'output', 'Insert_Size_Histogram.pdf');
+  let output_raw_data_txt = path.join(__dirname, '..', 'output', 'Insert_Size_RawData.txt');
+  let output_histogram_name_pdf = path.join(__dirname, '..', 'output', 'Insert_Size_Histogram.pdf');
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -976,14 +994,14 @@ router.post('/insert-size-data', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'Insert Size Raw Data',
-    content: output_GC_bias_metrics_txt,
+    content: 'Insert_Size_RawData.txt',
   });
 
   downloadable_content.push({
     enabled: false,
     has_visual_component: true,
     label: 'Insert Size Histogram',
-    content: output_GC_bias_metrics_txt,
+    content: 'Insert_Size_Histogram.pdf',
   });
 
 
@@ -998,7 +1016,7 @@ router.post('/create-seq-dict', (req, res) => {
   chosenRef = req.body.ref;
   let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
 
-  let outputFile = path.join(__dirname, '..', 'uploads', 'output', 'SeqDict.txt');
+  let outputFile = path.join(__dirname, '..', 'output', 'SeqDict.txt');
 
   // Run Command
   // samtools dict ref.fasta|ref.fasta.gz -o <output file name>
@@ -1028,7 +1046,7 @@ router.post('/create-seq-dict', (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'Sequence Dictionary',
-    content: outputFile,
+    content: 'SeqDict.txt',
   });
 
   // Return the results as a JSON
@@ -1039,9 +1057,10 @@ router.post('/create-seq-dict', (req, res) => {
 router.post('/flag-stats', upload.single('file'), (req, res) => {
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -1072,7 +1091,7 @@ router.post('/flag-stats', upload.single('file'), (req, res) => {
     console.log(`FlagStats process exited with code ${code}`);
 
     // Write outputData to a text file
-    fs.writeFile(path.join(__dirname, '..', 'uploads', 'output', 'Flag_Stats.txt'), outputData, (err) => {
+    fs.writeFile(path.join(__dirname, '..', 'output', 'Flag_Stats.txt'), outputData, (err) => {
       if (err) {
           console.error('Error writing file:', err);
           return;
@@ -1086,7 +1105,7 @@ router.post('/flag-stats', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'Flag Stats',
-    content: path.join(__dirname, '..', 'uploads', 'output', 'Flag_Stats.txt'),
+    content: 'Flag_Stats.txt',
   });
 
   // Return the results as a JSON
@@ -1095,13 +1114,14 @@ router.post('/flag-stats', upload.single('file'), (req, res) => {
 });
 
 router.post('/seq-depth', upload.single('file'), (req, res) => {
-  let output_file_name = path.join(__dirname, '..', 'uploads', 'output', 'Seq_Depth.txt');
+  let output_file_name = path.join(__dirname, '..', 'output', 'Seq_Depth.txt');
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -1137,7 +1157,7 @@ router.post('/seq-depth', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'Sequence Depth Data',
-    content: output_file_name,
+    content: 'Seq_Depth.txt',
   });
 
   // Return the results as a JSON
@@ -1146,14 +1166,15 @@ router.post('/seq-depth', upload.single('file'), (req, res) => {
 });
 
 router.post('/seq-coverage', upload.single('file'), (req, res) => {
-  let output_file_name = path.join(__dirname, '..', 'uploads', 'output', 'Seq_Coverage.txt');
+  let output_file_name = path.join(__dirname, '..', 'output', 'Seq_Coverage.txt');
   let isVisual = req.visual ? '-m' : '';
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -1189,7 +1210,7 @@ router.post('/seq-coverage', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: req.visual,
     label: req.visual ? 'Sequence Coverage Histogram' : 'Sequence Coverage Data',
-    content: output_file_name,
+    content: 'Seq_Coverage.txt',
   });
 
   // Return the results as a JSON
@@ -1198,8 +1219,8 @@ router.post('/seq-coverage', upload.single('file'), (req, res) => {
 });
 
 router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
-  let output_bam_file_name = path.join(__dirname, '..', 'uploads', 'output', 'MarkedDuplicatesBAM.bam');
-  let output_metrics_file_name = path.join(__dirname, '..', 'uploads', 'output', 'DuplicateMetrics.txt');
+  let output_bam_file_name = path.join(__dirname, '..', 'output', 'MarkedDuplicatesBAM.bam');
+  let output_metrics_file_name = path.join(__dirname, '..', 'output', 'DuplicateMetrics.txt');
   let removeDupes = '';
   if (req.remove === 'yes') {
     removeDupes = '--REMOVE_DUPLICATES';
@@ -1210,9 +1231,10 @@ router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
 
   // Main File Check
   const uploadedFile = req.file;
-  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFile.path;
     // We need the file, so check if a file was uploaded
     if (!uploadedFile) {
       res.status(400).send('No file uploaded');
@@ -1249,14 +1271,14 @@ router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
     enabled: false,
     has_visual_component: false,
     label: 'Marked Duplicates BAM',
-    content: output_bam_file_name,
+    content: 'MarkedDuplicatesBAM.bam',
   });
 
   downloadable_content.push({
     enabled: false,
     has_visual_component: false,
     label: 'Duplicate Metrics',
-    content: output_metrics_file_name,
+    content: 'DuplicateMetrics.txt',
   });
 
   // Return the results as a JSON
