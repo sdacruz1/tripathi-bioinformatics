@@ -531,18 +531,22 @@ router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
   // Variables
   let name_of_output_file_bam = path.join(__dirname, '..', 'uploads', 'output', 'ConvertedToBAM.bam');
 
+  // Main File Check
   const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'AlignedSAM.sam');
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Command
   // samtools view -bS <path to sam file> > <name of output file>.bam
   const ConvertToBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const ConvertToBamArgs = ['view', '-bS', uploadedFile.path, '>', name_of_output_file_bam];
+  const ConvertToBamArgs = ['view', '-bS', mainFilePath, '>', name_of_output_file_bam];
 
   const runConvertToBam = spawn(ConvertToBamCommand, ConvertToBamArgs);
 
@@ -577,24 +581,25 @@ router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
 });
 
 router.post('/sort-bam-file', upload.single('file'), (req, res) => {
-  // If you were not sent a bam file, use: path.join(__dirname, '..', 'uploads', 'output', 'ConvertedToBAM.bam');
-
   // Variables
   let outputFile = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
 
-  // File
+  // Main File Check
   const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'ConvertedToBAM.bam');
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Command
   // samtools sort <path to bam file> -o <name of output file>
   const SortBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const SortBamArgs = ['sort', uploadedFile.path, '-o', outputFile];
+  const SortBamArgs = ['sort', mainFilePath, '-o', outputFile];
 
   const runSortBam = spawn(SortBamCommand, SortBamArgs);
 
@@ -630,18 +635,22 @@ router.post('/sort-bam-file', upload.single('file'), (req, res) => {
 
 router.post('/index-bam-file', upload.single('file'), (req, res) => {
 
+  // Main File Check
   const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Command
   // samtools index <path to sorted bam file>
   const IndexBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const IndexBamArgs = ['index', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam')];
+  const IndexBamArgs = ['index', mainFilePath];
 
   const runIndexBam = spawn(IndexBamCommand, IndexBamArgs);
 
@@ -690,18 +699,21 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
   // let newReadGroupLine = req.line; // This is the string that will be replaced/added to the file
   let outputFile = path.join(__dirname, '..', 'uploads', 'output', 'RG_bam.bam');
 
-  // File
+  // Main File Check
   const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Add or Replace Read Groups
   const RGCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const RGArgs = ['addreplacerg', '-r', newReadGroupLine, '-m', editMode, '-u', '-o', outputFile, uploadedFile.path];
+  const RGArgs = ['addreplacerg', '-r', newReadGroupLine, '-m', editMode, '-u', '-o', outputFile, mainFilePath];
 
   const runRG = spawn(RGCommand, RGArgs);
 
@@ -733,18 +745,22 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
 });
 
 router.post('/bam-index-stats', upload.single('file'), (req, res) => {
+  // Main File Check
   const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Command
   // samtools idxstats in.bam
   const BamIndexStatsCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const BamIndexStatsArgs = ['idxstats', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam')];
+  const BamIndexStatsArgs = ['idxstats', mainFilePath];
 
   const runBamIndexStats = spawn(BamIndexStatsCommand, BamIndexStatsArgs);
 
@@ -790,21 +806,25 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
   // Variables
   let chosenRef = '';
   chosenRef = req.body.ref;
-  let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
-  
+  let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef, chosenRef + '.fna');
+
   let output_file_name_txt = path.join(__dirname, '..', 'uploads', 'output', 'AlignmentSummary.txt');
 
-  // const uploadedFile = req.file;
+  // Main File Check
+  const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
 
-  // // Check if a file was uploaded
-  // if (!uploadedFile) {
-  //   res.status(400).send('No file uploaded');
-  //   return;
-  // }
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
+  }
 
   // Run Command
   // java -jar picard.jar CollectAlignmentSummaryMetrics R=<path to reference fasta> I=<path the sorted BAM file> O=<output file name.txt>
-  const AlignmentDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectAlignmentSummaryMetrics', 'R=', path_to_reference_fastA, 'I=', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'), 'O=', output_file_name_txt];
+  const AlignmentDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectAlignmentSummaryMetrics', 'R=', path_to_reference_fastA, 'I=', mainFilePath, 'O=', output_file_name_txt];
 
   const runAlignmentData = spawn('java', AlignmentDataArgs);
 
@@ -847,18 +867,22 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
   chosenRef = req.body.ref;
   let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
 
+  // Main File Check
   const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Command
   // java -jar picard.jar CollectGcBiasMetrics -I <path to sorted BAM> -O <output GC bias metrics.txt> -CHART <GC bias ouputchart.pdf> -S <GC Bias summary output.txt> -R <reference fasta>
   const GCBiasDataCommand = 'java';
-  const GCBiasDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectGcBiasMetrics', '-I', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'), '-O', output_GC_bias_metrics_txt, '-CHART' + GC_bias_outputchart_pdf, '-S', GC_Bias_summary_output_txt + '-R', + path_to_reference_fastA];
+  const GCBiasDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectGcBiasMetrics', '-I', mainFilePath, '-O', output_GC_bias_metrics_txt, '-CHART' + GC_bias_outputchart_pdf, '-S', GC_Bias_summary_output_txt + '-R', + path_to_reference_fastA];
 
   const runGCBiasData = spawn(GCBiasDataCommand, GCBiasDataArgs);
 
@@ -911,19 +935,22 @@ router.post('/insert-size-data', upload.single('file'), (req, res) => {
   let output_raw_data_txt = path.join(__dirname, '..', 'uploads', 'output', 'Insert_Size_RawData.txt');
   let output_histogram_name_pdf = path.join(__dirname, '..', 'uploads', 'output', 'Insert_Size_Histogram.pdf');
 
+  // Main File Check
   const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
-
 
   // Run Command
   // java -jar picard.jar CollectInsertSizeMetrics -I <path to sorted bam> -O <output raw data.txt> -H <output histogram name.pdf> M=.5
   const InsertSizeDataCommand = 'java';
-  const InsertSizeDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectInsertSizeMetrics', '-I', path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam'),
+  const InsertSizeDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectInsertSizeMetrics', '-I', mainFilePath,
                           '-O', output_raw_data_txt, '-H' + output_histogram_name_pdf, 'M=.5'];
 
   const InsertSizeData = spawn(InsertSizeDataCommand, InsertSizeDataArgs);
@@ -1010,18 +1037,22 @@ router.post('/create-seq-dict', (req, res) => {
 });
 
 router.post('/flag-stats', upload.single('file'), (req, res) => {
+  // Main File Check
   const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Command
   // samtools flagstat in.sam|in.bam|in.cram
   const FlagStatsCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const FlagStatsArgs = ['flagstat', uploadedFile.path];
+  const FlagStatsArgs = ['flagstat', mainFilePath];
 
   const runFlagStats = spawn(FlagStatsCommand, FlagStatsArgs);
 
@@ -1065,18 +1096,23 @@ router.post('/flag-stats', upload.single('file'), (req, res) => {
 
 router.post('/seq-depth', upload.single('file'), (req, res) => {
   let output_file_name = path.join(__dirname, '..', 'uploads', 'output', 'Seq_Depth.txt');
-  const uploadedFile = req.file;
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  // Main File Check
+  const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Command
   // samtools depth -o FILE in.sam|in.bam
   const SeqDepthCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const SeqDepthArgs = ['depth', '-o', output_file_name, uploadedFile.path];
+  const SeqDepthArgs = ['depth', '-o', output_file_name, mainFilePath];
 
   const runSeqDepth = spawn(SeqDepthCommand, SeqDepthArgs);
 
@@ -1112,18 +1148,23 @@ router.post('/seq-depth', upload.single('file'), (req, res) => {
 router.post('/seq-coverage', upload.single('file'), (req, res) => {
   let output_file_name = path.join(__dirname, '..', 'uploads', 'output', 'Seq_Coverage.txt');
   let isVisual = req.visual ? '-m' : '';
-  const uploadedFile = req.file;
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  // Main File Check
+  const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Command
   // samtools coverage -o <output file name> [-m] in.sam|in.bam
   const SeqCovCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const SeqCovArgs = ['coverage', '-o', output_file_name, isVisual, uploadedFile.path];
+  const SeqCovArgs = ['coverage', '-o', output_file_name, isVisual, mainFilePath];
 
   const runSeqCov = spawn(SeqCovCommand, SeqCovArgs);
 
@@ -1166,19 +1207,24 @@ router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
     removeDupes = '--REMOVE_SEQUENCING_DUPLICATES';
   }
   let removeDupHelper = (str === '') ? '' : 'true';
-  const uploadedFile = req.file;
 
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
+  // Main File Check
+  const uploadedFile = req.file;
+  let mainFilePath = path.join(__dirname, '..', 'uploads', 'output', 'SortedBAM.bam');
+
+  if (!fs.existsSync(mainFilePath)) {
+    // We need the file, so check if a file was uploaded
+    if (!uploadedFile) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
   }
 
   // Run Command
   // NOTE: Bam file must be sorted
   // java -jar picard.jar MarkDuplicates -I <input bam file> -O <output bam with marked duplicates> -M <output metrics for marked duplicates> [--REMOVE_SEQUENCING_DUPLICATES | REMOVE_SEQUENCING_DUPLICATES  <true]
   const MarkRemDupCommand = 'java';
-  const MarkRemDupArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'MarkDuplicates', '-I', uploadedFile.path, '-O', output_bam_file_name, '-M', output_metrics_file_name, removeDupes, removeDupHelper];
+  const MarkRemDupArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'MarkDuplicates', '-I', mainFilePath, '-O', output_bam_file_name, '-M', output_metrics_file_name, removeDupes, removeDupHelper];
 
   const runMarkRemDup = spawn(MarkRemDupCommand, MarkRemDupArgs);
 
