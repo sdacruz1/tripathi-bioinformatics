@@ -267,6 +267,8 @@
                     // Handle Response
                     console.log('Insert Size Data response:', data);
                     setStatus(2, 2, 'done');
+                    setStatus(2, 2, 'running');
+
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -275,6 +277,107 @@
                 // Return a resolved promise if this command is not needed
                 return Promise.resolve();
             }
+        };
+
+        // Make Request
+        const MakeRequest = (title, prevCommandCheck, commandToRun, formDataArray, runningStatus, doneStatus) => {
+            const formData = new FormData();
+            formDataArray.forEach(element => {
+                formData.append(element[0], element[1]);
+            });
+
+            if (prevCommandCheck) {
+            fetch(commandToRun, {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json()) // Assume the server sends JSON data
+                .then(data => {
+                    // Handle Response
+                    console.log(title + ' response:', data);
+                    setStatus(doneStatus[0], doneStatus[1], 'done');
+                    if (runningStatus[0] != -1) {
+                        setStatus(runningStatus[0], runningStatus[1], 'running');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error with ' + title + ' :', error);
+                });
+            } else {
+                // Return a resolved promise if this command is not needed
+                return Promise.resolve();
+            }
+        };
+
+        // here are the commands, but honestly it would make a lot more sense to just have each thing
+        // announce when it's running and when it's done. so that's an ASAP change
+        // also NOTE: Fill out the formDataArray fields
+        const Commands = {
+            indexSummary: {
+                title: 'Index Size',
+                prevCommandCheck: categories[2][1][2][1],
+                commandToRun: '/insert-size-data',
+                formDataArray: [],
+                runningStatus: [-1, -1],
+                doneStatus: [2, 2]
+            },
+            GCBiasSummary: {
+                title: 'GC Bias',
+                prevCommandCheck: categories[2][1][1][1],
+                commandToRun: '/gc-bias-data',
+                formDataArray: [],
+                runningStatus: [2, 2],
+                doneStatus: [2, 1]
+            },
+            alignmentSummary: {
+                title: 'Alignment',
+                prevCommandCheck: categories[2][1][0][1],
+                commandToRun: '/alignment-data',
+                formDataArray: [],
+                runningStatus: [2, 1],
+                doneStatus: [2, 0]
+            },
+            index: {
+                title: 'Index',
+                prevCommandCheck: categories[0][1][5][1] && categories[0][1][5][2][0][3],
+                commandToRun: '/index-bam',
+                formDataArray: [],
+                runningStatus: [2, 0],
+                doneStatus: [0, 5]
+            },
+            sort: {
+                title: 'Sort',
+                prevCommandCheck: categories[0][1][5][1] && categories[0][1][5][2][1][3],
+                commandToRun: '/sort-bam',
+                formDataArray: [],
+                runningStatus: [2, 0],
+                doneStatus: [0, 5]
+            },
+            trimming: {
+                title: 'Trimming',
+                prevCommandCheck: categories[0][1][1][1],
+                commandToRun: '/trimming',
+                formDataArray: [],
+                runningStatus: [0, 2],
+                doneStatus: [0, 1]
+            },
+            alignment: {
+                title: 'Alignment',
+                prevCommandCheck: categories[0][1][2][1],
+                commandToRun: '/alignment',
+                formDataArray: [],
+                runningStatus: [0, 4],
+                doneStatus: [0, 2]
+            },
+            convertToBam: {
+                title: 'Convert to BAM File',
+                prevCommandCheck: categories[0][1][4][1],
+                commandToRun: '/convert-to-bam',
+                formDataArray: [],
+                runningStatus: [0, 5],
+                doneStatus: [0, 4]
+            }
+
         };
 
         function runCommands() {
