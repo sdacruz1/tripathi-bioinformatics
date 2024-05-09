@@ -279,35 +279,7 @@
             }
         };
 
-        // Make Request
-        const MakeRequest = (title, prevCommandCheck, commandToRun, formDataArray, runningStatus, doneStatus) => {
-            const formData = new FormData();
-            formDataArray.forEach(element => {
-                formData.append(element[0], element[1]);
-            });
-
-            if (prevCommandCheck) {
-            fetch(commandToRun, {
-                method: 'POST',
-                body: formData,
-            })
-                .then(response => response.json()) // Assume the server sends JSON data
-                .then(data => {
-                    // Handle Response
-                    console.log(title + ' response:', data);
-                    setStatus(doneStatus[0], doneStatus[1], 'done');
-                    if (runningStatus[0] != -1) {
-                        setStatus(runningStatus[0], runningStatus[1], 'running');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error with ' + title + ' :', error);
-                });
-            } else {
-                // Return a resolved promise if this command is not needed
-                return Promise.resolve();
-            }
-        };
+        
 
         // here are the commands, but honestly it would make a lot more sense to just have each thing
         // announce when it's running and when it's done. so that's an ASAP change
@@ -380,32 +352,40 @@
 
         };
 
+        // Make Request
+        const MakeRequest = (title, prevCommandCheck, commandToRun, formDataArray, runningStatus, doneStatus) => {
+            const formData = new FormData();
+            formDataArray.forEach(element => {
+                formData.append(element[0], element[1]);
+            });
+
+            if (prevCommandCheck) {
+            fetch(commandToRun, {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json()) // Assume the server sends JSON data
+                .then(data => {
+                    // Handle Response
+                    console.log(title + ' response:', data);
+                    setStatus(doneStatus[0], doneStatus[1], 'done');
+                    if (runningStatus[0] != -1) {
+                        setStatus(runningStatus[0], runningStatus[1], 'running');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error with ' + title + ' :', error);
+                });
+            } else {
+                // Return a resolved promise if this command is not needed
+                return Promise.resolve();
+            }
+        };
+
         function runCommands() {
             // Chain the requests
-
-            setStatus(0, 0, 'done');
-
-            trimmingRequest()
-                .then(() => alignmentRequest())
-                .then(() => {
-                    setStatus(0, 3, 'done');
-                    return convertToBamRequest();
-                })
-                .then(() => indexBamRequest())
+            indexBamRequest()
                 .then(() => sortBamRequest())
-                .then(() => {
-                    setStatus(1, 0, 'done');
-                    setStatus(1, 1, 'done');
-                    return alignmentDataRequest();
-                })
-                .then(() => GCBiasDataRequest())
-                .then(() => insertSizeDataRequest())
-                .then(() => {
-                    // All requests have been completed
-                    console.log('All requests completed');
-                    continueButton = document.getElementById('running_continue_button');
-                    continueButton.disabled = false;
-                }); 
         }
 
         function setStatus(i, j, status) {

@@ -214,7 +214,7 @@ router.post('/store-files', upload.array('files'), (req, res) => {
 
 // Run BCL2FastQ
 // Expects the contents of a BCL File
-router.post('/run-bcl2fastq' , upload.array('files'), (req, res) => {
+router.post('/bcl2fastq' , upload.array('files'), (req, res) => {
 
   // =============== Handle the BCL File Folder ===============
   const uploadedFiles = req.files;
@@ -274,7 +274,7 @@ router.post('/run-bcl2fastq' , upload.array('files'), (req, res) => {
 
 // Run FastQC
 // Expects a single FastQ File
-router.post('/run-fastqc', upload.single('file'), (req, res) => {
+router.post('/fastqc', upload.single('file'), (req, res) => {
   const uploadedFile = req.file;
 
   // Check if a file was uploaded
@@ -536,7 +536,7 @@ router.post('/alignment', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
+router.post('/sam-to-bam', upload.single('file'), (req, res) => {
   // Variables
   let name_of_output_file_bam = path.join(__dirname, '..', 'output', 'ConvertedToBAM.bam');
 
@@ -593,7 +593,6 @@ router.post('/convert-to-bam-file', upload.single('file'), (req, res) => {
 router.post('/sort-bam-file', upload.single('file'), (req, res) => {
   // Variables
   let outputFile = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
-  console.log(outputFile);
 
   // Main File Check
   const uploadedFile = req.file;
@@ -706,10 +705,10 @@ router.post('/index-bam-file', upload.single('file'), (req, res) => {
 
 router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => {
   // Specific Variables
-  let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
-  let editMode = 'overwrite_all';
-  // let editMode = 'overwrite_all'; // overwrite_all or orphan_only depending on user selected mode
-  // let newReadGroupLine = req.line; // This is the string that will be replaced/added to the file
+  // let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
+  // let editMode = 'overwrite_all';
+  let editMode = req.body.editMode; // overwrite_all or orphan_only depending on user selected mode
+  let newReadGroupLine = req.body.newReadGroupLine; // This is the string that will be replaced/added to the file
   let outputFile = path.join(__dirname, '..', 'output', 'RG_bam.bam');
 
   // Main File Check
@@ -821,7 +820,7 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
   // Variables
   let chosenRef = '';
   chosenRef = req.body.ref;
-  let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef, chosenRef + '.fna');
+  let path_to_reference_fastA = path.join(__dirname, '..', 'ref_genomes', chosenRef, chosenRef + '.fna');
 
   let output_file_name_txt = path.join(__dirname, '..', 'output', 'AlignmentSummary.txt');
 
@@ -1011,7 +1010,7 @@ router.post('/insert-size-data', upload.single('file'), (req, res) => {
 });
 
 router.post('/create-seq-dict', (req, res) => {
-
+  // Variables
   let chosenRef = '';
   chosenRef = req.body.ref;
   let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
@@ -1167,7 +1166,7 @@ router.post('/seq-depth', upload.single('file'), (req, res) => {
 
 router.post('/seq-coverage', upload.single('file'), (req, res) => {
   let output_file_name = path.join(__dirname, '..', 'output', 'Seq_Coverage.txt');
-  let isVisual = req.visual ? '-m' : '';
+  let isVisual = req.body.visual ? '-m' : '';
 
   // Main File Check
   const uploadedFile = req.file;
@@ -1222,12 +1221,12 @@ router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
   let output_bam_file_name = path.join(__dirname, '..', 'output', 'MarkedDuplicatesBAM.bam');
   let output_metrics_file_name = path.join(__dirname, '..', 'output', 'DuplicateMetrics.txt');
   let removeDupes = '';
-  if (req.remove === 'yes') {
+  if (req.body.remove === 'yes') {
     removeDupes = '--REMOVE_DUPLICATES';
-  } else if (req.remove === 'select') {
+  } else if (req.body.remove === 'select') {
     removeDupes = '--REMOVE_SEQUENCING_DUPLICATES';
   }
-  let removeDupHelper = (str === '') ? '' : 'true';
+  let removeDupHelper = (removeDupes === '') ? '' : 'true';
 
   // Main File Check
   const uploadedFile = req.file;
