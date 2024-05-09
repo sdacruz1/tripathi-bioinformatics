@@ -94,7 +94,7 @@ let inputType = "";
 
 // Stored Outputs
 let infoSteps;          // An array that determines which file processing steps will be available in the timeline
-let uploadedFilePath;   // The path to the original file that was uploaded or the directory, if it was a BCL folder
+let uploadedFilePath = "heya";   // The path to the original file that was uploaded or the directory, if it was a BCL folder
 let uploadedFileType;   // A string representing the original uploaded file type
 let fastQConversion;    // The path to the fastQ file result of any conversions (BCL, FastA, Fast5)
 let fastQCResults;      // The path to the directory containing the results of running FastQC on the uploaded file
@@ -136,7 +136,7 @@ router.post('/dna-goalposts', function (req, res, next) {
   // Store the uploaded file and any conversions
   inputType = req.body.inputType;
   infoSteps = JSON.parse(req.body.infoSteps);
-  uploadedFilePath = req.body.uploadedFilePath;
+  // uploadedFilePath = req.body.uploadedFilePath;
   uploadedFileType = req.body.uploadedFileType;
   fastQConversion = req.body.fastQConversion;
   fastQCResults = req.body.fastQCResults;
@@ -155,7 +155,13 @@ router.post('/dna-pipeline', function (req, res, next) {
 router.post('/running', function (req, res, next) {
   const categories = JSON.parse(decodeURIComponent(req.body.categories || '[]'));
 
-  res.render('running', { toolbar_index: 5, categories });
+  res.render('running', { toolbar_index: 5, categories, uploadedFilePath });
+});
+
+/* Running Page */
+router.get('/running', function (req, res, next) {
+  // Render the 'output' view
+  res.render('running', { categories, uploadedFilePath, toolbar_index: 5 });
 });
 
 /* Output Page */
@@ -192,12 +198,12 @@ router.post('/store-files', upload.array('files'), (req, res) => {
 
   // If it's just one file, send the new path to that
   if (uploadedFiles.length === 1) {
-    const singleFilePath = path.join('./uploads/', uploadedFiles[0].filename);
-    return res.status(200).send({ storedPath: singleFilePath });
+    uploadedFilePath = path.join(__dirname, '..', 'uploads', uploadedFiles[0].filename);
+    return res.status(200).send({ storedPath: uploadedFilePath });
   }
 
   // Create an empty directory to hold them in
-  const BCLdirectory = './uploads/BCLFiles-' + Date.now();
+  const BCLdirectory = '/uploads/BCLFiles-' + Date.now();
   if (!fs.existsSync(BCLdirectory)) {
     fs.mkdirSync(BCLdirectory);
   }
@@ -208,8 +214,37 @@ router.post('/store-files', upload.array('files'), (req, res) => {
     fs.renameSync(file.path, destinationPath);
   });
 
+  uploadedFilePath = BCLdirectory;
   // Send the path to the directory
-  return res.status(200).send({ storedPath: BCLdirectory });
+  return res.status(200).send({ storedPath: uploadedFilePath });
+});
+
+// Route to delete all files in the 'uploads' folder
+router.get('/cleanup', (req, res) => {
+  const uploadsPath = 'uploads';
+
+  // Delete all files in the 'uploads' folder
+  fs.readdir(uploadsPath, (err, files) => {
+    if (err) {
+      console.error(`Error reading 'uploads' folder: ${err.message}`);
+      res.status(500).send('Error cleaning up files');
+      return;
+    }
+
+    files.forEach((file) => {
+      const filePath = `${uploadsPath}/${file}`;
+
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(`Error deleting file ${filePath}: ${err.message}`);
+        } else {
+          console.log(`File deleted: ${filePath}`);
+        }
+      });
+    });
+
+    res.send('All files in the "uploads" folder deleted');
+  });
 });
 
 // Run BCL2FastQ
@@ -274,7 +309,7 @@ router.post('/bcl2fastq' , upload.array('files'), (req, res) => {
 
 // Run FastQC
 // Expects a single FastQ File
-router.post('/fastqc', upload.single('file'), (req, res) => {
+router.post('/fastqc', (req, res) => {
   const uploadedFile = req.file;
 
   // Check if a file was uploaded
@@ -312,38 +347,9 @@ router.post('/fastqc', upload.single('file'), (req, res) => {
 
 });
 
-// Route to delete all files in the 'uploads' folder
-router.get('/cleanup', (req, res) => {
-  const uploadsPath = 'uploads';
-
-  // Delete all files in the 'uploads' folder
-  fs.readdir(uploadsPath, (err, files) => {
-    if (err) {
-      console.error(`Error reading 'uploads' folder: ${err.message}`);
-      res.status(500).send('Error cleaning up files');
-      return;
-    }
-
-    files.forEach((file) => {
-      const filePath = `${uploadsPath}/${file}`;
-
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.error(`Error deleting file ${filePath}: ${err.message}`);
-        } else {
-          console.log(`File deleted: ${filePath}`);
-        }
-      });
-    });
-
-    res.send('All files in the "uploads" folder deleted');
-  });
-});
-
-
 // ======= COMMANDS ======= //
 
-router.post('/trimming', upload.single('file'), (req, res) => {
+router.post('/trimming', (req, res) => {
 
   // Variables
   let path_to_Fastq_Read1 = '';
@@ -472,7 +478,7 @@ router.post('/trimming', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/alignment', upload.single('file'), (req, res) => {
+router.post('/alignment', (req, res) => {
 
   // Variables
   let reference_file_name = '';
@@ -536,18 +542,17 @@ router.post('/alignment', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/sam-to-bam', upload.single('file'), (req, res) => {
+router.post('/sam-to-bam', (req, res) => {
   // Variables
   let name_of_output_file_bam = path.join(__dirname, '..', 'output', 'ConvertedToBAM.bam');
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'AlignedSAM.sam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -590,18 +595,18 @@ router.post('/sam-to-bam', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/sort-bam-file', upload.single('file'), (req, res) => {
+router.post('/sort-bam-file', (req, res) => {
   // Variables
   let outputFile = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'ConvertedToBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
+    console.log(uploadedFilePath);
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -628,32 +633,31 @@ router.post('/sort-bam-file', upload.single('file'), (req, res) => {
 
   runSortBam.on('exit', (code) => {
     console.log(`runSortBam process exited with code ${code}`);
-  });
 
-  // Make a downloadable_content entry for it
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Sorted BAM',
-    content: 'SortedBAM.bam'
-  });
+    // Make a downloadable_content entry for it
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Sorted BAM',
+      content: 'SortedBAM.bam'
+    });
 
-  // Return the results as a JSON
-  // Need to find and return the path of the output: Aligned SAM file in same directory
-  res.json({ });
+    // Return the results as a JSON
+    // Need to find and return the path of the output: Aligned SAM file in same directory
+    res.json({ });
+  });
 
 });
 
-router.post('/index-bam-file', upload.single('file'), (req, res) => {
+router.post('/index-bam-file', (req, res) => {
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -680,30 +684,32 @@ router.post('/index-bam-file', upload.single('file'), (req, res) => {
 
   runIndexBam.on('exit', (code) => {
     console.log(`runIndexBam process exited with code ${code}`);
+
+    let indexPath = '';
+    // Check if it made a .bai or .csi index file
+    if (fs.existsSync(path.join(__dirname, '..', 'output', 'SortedBAM.bam.bai'))) {
+      indexPath = 'SortedBAM.bam.bai';
+    } else {
+      indexPath = 'SortedBAM.bam.csi';
+    }
+
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'BAM Index',
+      content: indexPath,
+    });
+
+    // Return the results as a JSON
+    res.json({ });
   });
 
-  let indexPath = '';
-  // Check if it made a .bai or .csi index file
-  if (fs.existsSync(path.join(__dirname, '..', 'output', 'SortedBAM.bam.bai'))) {
-    indexPath = 'SortedBAM.bam.bai';
-  } else {
-    indexPath = 'SortedBAM.bam.csi';
-  }
-
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'BAM Index',
-    content: indexPath,
-  });
-
-  // Return the results as a JSON
-  res.json({ });
+  
 
 });
 
-router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => {
+router.post('/add-or-replace-read-groups', (req, res) => {
   // Specific Variables
   // let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
   // let editMode = 'overwrite_all';
@@ -712,13 +718,12 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
   let outputFile = path.join(__dirname, '..', 'output', 'RG_bam.bam');
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -757,15 +762,14 @@ router.post('/add-or-replace-read-groups', upload.single('file'), (req, res) => 
 
 });
 
-router.post('/bam-index-stats', upload.single('file'), (req, res) => {
+router.post('/bam-index-stats', (req, res) => {
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -816,7 +820,7 @@ router.post('/bam-index-stats', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/alignment-summary', upload.single('file'), (req, res) => {
+router.post('/alignment-summary', (req, res) => {
   // Variables
   let chosenRef = '';
   chosenRef = req.body.ref;
@@ -825,13 +829,12 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
   let output_file_name_txt = path.join(__dirname, '..', 'output', 'AlignmentSummary.txt');
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -872,7 +875,7 @@ router.post('/alignment-summary', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
+router.post('/gc-bias-summary', (req, res) => {
   // Variables
   let output_GC_bias_metrics_txt = path.join(__dirname, '..', 'output', 'GC_BIAS_Metrics.txt');
   let GC_bias_outputchart_pdf = path.join(__dirname, '..', 'output', 'GC_BIAS_OutputChart.pdf');
@@ -883,13 +886,12 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
   let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -946,19 +948,18 @@ router.post('/gc-bias-summary', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/insert-size-data', upload.single('file'), (req, res) => {
+router.post('/insert-size-data', (req, res) => {
   // Variables
   let output_raw_data_txt = path.join(__dirname, '..', 'output', 'Insert_Size_RawData.txt');
   let output_histogram_name_pdf = path.join(__dirname, '..', 'output', 'Insert_Size_Histogram.pdf');
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -1053,15 +1054,14 @@ router.post('/create-seq-dict', (req, res) => {
 
 });
 
-router.post('/flag-stats', upload.single('file'), (req, res) => {
+router.post('/flag-stats', (req, res) => {
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -1112,17 +1112,16 @@ router.post('/flag-stats', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/seq-depth', upload.single('file'), (req, res) => {
+router.post('/seq-depth', (req, res) => {
   let output_file_name = path.join(__dirname, '..', 'output', 'Seq_Depth.txt');
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -1164,18 +1163,17 @@ router.post('/seq-depth', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/seq-coverage', upload.single('file'), (req, res) => {
+router.post('/seq-coverage', (req, res) => {
   let output_file_name = path.join(__dirname, '..', 'output', 'Seq_Coverage.txt');
   let isVisual = req.body.visual ? '-m' : '';
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -1217,7 +1215,7 @@ router.post('/seq-coverage', upload.single('file'), (req, res) => {
 
 });
 
-router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
+router.post('/mark-remove-duplicates', (req, res) => {
   let output_bam_file_name = path.join(__dirname, '..', 'output', 'MarkedDuplicatesBAM.bam');
   let output_metrics_file_name = path.join(__dirname, '..', 'output', 'DuplicateMetrics.txt');
   let removeDupes = '';
@@ -1229,13 +1227,12 @@ router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
   let removeDupHelper = (removeDupes === '') ? '' : 'true';
 
   // Main File Check
-  const uploadedFile = req.file;
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFile.path;
+    mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
-    if (!uploadedFile) {
+    if (!fs.existsSync(uploadedFilePath)) {
       res.status(400).send('No file uploaded');
       return;
     }
@@ -1284,90 +1281,6 @@ router.post('/mark-remove-duplicates', upload.single('file'), (req, res) => {
   res.json({ });
 
 });
-
-//#region  ... Temporary Dummy Requests ...
-
-// router.post('/trimming', (req, res) => {
-//   console.log("Began 'Trimming'...");
-//   console.log("Completed 'Trimming'...");
-//   setTimeout(() => {
-//     res.json({ message: 'Trimming completed successfully.' });
-//   }, 1000);
-// });
-
-// router.post('/alignment', (req, res) => {
-//   console.log("Began 'Alignment'...");
-   
-//   console.log("Running 'Alignment'...");
-   
-//   console.log("Completed 'Alignment'...");
-//   setTimeout(() => {
-//     res.json({ message: 'Alignment completed successfully.' });
-//   }, 2000);
-// });
-
-// router.post('/convert-to-bam', (req, res) => {
-//   console.log("Began 'Convert to BAM File'...");
-  
-//   console.log("Running 'Convert to BAM File'...");
-   
-//   console.log("Completed 'Convert to BAM File'...");
-
-//     setTimeout(() => {
-//       res.json({ message: 'Convert to BAM File process completed successfully.' });
-//     }, 3000);
-  
-// });
-
-// router.post('/sort-bam', (req, res) => {
-//   console.log("Began 'Sort BAM File'...");
-
-//   console.log("Running 'Sort BAM File'...");
-   
-//   console.log("Completed 'Sort BAM File'...");
-//   setTimeout(() => {
-//     res.json({ message: 'Sort BAM File process completed successfully.' });
-//   }, 4000);
-// });
-
-// router.post('/index-bam', (req, res) => {
-//   console.log("Began 'Index BAM File'...");
-   
-//   console.log("Running 'Index BAM File'...");
-   
-//   console.log("Completed 'Index BAM File'...");
-//   res.json({ message: 'Index BAM File process completed successfully.' });
-// });
-
-// router.post('/alignment-data', (req, res) => {
-//   console.log("Began 'Alignment Data'...");
-   
-//   console.log("Running 'Alignment Data'...");
-   
-//   console.log("Completed 'Alignment Data'...");
-//   res.json({ message: 'Alignment Data process completed successfully.' });
-// });
-
-// router.post('/gc-bias-data', (req, res) => {
-//   console.log("Began 'GC Bias Data'...");
-   
-//   console.log("Running 'GC Bias Data'...");
-   
-//   console.log("Completed 'GC Bias Data'...");
-//   res.json({ message: 'GC Bias Data process completed successfully.' });
-// });
-
-// router.post('/insert-size-data', (req, res) => {
-//   console.log("Began 'Insert Size Data'...");
-   
-//   console.log("Running 'Insert Size Data'...");
-   
-//   console.log("Completed 'Insert Size Data'...");
-//   res.json({ message: 'Insert Size Data process completed successfully.' });
-// });
-
- //#endregion TEMPORARY ^^^^
-
 //#endregion
 
 module.exports = router;

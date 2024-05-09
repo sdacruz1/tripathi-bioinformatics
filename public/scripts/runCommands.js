@@ -1,5 +1,28 @@
 // ==== Helper Functions ==== //
 
+function setStatus(i, j, status) {
+    const imageElement = document.getElementById(`status_img_${i}_${j}`);
+    const textElement = document.getElementById(`status_text_${i}_${j}`);
+
+    if (imageElement === null || textElement === null) {
+        return;
+    }
+
+    switch (status) {
+        case 'running':
+            imageElement.src = "../uploads/images/Hourglass.png";
+            textElement.textContent = 'Running';
+            break;
+        case 'done':
+            imageElement.src = '../uploads/images/Checked_Circle.png';
+            textElement.textContent = 'Done';
+            break;
+        default:
+            // Handle unknown status
+            break;
+    }
+}
+
 // Takes a list of indexes and checks if any of them correspond to our selected commands to be run
 function containedInCommandList(commandIndexes) {
     commandIndexes.foreach(function(index) {
@@ -24,34 +47,41 @@ function runCommand(commandIndex, command) {
 }
 
 // Make Request
-const MakeRequest = (command, file = null) => {
-    const formData = new FormData();
-    command.formDataArray.forEach(element => {
-        formData.append(element[0], element[1]);
-    });
-    if (file != null) {
-        formData.append(file, 'file');
-    }
-
-    setStatus(command.commandIndex[0], command.commandIndex[1], 'running');
-
-    fetch(command.commandToRun, {
-        method: 'POST',
-        body: formData,
-    })
-        .then(response => response.json()) // Assume the server sends JSON data
-        .then(data => {
-            // Handle Response
-            console.log(title + ' response:', data);
-            setStatus(command.commandIndex[0], command.commandIndex[1], 'done');
-        })
-        .catch(error => {
-            console.error('Error with ' + command.title + ' :', error);
+const MakeRequest = (command) => {
+    return new Promise((resolve) => {
+        const formData = new FormData();
+        command.formDataArray.forEach(element => {
+            formData.append(element[0], element[1]);
         });
+
+        setStatus(command.commandIndex[0], command.commandIndex[1], 'running');
+
+        fetch(command.commandToRun, {
+            method: 'POST',
+            body: formData,
+        })
+            .then(response => response.json()) // Assume the server sends JSON data
+            .then(data => {
+                // Handle Response
+                console.log(command.title + ' response:', data);
+                setStatus(command.commandIndex[0], command.commandIndex[1], 'done');
+                resolve(10);
+            })
+            .catch(error => {
+                console.error('Error with ' + command.title + ' :', error);
+            });``
+    });
 };
 
-// ==== Variables and Data Structures ==== //
+// Call RunCommands the first time
+document.addEventListener('DOMContentLoaded', function() {
+    // The DOM content has been fully loaded, including stylesheets, images, etc.
+    console.log('View content has finished rendering');
+    // Call your function here
+    runCommands();
+});
 
+// ==== Variables and Data Structures ==== //
 const Commands = {
     Store_BCL: { // CBTT
         title: 'Store_BCL',
@@ -103,22 +133,22 @@ const Commands = {
     },
     Sort_BAM_File: {
         title: 'Sort',
-        commandToRun: '/sort-bam',
-        formDataArray: [
-            ['newReadGroupLine', '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina'],
-            ['editMode', 'overwrite_all'] ],
+        commandToRun: '/sort-bam-file',
+        formDataArray: [],
         commandIndex: [0, 5]
     },
     Index_BAM_File: {
         title: 'Index',
-        commandToRun: '/index-bam',
+        commandToRun: '/index-bam-file',
         formDataArray: [],
         commandIndex: [0, 5]
     },
     Add_Or_Replace_Read_Groups: {
         title: 'Add_Or_Replace_Read_Groups',
         commandToRun: '/add-or-replace-read-groups',
-        formDataArray: [],
+        formDataArray: [
+            ['@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina', 'newReadGroupLine'],
+            ['overwrite_all', 'editMode'] ],
         commandIndex: [2, 1]
     },
     Bam_Index_Stats: {
@@ -131,7 +161,7 @@ const Commands = {
         title: 'Alignment',
         commandToRun: '/alignment-data',
         formDataArray: [
-            ['ref', 'Ecoli']
+            ['Ecoli', 'ref']
         ],
         commandIndex: [2, 0]
     },
@@ -139,7 +169,7 @@ const Commands = {
         title: 'GC Bias',
         commandToRun: '/gc-bias-data',
         formDataArray: [
-            ['ref', 'Ecoli']
+            ['Ecoli', 'ref']
         ],
         commandIndex: [2, 1]
     },
@@ -153,7 +183,7 @@ const Commands = {
         title: 'Create_Sequence_Dictionary',
         commandToRun: '/create-sequence-dictionary',
         formDataArray: [
-            ['ref', 'Ecoli']
+            ['Ecoli', 'ref']
         ],
         commandIndex: [2, 1]
     },
@@ -173,7 +203,7 @@ const Commands = {
         title: 'Sequence_Coverage',
         commandToRun: '/sequence-coverage',
         formDataArray: [
-            ['visual', '']
+            ['', 'visual']
         ],
         commandIndex: [2, 1]
     },
@@ -181,12 +211,14 @@ const Commands = {
         title: 'Mark_Or_Remove_Duplicates',
         commandToRun: '/mark-or-remove-duplicates',
         formDataArray: [
-            ['remove', 'yes']
+            ['yes', 'remove']
         ],
         commandIndex: [2, 1]
     },
 };
 
+const categories = JSON.parse('<%- JSON.stringify(categories) %>');
+// const originalInput = JSON.parse('<%- JSON.stringify(uploadedFilePath) %>');
 
 // optional variables that will hold filepaths.
 let FastQFile = '';
@@ -202,51 +234,58 @@ let reqiresSortedBAM = false; // CBTT to put in the actual command indexes
 let reqiresIndexedBAM = false; // CBTT to put in the actual command indexes
 
 // otherwise necessary variables
-let originalInput = ''; // This will be the file(s) I was given by the user on the upload page
-let firstCommandIndex = 0; // This will indicate the first 'true', AKA activated step the user selected.
+let firstCommandIndex = 7; // This will indicate the first 'true', AKA activated step the user selected.
 
+async function runCommands() {
+    try {
+        const x = await MakeRequest(Commands.Sort_BAM_File);
+        const y = await MakeRequest(Commands.Index_BAM_File);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+}
+
+/*
 function runCommands() {
     switch(firstCommandIndex) {
         case 0: // BCL
-            let BCL_folder = store_BCL(originalInput);
-            FastQFile = BCL2FastQ(BCL_folder);
+            FastQFile = BCL2FastQ(originalInput);
             // note the lack of a 'break;' here. This is intentional. I want it to keep going through commands sequentially.
         case 1: // FastA
             if (firstCommandIndex != 0) { // don't want this step for BCL case
-                Fast5File = MakeRequest(Commands.FastA_To_Fast5, originalInput);
+                MakeRequest(Commands.FastA_To_Fast5);
             }
         case 2: // Fast5
             if (firstCommandIndex != 0) {// don't want this step for BCL case
-                Fast5File = (Fast5File == '') ? originalInput : Fast5File;
-                FastQFile = MakeRequest(Commands.Fast5_To_FastQ, originalInput);
+                MakeRequest(Commands.Fast5_To_FastQ);
             }
         case 3: // FastQ
             FastQFile = (FastQFile == '') ? originalInput : FastQFile;
-            fastQC(FastQFile); // COMMAND
+            fastQC(); // COMMAND
         case 4: // Trimming
             // This is the first optional command. 
             if (commandList[4] || requiresTrimming) { // run only if command is selected OR if it will be needed later
-                FastQFile = MakeRequest(Commands.Trimming, FastQFile); // COMMAND, CBTT, what are ALL the outputs? if they do both trimming and alignment, it must output some sort of fastQ file, right?
+                MakeRequest(Commands.Trimming); // COMMAND, CBTT, what are ALL the outputs? if they do both trimming and alignment, it must output some sort of fastQ file, right?
             }
         case 5: // Alignment
             if (commandList[5] || requiresAlignment) { // run only if command is selected
-                SAMFile = MakeRequest(Commands.Alignment, FastQFile); // CBTT, needs alignment type and info and stuff
+                MakeRequest(Commands.Alignment); // CBTT, needs alignment type and info and stuff
             }
         case 6: // BAM
             // either they are converting to BAM, or they gave me a BAM file
             // CBTT: if they don't want this step at all, what then?
-            BAMFile = (commandList[7] || reqiresBAM) ? MakeRequest(Commands.Sam_To_Bam, SAMFile) : originalInput; // COMMAND, CBTT
+            if (commandList[7] || reqiresBAM) { MakeRequest(Commands.Sam_To_Bam);} // COMMAND, CBTT
 
         // That covers all of the steps to do with conversion.
         
         default:
             // Sort BAM
             if (commandList[7] || reqiresSortedBAM) {
-                BAMFile = MakeRequest(Commands.Sort_BAM_File, BAMFile);
+                MakeRequest(Commands.Sort_BAM_File);
             }
             // Index BAM
             if (commandList[8] || reqiresIndexedBAM) {
-                MakeRequest(Commands.Index_BAM_File, BAMFile);
+                MakeRequest(Commands.Index_BAM_File);
             }
             // Add or Replace Read Groups
             if (runCommand(9, Commands.Add_Or_Replace_Read_Groups)) { break; }
@@ -270,3 +309,4 @@ function runCommands() {
             if (runCommand(18, Commands.Mark_Or_Remove_Duplicates)) { break; }
     }
 }
+*/

@@ -6,71 +6,7 @@
     <link rel="stylesheet" href="https://use.typekit.net/azy2ine.css">
     <link rel='stylesheet' href='/stylesheets/pipeline.css' />
     <link rel='stylesheet' href='/stylesheets/style.css' />
-    <style>
-        /* Hide the default checkbox */
-        input[type="checkbox"] {
-            display: none;
-        }
-
-        /* Style the custom checkbox container */
-        .checkbox-container {
-            display: inline-block;
-            position: relative;
-            padding-left: 30px;
-            margin-bottom: 15px;
-            cursor: pointer;
-        }
-
-        /* Style the custom checkbox itself */
-        .checkbox-container::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 12px;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #7F03B0;
-            border-radius: 5px;
-            background-color: #fff;
-        }
-
-        /* Style the checkmark when the checkbox is checked */
-        .checkbox-container input:checked + .checkmark::after {
-            content: '\2713'; /* Unicode checkmark character */
-            font-size: 16px;
-            color: #7F03B0;
-            position: absolute;
-            left: 6px;
-            top: 14px;
-        }
-
-        .goalpost_content {
-            padding: 4% 8%;
-            max-width: 75%;
-            text-align: left;
-        }
-
-        .collapsible {
-            background-color: white;
-        }
-
-        .content {
-            background-color: white;
-        }
-
-        .category_labels {
-            margin-left: 2rem;
-        }
-        
-        .goals_continue_button {
-            border: none;
-            border-radius: 10px;
-            padding: 10px;
-            background-color: #FFEB0F;
-            cursor: pointer;
-            margin-top: 2rem;
-        }
-    </style>
+    <link rel='stylesheet' href='/stylesheets/dna-goalposts.css' />
 </head>
 
 <body>

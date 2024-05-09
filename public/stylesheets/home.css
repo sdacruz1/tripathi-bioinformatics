@@ -1,0 +1,36 @@
+.home_content {
+    padding: 4% 8%;
+    max-width: 75%;
+    text-align: left;
+}
+
+.file_info_option_button {
+    width: 25rem;
+    height: 10rem;
+    border: none;
+    border-radius: 10px;
+    background-color: #FFEB0F;
+    cursor: pointer;
+
+    font-family: "asap", sans-serif;
+    font-weight: 300;
+    font-style: normal;
+}
+
+.file_info_option_button:hover {
+    transition: 0.3s;
+    background-color: rgb(179, 137, 32);
+}
+
+.file_info_option_info {
+    width: 24rem;
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.file_info_form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
