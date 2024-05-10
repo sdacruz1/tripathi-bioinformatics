@@ -100,18 +100,18 @@ let fastQConversion;    // The path to the fastQ file result of any conversions 
 let fastQCResults;      // The path to the directory containing the results of running FastQC on the uploaded file
 let BAMFile;            // The path to the BAM file result of any conversions
 let downloadable_content = [  // An object array holding the result of the steps in the actual timeline
-  {
-      enabled: true,
-      has_visual_component: false,
-      label: "Test Object BAM",
-      content: "../output/SortedBAM.bam"
-  },
-  {
-      enabled: false,
-      has_visual_component: true,
-      label: "Test Object 2",
-      content: "../images/Checked_Circle.png"
-  },
+  // {
+  //     enabled: true,
+  //     has_visual_component: false,
+  //     label: "Test Object BAM",
+  //     content: "../output/SortedBAM.bam"
+  // },
+  // {
+  //     enabled: false,
+  //     has_visual_component: true,
+  //     label: "Test Object 2",
+  //     content: "../images/Checked_Circle.png"
+  // },
 ];
 
 //#endregion
@@ -295,6 +295,7 @@ router.post('/bcl2fastq' , upload.array('files'), (req, res) => {
 
   runBCL2FastQ.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runBCL2FastQ.on('exit', (code) => {
@@ -333,6 +334,7 @@ router.post('/fastqc', (req, res) => {
 
   runFastQC.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runFastQC.on('exit', (code) => {
@@ -423,58 +425,61 @@ router.post('/trimming', (req, res) => {
 
   runTrim.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runTrim.on('exit', (code) => {
     console.log(`runTrim process exited with code ${code}`);
+
+    // Prepare the data you want to send back as JSON
+    const responseData = {
+      status: 'success',
+      message: 'Trimming completed successfully',
+      output: outputData, // Include any relevant output data
+    };
+
+    // Make a downloadable_content entry for each file that exists
+    if (fs.existsSync(output_paired_Read1)) {
+      downloadable_content.push({
+        enabled: false,
+        has_visual_component: false,
+        label: 'Trimming Paired Read 1',
+        content: 'output_paired_Read1.fastq.gz',
+      });
+    }
+
+    if (fs.existsSync(output_unpaired_Read1)) {
+      downloadable_content.push({
+        enabled: false,
+        has_visual_component: false,
+        label: 'Trimming Unpaired Read 1',
+        content: 'output_unpaired_Read1.fastq.gz',
+      });
+    }
+
+    if (fs.existsSync(output_paired_Read2)) {
+      downloadable_content.push({
+        enabled: false,
+        has_visual_component: false,
+        label: 'Trimming Paired Read 2',
+        content: 'output_paired_Read2.fastq.gz',
+      });
+    }
+
+    if (fs.existsSync(output_unpaired_Read2)) {
+      downloadable_content.push({
+        enabled: false,
+        has_visual_component: false,
+        label: 'Trimming Unpaired Read 2',
+        content: 'output_unpaired_Read2.fastq.gz',
+      });
+    }
+
+    // Send the JSON response
+    res.json(responseData);
   });
 
-  // Prepare the data you want to send back as JSON
-  const responseData = {
-    status: 'success',
-    message: 'Trimming completed successfully',
-    output: outputData, // Include any relevant output data
-  };
-
-  // Make a downloadable_content entry for each file that exists
-  if (fs.existsSync(output_paired_Read1)) {
-    downloadable_content.push({
-      enabled: false,
-      has_visual_component: false,
-      label: 'Trimming Paired Read 1',
-      content: 'output_paired_Read1.fastq.gz',
-    });
-  }
-
-  if (fs.existsSync(output_unpaired_Read1)) {
-    downloadable_content.push({
-      enabled: false,
-      has_visual_component: false,
-      label: 'Trimming Unpaired Read 1',
-      content: 'output_unpaired_Read1.fastq.gz',
-    });
-  }
-
-  if (fs.existsSync(output_paired_Read2)) {
-    downloadable_content.push({
-      enabled: false,
-      has_visual_component: false,
-      label: 'Trimming Paired Read 2',
-      content: 'output_paired_Read2.fastq.gz',
-    });
-  }
-
-  if (fs.existsSync(output_unpaired_Read2)) {
-    downloadable_content.push({
-      enabled: false,
-      has_visual_component: false,
-      label: 'Trimming Unpaired Read 2',
-      content: 'output_unpaired_Read2.fastq.gz',
-    });
-  }
-
-  // Send the JSON response
-  res.json(responseData);
+  
 
 });
 
@@ -522,23 +527,25 @@ router.post('/alignment', (req, res) => {
 
   runAlignment.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runAlignment.on('exit', (code) => {
     console.log(`runAlignment process exited with code ${code}`);
+
+    // Make a downloadable_content entry for it
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Aligned SAM File: ' + req.type,
+      content: 'AlignedSAM.sam',
+    });
+  
+    // Return the results as a JSON
+    // Need to find and return the path of the output: Aligned SAM file in same directory
+    res.json();
   });
 
-  // Make a downloadable_content entry for it
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Aligned SAM File: ' + req.type,
-    content: 'AlignedSAM.sam',
-  });
-
-  // Return the results as a JSON
-  // Need to find and return the path of the output: Aligned SAM file in same directory
-  res.json({ });
 
 });
 
@@ -575,23 +582,24 @@ router.post('/sam-to-bam', (req, res) => {
 
   runConvertToBam.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runConvertToBam.on('exit', (code) => {
     console.log(`runConvertToBam process exited with code ${code}`);
-  });
 
-  // Make a downloadable_content entry for it
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Converted BAM File',
-    content: 'AlignedSAM.sam',
+    // Make a downloadable_content entry for it
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Converted BAM File',
+      content: 'AlignedSAM.sam',
+    });
+  
+    // Return the results as a JSON
+    // Need to find and return the path of the output: Aligned SAM file in same directory
+    res.json();
   });
-
-  // Return the results as a JSON
-  // Need to find and return the path of the output: Aligned SAM file in same directory
-  res.json({ });
 
 });
 
@@ -629,6 +637,7 @@ router.post('/sort-bam-file', (req, res) => {
 
   runSortBam.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runSortBam.on('exit', (code) => {
@@ -680,6 +689,7 @@ router.post('/index-bam-file', (req, res) => {
 
   runIndexBam.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runIndexBam.on('exit', (code) => {
@@ -705,16 +715,16 @@ router.post('/index-bam-file', (req, res) => {
     res.json({ });
   });
 
-  
-
 });
 
 router.post('/add-or-replace-read-groups', (req, res) => {
   // Specific Variables
-  // let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
-  // let editMode = 'overwrite_all';
-  let editMode = req.body.editMode; // overwrite_all or orphan_only depending on user selected mode
-  let newReadGroupLine = req.body.newReadGroupLine; // This is the string that will be replaced/added to the file
+  let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
+  let editMode = 'overwrite_all';
+
+  console.log(req.body.editMode);
+  // let editMode = req.body.editMode; // overwrite_all or orphan_only depending on user selected mode
+  // let newReadGroupLine = req.body.newReadGroupLine; // This is the string that will be replaced/added to the file
   let outputFile = path.join(__dirname, '..', 'output', 'RG_bam.bam');
 
   // Main File Check
@@ -732,6 +742,7 @@ router.post('/add-or-replace-read-groups', (req, res) => {
   // Run Add or Replace Read Groups
   const RGCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
   const RGArgs = ['addreplacerg', '-r', newReadGroupLine, '-m', editMode, '-u', '-o', outputFile, mainFilePath];
+  console.log(RGArgs);
 
   const runRG = spawn(RGCommand, RGArgs);
 
@@ -744,21 +755,22 @@ router.post('/add-or-replace-read-groups', (req, res) => {
 
   runRG.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runRG.on('exit', (code) => {
     console.log(`Add or Replace Read Groups process exited with code ${code}`);
-  });
 
-  // Make a downloadable_content entry for it
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Read Groups Added/Replaced BAM',
-    content: 'RG_bam.bam',
+    // Make a downloadable_content entry for it
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Read Groups Added/Replaced BAM',
+      content: 'RG_bam.bam',
+    });
+  
+    res.json({ });
   });
-
-  res.json({ });
 
 });
 
@@ -792,6 +804,7 @@ router.post('/bam-index-stats', (req, res) => {
 
   runBamIndexStats.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runBamIndexStats.on('exit', (code) => {
@@ -805,18 +818,18 @@ router.post('/bam-index-stats', (req, res) => {
       }
       console.log('stdout data written to BAM_Index_Stats.txt');
     });
-  });
 
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'BAM Index Stats',
-    content: 'BAM_Index_Stats.txt',
-  });
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'BAM Index Stats',
+      content: 'BAM_Index_Stats.txt',
+    });
 
-  // Return the results as a JSON
-  res.json({ });
+    // Return the results as a JSON
+    res.json({ });
+  });
 
 });
 
@@ -856,22 +869,23 @@ router.post('/alignment-summary', (req, res) => {
 
   runAlignmentData.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runAlignmentData.on('exit', (code) => {
     console.log(`runAlignmentData process exited with code ${code}`);
-  });
 
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Alignment Summary',
-    content: 'AlignmentSummary.txt',
-  });
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Alignment Summary',
+      content: 'AlignmentSummary.txt',
+    });
 
-  // Return the results as a JSON
-  res.json({ });
+    // Return the results as a JSON
+    res.json({ });
+  });
 
 });
 
@@ -914,37 +928,38 @@ router.post('/gc-bias-summary', (req, res) => {
 
   runGCBiasData.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runGCBiasData.on('exit', (code) => {
     console.log(`runGCBiasData process exited with code ${code}`);
+
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'GC Bias Metrics',
+      content: 'GC_BIAS_Metrics.txt'
+    });
+
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: true,
+      label: 'GC Bias Output Chart',
+      content: 'GC_BIAS_OutputChart.pdf',
+    });
+
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'GC Bias Summary Output',
+      content: 'GC_BIAS_SummaryOutput.txt',
+    });
+
+
+    // Return the results as a JSON
+    res.json({ });
   });
-
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'GC Bias Metrics',
-    content: 'GC_BIAS_Metrics.txt'
-  });
-
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: true,
-    label: 'GC Bias Output Chart',
-    content: 'GC_BIAS_OutputChart.pdf',
-  });
-
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'GC Bias Summary Output',
-    content: 'GC_BIAS_SummaryOutput.txt',
-  });
-
-
-  // Return the results as a JSON
-  res.json({ });
 
 });
 
@@ -983,30 +998,31 @@ router.post('/insert-size-data', (req, res) => {
 
   InsertSizeData.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   InsertSizeData.on('exit', (code) => {
     console.log(`InsertSizeData process exited with code ${code}`);
+
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Insert Size Raw Data',
+      content: 'Insert_Size_RawData.txt',
+    });
+  
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: true,
+      label: 'Insert Size Histogram',
+      content: 'Insert_Size_Histogram.pdf',
+    });
+  
+  
+    // Return the results as a JSON
+    res.json({ });
   });
-
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Insert Size Raw Data',
-    content: 'Insert_Size_RawData.txt',
-  });
-
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: true,
-    label: 'Insert Size Histogram',
-    content: 'Insert_Size_Histogram.pdf',
-  });
-
-
-  // Return the results as a JSON
-  res.json({ });
 
 });
 
@@ -1035,22 +1051,23 @@ router.post('/create-seq-dict', (req, res) => {
 
   runSeqDict.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runSeqDict.on('exit', (code) => {
     console.log(`SeqDict process exited with code ${code}`);
-  });
 
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Sequence Dictionary',
-    content: 'SeqDict.txt',
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Sequence Dictionary',
+      content: 'SeqDict.txt',
+    });
+  
+    // Return the results as a JSON
+    res.json({ });
   });
-
-  // Return the results as a JSON
-  res.json({ });
 
 });
 
@@ -1084,6 +1101,7 @@ router.post('/flag-stats', (req, res) => {
 
   runFlagStats.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runFlagStats.on('exit', (code) => {
@@ -1097,18 +1115,18 @@ router.post('/flag-stats', (req, res) => {
       }
       console.log('stdout data written to Flag_Stats.txt');
     });
-  });
 
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Flag Stats',
-    content: 'Flag_Stats.txt',
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Flag Stats',
+      content: 'Flag_Stats.txt',
+    });
+  
+    // Return the results as a JSON
+    res.json({ });
   });
-
-  // Return the results as a JSON
-  res.json({ });
 
 });
 
@@ -1144,22 +1162,23 @@ router.post('/seq-depth', (req, res) => {
 
   runSeqDepth.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runSeqDepth.on('exit', (code) => {
     console.log(`SeqDepth process exited with code ${code}`);
-  });
 
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Sequence Depth Data',
-    content: 'Seq_Depth.txt',
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Sequence Depth Data',
+      content: 'Seq_Depth.txt',
+    });
+  
+    // Return the results as a JSON
+    res.json({ });
   });
-
-  // Return the results as a JSON
-  res.json({ });
 
 });
 
@@ -1196,22 +1215,23 @@ router.post('/seq-coverage', (req, res) => {
 
   runSeqCov.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runSeqCov.on('exit', (code) => {
     console.log(`SeqCoverage process exited with code ${code}`);
-  });
 
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: req.visual,
-    label: req.visual ? 'Sequence Coverage Histogram' : 'Sequence Coverage Data',
-    content: 'Seq_Coverage.txt',
-  });
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: req.visual,
+      label: req.visual ? 'Sequence Coverage Histogram' : 'Sequence Coverage Data',
+      content: 'Seq_Coverage.txt',
+    });
 
-  // Return the results as a JSON
-  res.json({ });
+    // Return the results as a JSON
+    res.json({ });
+  });
 
 });
 
@@ -1256,29 +1276,30 @@ router.post('/mark-remove-duplicates', (req, res) => {
 
   runMarkRemDup.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    res.json();
   });
 
   runMarkRemDup.on('exit', (code) => {
     console.log(`Mark/Remove Duplicates process exited with code ${code}`);
-  });
 
-  // Make a downloadable_content entry for the results
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Marked Duplicates BAM',
-    content: 'MarkedDuplicatesBAM.bam',
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Marked Duplicates BAM',
+      content: 'MarkedDuplicatesBAM.bam',
+    });
+  
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'Duplicate Metrics',
+      content: 'DuplicateMetrics.txt',
+    });
+  
+    // Return the results as a JSON
+    res.json({ });
   });
-
-  downloadable_content.push({
-    enabled: false,
-    has_visual_component: false,
-    label: 'Duplicate Metrics',
-    content: 'DuplicateMetrics.txt',
-  });
-
-  // Return the results as a JSON
-  res.json({ });
 
 });
 //#endregion

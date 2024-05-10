@@ -10,11 +10,11 @@ function setStatus(i, j, status) {
 
     switch (status) {
         case 'running':
-            imageElement.src = "../uploads/images/Hourglass.png";
+            imageElement.src = "../images/Hourglass.png";
             textElement.textContent = 'Running';
             break;
         case 'done':
-            imageElement.src = '../uploads/images/Checked_Circle.png';
+            imageElement.src = '../images/Checked_Circle.png';
             textElement.textContent = 'Done';
             break;
         default:
@@ -49,10 +49,14 @@ function runCommand(commandIndex, command) {
 // Make Request
 const MakeRequest = (command) => {
     return new Promise((resolve) => {
-        const formData = new FormData();
+        let formData = new FormData();
         command.formDataArray.forEach(element => {
+            console.log(element);
             formData.append(element[0], element[1]);
         });
+        formData.append('editMode', 'hi');
+        console.log(command.formDataArray);
+        console.log(formData);
 
         setStatus(command.commandIndex[0], command.commandIndex[1], 'running');
 
@@ -69,7 +73,7 @@ const MakeRequest = (command) => {
             })
             .catch(error => {
                 console.error('Error with ' + command.title + ' :', error);
-            });``
+            });
     });
 };
 
@@ -147,15 +151,15 @@ const Commands = {
         title: 'Add_Or_Replace_Read_Groups',
         commandToRun: '/add-or-replace-read-groups',
         formDataArray: [
-            ['@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina', 'newReadGroupLine'],
-            ['overwrite_all', 'editMode'] ],
-        commandIndex: [2, 1]
+            ['newReadGroupLine', '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina'],
+            ['editMode', 'overwrite_all'] ],
+        commandIndex: [1, 0]
     },
     Bam_Index_Stats: {
-        title: 'Index Size',
-        commandToRun: '/insert-size-data',
+        title: 'Index Stats',
+        commandToRun: '/bam-index-stats',
         formDataArray: [],
-        commandIndex: [2, 2]
+        commandIndex: [1, 1]
     },
     Alignment_Summary: {
         title: 'Alignment',
@@ -238,8 +242,10 @@ let firstCommandIndex = 7; // This will indicate the first 'true', AKA activated
 
 async function runCommands() {
     try {
-        const x = await MakeRequest(Commands.Sort_BAM_File);
-        const y = await MakeRequest(Commands.Index_BAM_File);
+        await MakeRequest(Commands.Sort_BAM_File);
+        await MakeRequest(Commands.Index_BAM_File);
+        await MakeRequest(Commands.Add_Or_Replace_Read_Groups);
+        await MakeRequest(Commands.Bam_Index_Stats);
     } catch (error) {
         console.error('Error fetching data:', error);
     }
