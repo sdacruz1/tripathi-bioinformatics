@@ -3,7 +3,15 @@ const multer = require('multer');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const bodyParser = require('body-parser');
+const Docker = require('dockerode');
+
+const docker = new Docker();
 var router = express.Router();
+
+
+router.use(bodyParser.urlencoded({ extended: true }));
+router.use(bodyParser.json());
 
 // Use express.urlencoded middleware
 router.use(express.urlencoded({ extended: true }));
@@ -94,7 +102,7 @@ let inputType = "";
 
 // Stored Outputs
 let infoSteps;          // An array that determines which file processing steps will be available in the timeline
-let uploadedFilePath = "heya";   // The path to the original file that was uploaded or the directory, if it was a BCL folder
+let uploadedFilePath = "";   // The path to the original file that was uploaded or the directory, if it was a BCL folder
 let uploadedFileType;   // A string representing the original uploaded file type
 let fastQConversion;    // The path to the fastQ file result of any conversions (BCL, FastA, Fast5)
 let fastQCResults;      // The path to the directory containing the results of running FastQC on the uploaded file
@@ -310,7 +318,7 @@ router.post('/bcl2fastq' , upload.array('files'), (req, res) => {
 
 // Run FastQC
 // Expects a single FastQ File
-router.post('/fastqc', (req, res) => {
+router.post('/fastqc', upload.none(), (req, res) => {
   const uploadedFile = req.file;
 
   // Check if a file was uploaded
@@ -351,7 +359,7 @@ router.post('/fastqc', (req, res) => {
 
 // ======= COMMANDS ======= //
 
-router.post('/trimming', (req, res) => {
+router.post('/trimming', upload.none(), (req, res) => {
 
   // Variables
   let path_to_Fastq_Read1 = '';
@@ -483,7 +491,7 @@ router.post('/trimming', (req, res) => {
 
 });
 
-router.post('/alignment', (req, res) => {
+router.post('/alignment', upload.none(), (req, res) => {
 
   // Variables
   let reference_file_name = '';
@@ -549,7 +557,7 @@ router.post('/alignment', (req, res) => {
 
 });
 
-router.post('/sam-to-bam', (req, res) => {
+router.post('/sam-to-bam', upload.none(), (req, res) => {
   // Variables
   let name_of_output_file_bam = path.join(__dirname, '..', 'output', 'ConvertedToBAM.bam');
 
@@ -603,7 +611,7 @@ router.post('/sam-to-bam', (req, res) => {
 
 });
 
-router.post('/sort-bam-file', (req, res) => {
+router.post('/sort-bam-file', upload.none(), (req, res) => {
   // Variables
   let outputFile = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
@@ -658,7 +666,7 @@ router.post('/sort-bam-file', (req, res) => {
 
 });
 
-router.post('/index-bam-file', (req, res) => {
+router.post('/index-bam-file', upload.none(), (req, res) => {
 
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
@@ -717,14 +725,13 @@ router.post('/index-bam-file', (req, res) => {
 
 });
 
-router.post('/add-or-replace-read-groups', (req, res) => {
+router.post('/add-or-replace-read-groups', upload.none(), (req, res) => {
   // Specific Variables
-  let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
-  let editMode = 'overwrite_all';
+  // let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
+  // let editMode = 'overwrite_all';
 
-  console.log(req.body.editMode);
-  // let editMode = req.body.editMode; // overwrite_all or orphan_only depending on user selected mode
-  // let newReadGroupLine = req.body.newReadGroupLine; // This is the string that will be replaced/added to the file
+  let editMode = req.body.editMode; // overwrite_all or orphan_only depending on user selected mode
+  let newReadGroupLine = req.body.newReadGroupLine; // This is the string that will be replaced/added to the file
   let outputFile = path.join(__dirname, '..', 'output', 'RG_bam.bam');
 
   // Main File Check
@@ -774,7 +781,7 @@ router.post('/add-or-replace-read-groups', (req, res) => {
 
 });
 
-router.post('/bam-index-stats', (req, res) => {
+router.post('/bam-index-stats', upload.none(), (req, res) => {
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
@@ -833,7 +840,7 @@ router.post('/bam-index-stats', (req, res) => {
 
 });
 
-router.post('/alignment-summary', (req, res) => {
+router.post('/alignment-summary', upload.none(), (req, res) => {
   // Variables
   let chosenRef = '';
   chosenRef = req.body.ref;
@@ -889,7 +896,7 @@ router.post('/alignment-summary', (req, res) => {
 
 });
 
-router.post('/gc-bias-summary', (req, res) => {
+router.post('/gc-bias-summary', upload.none(), (req, res) => {
   // Variables
   let output_GC_bias_metrics_txt = path.join(__dirname, '..', 'output', 'GC_BIAS_Metrics.txt');
   let GC_bias_outputchart_pdf = path.join(__dirname, '..', 'output', 'GC_BIAS_OutputChart.pdf');
@@ -963,7 +970,7 @@ router.post('/gc-bias-summary', (req, res) => {
 
 });
 
-router.post('/insert-size-data', (req, res) => {
+router.post('/insert-size-data', upload.none(), (req, res) => {
   // Variables
   let output_raw_data_txt = path.join(__dirname, '..', 'output', 'Insert_Size_RawData.txt');
   let output_histogram_name_pdf = path.join(__dirname, '..', 'output', 'Insert_Size_Histogram.pdf');
@@ -1026,7 +1033,7 @@ router.post('/insert-size-data', (req, res) => {
 
 });
 
-router.post('/create-seq-dict', (req, res) => {
+router.post('/create-seq-dict', upload.none(), (req, res) => {
   // Variables
   let chosenRef = '';
   chosenRef = req.body.ref;
@@ -1071,7 +1078,7 @@ router.post('/create-seq-dict', (req, res) => {
 
 });
 
-router.post('/flag-stats', (req, res) => {
+router.post('/flag-stats', upload.none(), (req, res) => {
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
@@ -1130,7 +1137,7 @@ router.post('/flag-stats', (req, res) => {
 
 });
 
-router.post('/seq-depth', (req, res) => {
+router.post('/seq-depth', upload.none(), (req, res) => {
   let output_file_name = path.join(__dirname, '..', 'output', 'Seq_Depth.txt');
 
   // Main File Check
@@ -1182,7 +1189,7 @@ router.post('/seq-depth', (req, res) => {
 
 });
 
-router.post('/seq-coverage', (req, res) => {
+router.post('/seq-coverage', upload.none(), (req, res) => {
   let output_file_name = path.join(__dirname, '..', 'output', 'Seq_Coverage.txt');
   let isVisual = req.body.visual ? '-m' : '';
 
@@ -1235,7 +1242,7 @@ router.post('/seq-coverage', (req, res) => {
 
 });
 
-router.post('/mark-remove-duplicates', (req, res) => {
+router.post('/mark-remove-duplicates', upload.none(), (req, res) => {
   let output_bam_file_name = path.join(__dirname, '..', 'output', 'MarkedDuplicatesBAM.bam');
   let output_metrics_file_name = path.join(__dirname, '..', 'output', 'DuplicateMetrics.txt');
   let removeDupes = '';
@@ -1302,6 +1309,93 @@ router.post('/mark-remove-duplicates', (req, res) => {
   });
 
 });
+
+
+/// SCREM
+
+router.get('/testing', function (req, res) {
+  res.render('testing');
+});
+
+router.post('/test-docker', upload.none(), async (req, res) => {
+  try {
+  // 'CollectAlignmentSummaryMetrics R=' + path.join(__dirname, '..', 'ref_genomes', 'Ecoli',  + 'Ecoli.fna') + ' I=' + path.join(__dirname, '..', 'output', 'SortedBAM.bam') + ' O=' + path.join(__dirname, '..', 'output', 'AlignmentSummary.txt');
+
+  // 'java -jar ../picard/picard.jar MarkIlluminaAdapters -h'
+    // let r_path = '../refs/Ecoli/Ecoli.fna';
+    let i_path = '../output/SortedBAM.bam';
+    let o_path = '../output/AlignmentSummary.txt';
+    // const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -R ' + r_path + ' -I ' + i_path + ' -O ' + o_path);
+    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -I ' + i_path + ' -O ' + o_path);
+
+    console.log('Output:', output);
+    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send('Error executing Docker command');
+  }
+});
+
+
+async function runPicardCommand(command) {
+  const container = await docker.createContainer({
+    Image: 'picard-tools-image', // Replace with your Docker image name
+    Cmd: ['/bin/bash', '-c', command],
+    AttachStdout: true,
+    AttachStderr: true,
+    Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely
+    HostConfig: {
+      Mounts: [
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, '..', 'output'), // Replace with the absolute path to the output folder on your host machine
+          Target: '/usr/output',
+        },
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, '..', 'ref_genomes'), // Replace with the absolute path to the output folder on your host machine
+          Target: '/usr/refs',
+        },
+      ],
+    },
+  });
+
+  await container.start();
+
+  const outputPromise = new Promise((resolve, reject) => {
+    container.wait((err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        console.log('Raw Data:', data); // Log the raw data object
+        resolve(data.toString());
+      }
+    });
+  });
+
+  let output;
+  try {
+    output = await outputPromise;
+  } catch (err) {
+    console.error('Error while waiting for container output:', err);
+    throw new Error('Error waiting for container output');
+  } finally {
+    try {
+      // Get container logs after command execution
+      const logs = await container.logs({ stdout: true, stderr: true });
+      console.log('Container Logs:', logs.toString());
+    } catch (logErr) {
+      console.error('Error getting container logs:', logErr);
+    }
+
+    container.remove(); // Always remove the container after use
+  }
+
+  return output;
+}
+
+
+
 //#endregion
 
 module.exports = router;

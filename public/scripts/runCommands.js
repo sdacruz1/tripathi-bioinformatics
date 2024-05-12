@@ -51,12 +51,8 @@ const MakeRequest = (command) => {
     return new Promise((resolve) => {
         let formData = new FormData();
         command.formDataArray.forEach(element => {
-            console.log(element);
             formData.append(element[0], element[1]);
         });
-        formData.append('editMode', 'hi');
-        console.log(command.formDataArray);
-        console.log(formData);
 
         setStatus(command.commandIndex[0], command.commandIndex[1], 'running');
 
@@ -163,9 +159,9 @@ const Commands = {
     },
     Alignment_Summary: {
         title: 'Alignment',
-        commandToRun: '/alignment-data',
+        commandToRun: '/alignment-summary',
         formDataArray: [
-            ['Ecoli', 'ref']
+            ['ref', 'Ecoli']
         ],
         commandIndex: [2, 0]
     },
@@ -173,7 +169,7 @@ const Commands = {
         title: 'GC Bias',
         commandToRun: '/gc-bias-data',
         formDataArray: [
-            ['Ecoli', 'ref']
+            ['ref', 'Ecoli']
         ],
         commandIndex: [2, 1]
     },
@@ -187,7 +183,7 @@ const Commands = {
         title: 'Create_Sequence_Dictionary',
         commandToRun: '/create-sequence-dictionary',
         formDataArray: [
-            ['Ecoli', 'ref']
+            ['ref', 'Ecoli']
         ],
         commandIndex: [2, 1]
     },
@@ -207,7 +203,7 @@ const Commands = {
         title: 'Sequence_Coverage',
         commandToRun: '/sequence-coverage',
         formDataArray: [
-            ['', 'visual']
+            ['visual', '']
         ],
         commandIndex: [2, 1]
     },
@@ -215,7 +211,7 @@ const Commands = {
         title: 'Mark_Or_Remove_Duplicates',
         commandToRun: '/mark-or-remove-duplicates',
         formDataArray: [
-            ['yes', 'remove']
+            ['remove', 'yes']
         ],
         commandIndex: [2, 1]
     },
@@ -246,6 +242,7 @@ async function runCommands() {
         await MakeRequest(Commands.Index_BAM_File);
         await MakeRequest(Commands.Add_Or_Replace_Read_Groups);
         await MakeRequest(Commands.Bam_Index_Stats);
+        await MakeRequest(Commands.Alignment_Summary);
     } catch (error) {
         console.error('Error fetching data:', error);
     }
