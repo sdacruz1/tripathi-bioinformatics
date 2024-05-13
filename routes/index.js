@@ -87,9 +87,8 @@ let metrics = ["Metrics",
 let cleanup = ["Cleanup and Sequencing",
   [
     ["Create Sequence Dictionary", false, [], []],
-    ["Mark Duplicates", false, [], []],
-    ["Sort Bam File", false, [], []],
     ["Flag Stats", false, [], []],
+    ["Mark Duplicates", false, [], []],
     ["Sequencing Depth", false, [], []],
     ["Sequencing Coverage", false, [], []],
   ]];
@@ -840,7 +839,7 @@ router.post('/bam-index-stats', upload.none(), (req, res) => {
 
 });
 
-router.post('/alignment-summary', upload.none(), (req, res) => {
+router.post('/alignment-summary', upload.none(), async (req, res) => {
   // Variables
   let chosenRef = '';
   chosenRef = req.body.ref;
@@ -861,27 +860,13 @@ router.post('/alignment-summary', upload.none(), (req, res) => {
   }
 
   // Run Command
-  // java -jar picard.jar CollectAlignmentSummaryMetrics R=<path to reference fasta> I=<path the sorted BAM file> O=<output file name.txt>
-  const AlignmentDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectAlignmentSummaryMetrics', 'R=', path_to_reference_fastA, 'I=', mainFilePath, 'O=', output_file_name_txt];
+  try {
+    // let r_path = '../refs/Ecoli/Ecoli.fna';
+    let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
+    let o_path = '../output/AlignmentSummary.txt';
+    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -I ' + i_path + ' -O ' + o_path);
 
-  const runAlignmentData = spawn('java', AlignmentDataArgs);
-
-  // Handle Response
-  let outputData = '';
-
-  runAlignmentData.stdout.on('data', (data) => {
-    outputData += data;
-    console.log(`stdout: ${data}`);
-  });
-
-  runAlignmentData.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    res.json();
-  });
-
-  runAlignmentData.on('exit', (code) => {
-    console.log(`runAlignmentData process exited with code ${code}`);
-
+    console.log('Output:', output);
     // Make a downloadable_content entry for the results
     downloadable_content.push({
       enabled: false,
@@ -891,20 +876,27 @@ router.post('/alignment-summary', upload.none(), (req, res) => {
     });
 
     // Return the results as a JSON
-    res.json({ });
-  });
+    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send('Error executing Docker command');
+  }
+
+  // runAlignmentData.on('exit', (code) => {
+  //   console.log(`runAlignmentData process exited with code ${code}`);
+  // });
 
 });
 
-router.post('/gc-bias-summary', upload.none(), (req, res) => {
+router.post('/gc-bias-summary', upload.none(), async (req, res) => {
   // Variables
-  let output_GC_bias_metrics_txt = path.join(__dirname, '..', 'output', 'GC_BIAS_Metrics.txt');
-  let GC_bias_outputchart_pdf = path.join(__dirname, '..', 'output', 'GC_BIAS_OutputChart.pdf');
-  let GC_Bias_summary_output_txt = path.join(__dirname, '..', 'output','GC_BIAS_SummaryOutput.txt');
+  let output_GC_bias_metrics_txt = path.join('..', 'output', 'GC_BIAS_Metrics.txt');
+  let GC_bias_outputchart_pdf = path.join('..', 'output', 'GC_BIAS_OutputChart.pdf');
+  let GC_Bias_summary_output_txt = path.join('..', 'output','GC_BIAS_SummaryOutput.txt');
 
   let chosenRef = '';
   chosenRef = req.body.ref;
-  let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
+  let path_to_reference_fastA = path.join('..', 'refs', chosenRef);
 
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
@@ -920,27 +912,13 @@ router.post('/gc-bias-summary', upload.none(), (req, res) => {
 
   // Run Command
   // java -jar picard.jar CollectGcBiasMetrics -I <path to sorted BAM> -O <output GC bias metrics.txt> -CHART <GC bias ouputchart.pdf> -S <GC Bias summary output.txt> -R <reference fasta>
-  const GCBiasDataCommand = 'java';
-  const GCBiasDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectGcBiasMetrics', '-I', mainFilePath, '-O', output_GC_bias_metrics_txt, '-CHART' + GC_bias_outputchart_pdf, '-S', GC_Bias_summary_output_txt + '-R', + path_to_reference_fastA];
+  try {
+    // let r_path = '../refs/Ecoli/Ecoli.fna';
+    let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
+    // const output = await runPicardCommand('java -jar ../picard/picard.jar CollectGcBiasMetrics -I ' + i_path + ' -O ' + output_GC_bias_metrics_txt + ' -CHART ' + GC_bias_outputchart_pdf + ' -S ' + GC_Bias_summary_output_txt);
+    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectGcBiasMetrics -I ' + i_path + ' -O ' + output_GC_bias_metrics_txt + ' -CHART ' + GC_bias_outputchart_pdf + ' -S ' + GC_Bias_summary_output_txt + ' -R ' + path_to_reference_fastA);
 
-  const runGCBiasData = spawn(GCBiasDataCommand, GCBiasDataArgs);
-
-  // Handle Response
-  let outputData = '';
-
-  runGCBiasData.stdout.on('data', (data) => {
-    outputData += data;
-    console.log(`stdout: ${data}`);
-  });
-
-  runGCBiasData.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    res.json();
-  });
-
-  runGCBiasData.on('exit', (code) => {
-    console.log(`runGCBiasData process exited with code ${code}`);
-
+    console.log('Output:', output);
     // Make a downloadable_content entry for the results
     downloadable_content.push({
       enabled: false,
@@ -963,20 +941,22 @@ router.post('/gc-bias-summary', upload.none(), (req, res) => {
       content: 'GC_BIAS_SummaryOutput.txt',
     });
 
-
     // Return the results as a JSON
-    res.json({ });
-  });
+    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send('Error executing Docker command');
+  }
 
 });
 
-router.post('/insert-size-data', upload.none(), (req, res) => {
+router.post('/insert-size-summary', upload.none(), async (req, res) => {
   // Variables
-  let output_raw_data_txt = path.join(__dirname, '..', 'output', 'Insert_Size_RawData.txt');
-  let output_histogram_name_pdf = path.join(__dirname, '..', 'output', 'Insert_Size_Histogram.pdf');
+  let output_raw_data_txt = path.join('..', 'output', 'Insert_Size_RawData.txt');
+  let output_histogram_name_pdf = path.join('..', 'output', 'Insert_Size_Histogram.pdf');
 
   // Main File Check
-  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
+  let mainFilePath = path.join('..', 'output', 'SortedBAM.bam');
 
   if (!fs.existsSync(mainFilePath)) {
     mainFilePath = uploadedFilePath;
@@ -989,28 +969,12 @@ router.post('/insert-size-data', upload.none(), (req, res) => {
 
   // Run Command
   // java -jar picard.jar CollectInsertSizeMetrics -I <path to sorted bam> -O <output raw data.txt> -H <output histogram name.pdf> M=.5
-  const InsertSizeDataCommand = 'java';
-  const InsertSizeDataArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'CollectInsertSizeMetrics', '-I', mainFilePath,
-                          '-O', output_raw_data_txt, '-H' + output_histogram_name_pdf, 'M=.5'];
+  try {
+    // let r_path = '../refs/Ecoli/Ecoli.fna';
+    let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
+    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectInsertSizeMetrics -I ' + i_path + ' -O ' + output_raw_data_txt + ' -H ' + output_histogram_name_pdf + ' -M 0.5');
 
-  const InsertSizeData = spawn(InsertSizeDataCommand, InsertSizeDataArgs);
-
-  // Handle Response
-  let outputData = '';
-
-  InsertSizeData.stdout.on('data', (data) => {
-    outputData += data;
-    console.log(`stdout: ${data}`);
-  });
-
-  InsertSizeData.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    res.json();
-  });
-
-  InsertSizeData.on('exit', (code) => {
-    console.log(`InsertSizeData process exited with code ${code}`);
-
+    console.log('Output:', output);
     // Make a downloadable_content entry for the results
     downloadable_content.push({
       enabled: false,
@@ -1021,30 +985,32 @@ router.post('/insert-size-data', upload.none(), (req, res) => {
   
     downloadable_content.push({
       enabled: false,
-      has_visual_component: true,
+      has_visual_component: false,
       label: 'Insert Size Histogram',
       content: 'Insert_Size_Histogram.pdf',
     });
-  
-  
-    // Return the results as a JSON
-    res.json({ });
-  });
 
+    // Return the results as a JSON
+    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send('Error executing Docker command');
+  }
+  
 });
 
-router.post('/create-seq-dict', upload.none(), (req, res) => {
+router.post('/create-sequence-dictionary', upload.none(), (req, res) => {
   // Variables
   let chosenRef = '';
   chosenRef = req.body.ref;
-  let path_to_reference_fastA = path.join(__dirname, '..', 'uploads', 'ref_genomes', chosenRef);
+  let path_to_reference_fastA = path.join(__dirname, '..', 'ref_genomes', chosenRef, chosenRef + '.fna');
 
   let outputFile = path.join(__dirname, '..', 'output', 'SeqDict.txt');
 
   // Run Command
   // samtools dict ref.fasta|ref.fasta.gz -o <output file name>
   const SeqDictCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const SeqDictArgs = ['idxstats', path_to_reference_fastA.path, '-o', outputFile];
+  const SeqDictArgs = ['dict', path_to_reference_fastA, '-o', outputFile];
 
   const runSeqDict = spawn(SeqDictCommand, SeqDictArgs);
 
@@ -1137,7 +1103,7 @@ router.post('/flag-stats', upload.none(), (req, res) => {
 
 });
 
-router.post('/seq-depth', upload.none(), (req, res) => {
+router.post('/sequence-depth', upload.none(), (req, res) => {
   let output_file_name = path.join(__dirname, '..', 'output', 'Seq_Depth.txt');
 
   // Main File Check
@@ -1189,9 +1155,9 @@ router.post('/seq-depth', upload.none(), (req, res) => {
 
 });
 
-router.post('/seq-coverage', upload.none(), (req, res) => {
+router.post('/sequence-coverage', upload.none(), (req, res) => {
   let output_file_name = path.join(__dirname, '..', 'output', 'Seq_Coverage.txt');
-  let isVisual = req.body.visual ? '-m' : '';
+  // let isVisual = req.body.visual ? '-m' : '';
 
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
@@ -1208,7 +1174,7 @@ router.post('/seq-coverage', upload.none(), (req, res) => {
   // Run Command
   // samtools coverage -o <output file name> [-m] in.sam|in.bam
   const SeqCovCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const SeqCovArgs = ['coverage', '-o', output_file_name, isVisual, mainFilePath];
+  const SeqCovArgs = req.body.visual ? ['coverage', '-o', output_file_name, '-m', mainFilePath] : ['coverage', '-o', output_file_name, mainFilePath];
 
   const runSeqCov = spawn(SeqCovCommand, SeqCovArgs);
 
@@ -1242,9 +1208,9 @@ router.post('/seq-coverage', upload.none(), (req, res) => {
 
 });
 
-router.post('/mark-remove-duplicates', upload.none(), (req, res) => {
-  let output_bam_file_name = path.join(__dirname, '..', 'output', 'MarkedDuplicatesBAM.bam');
-  let output_metrics_file_name = path.join(__dirname, '..', 'output', 'DuplicateMetrics.txt');
+router.post('/mark-or-remove-duplicates', upload.none(), async (req, res) => {
+  let output_bam_file_name = path.join('..', 'output', 'MarkedDuplicatesBAM.bam');
+  let output_metrics_file_name = path.join('..', 'output', 'DuplicateMetrics.txt');
   let removeDupes = '';
   if (req.body.remove === 'yes') {
     removeDupes = '--REMOVE_DUPLICATES';
@@ -1266,29 +1232,15 @@ router.post('/mark-remove-duplicates', upload.none(), (req, res) => {
   }
 
   // Run Command
-  // NOTE: Bam file must be sorted
   // java -jar picard.jar MarkDuplicates -I <input bam file> -O <output bam with marked duplicates> -M <output metrics for marked duplicates> [--REMOVE_SEQUENCING_DUPLICATES | REMOVE_SEQUENCING_DUPLICATES  <true]
-  const MarkRemDupCommand = 'java';
-  const MarkRemDupArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'picard.jar'), 'MarkDuplicates', '-I', mainFilePath, '-O', output_bam_file_name, '-M', output_metrics_file_name, removeDupes, removeDupHelper];
+  try {
+    // let r_path = '../refs/Ecoli/Ecoli.fna';
+    let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
+    let command = 'java -jar ../picard/picard.jar MarkDuplicates -I ' + i_path + ' -O ' + output_bam_file_name + ' -M ' + output_metrics_file_name;
+    command += removeDupes + removeDupHelper;
+    const output = await runPicardCommand(command);
 
-  const runMarkRemDup = spawn(MarkRemDupCommand, MarkRemDupArgs);
-
-  // Handle Response
-  let outputData = '';
-
-  runMarkRemDup.stdout.on('data', (data) => {
-    outputData += data;
-    console.log(`stdout: ${data}`);
-  });
-
-  runMarkRemDup.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    res.json();
-  });
-
-  runMarkRemDup.on('exit', (code) => {
-    console.log(`Mark/Remove Duplicates process exited with code ${code}`);
-
+    console.log('Output:', output);
     // Make a downloadable_content entry for the results
     downloadable_content.push({
       enabled: false,
@@ -1303,10 +1255,13 @@ router.post('/mark-remove-duplicates', upload.none(), (req, res) => {
       label: 'Duplicate Metrics',
       content: 'DuplicateMetrics.txt',
     });
-  
+
     // Return the results as a JSON
-    res.json({ });
-  });
+    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send('Error executing Docker command');
+  }
 
 });
 
@@ -1319,7 +1274,6 @@ router.get('/testing', function (req, res) {
 
 router.post('/test-docker', upload.none(), async (req, res) => {
   try {
-  // 'CollectAlignmentSummaryMetrics R=' + path.join(__dirname, '..', 'ref_genomes', 'Ecoli',  + 'Ecoli.fna') + ' I=' + path.join(__dirname, '..', 'output', 'SortedBAM.bam') + ' O=' + path.join(__dirname, '..', 'output', 'AlignmentSummary.txt');
 
   // 'java -jar ../picard/picard.jar MarkIlluminaAdapters -h'
     // let r_path = '../refs/Ecoli/Ecoli.fna';

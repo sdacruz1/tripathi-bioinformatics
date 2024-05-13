@@ -167,7 +167,7 @@ const Commands = {
     },
     GC_Bias_Summary: {
         title: 'GC Bias',
-        commandToRun: '/gc-bias-data',
+        commandToRun: '/gc-bias-summary',
         formDataArray: [
             ['ref', 'Ecoli']
         ],
@@ -177,7 +177,7 @@ const Commands = {
         title: 'Insert_Size_Summary',
         commandToRun: '/insert-size-summary',
         formDataArray: [],
-        commandIndex: [2, 1]
+        commandIndex: [2, 2]
     },
     Create_Sequence_Dictionary: {
         title: 'Create_Sequence_Dictionary',
@@ -185,27 +185,13 @@ const Commands = {
         formDataArray: [
             ['ref', 'Ecoli']
         ],
-        commandIndex: [2, 1]
+        commandIndex: [5, 0]
     },
     Flag_Stats: {
         title: 'Flag_Stats',
         commandToRun: '/flag-stats',
         formDataArray: [],
-        commandIndex: [2, 1]
-    },
-    Sequence_Depth: {
-        title: 'Sequence_Depth',
-        commandToRun: '/sequence-depth',
-        formDataArray: [],
-        commandIndex: [2, 1]
-    },
-    Sequence_Coverage: {
-        title: 'Sequence_Coverage',
-        commandToRun: '/sequence-coverage',
-        formDataArray: [
-            ['visual', '']
-        ],
-        commandIndex: [2, 1]
+        commandIndex: [5, 1]
     },
     Mark_Or_Remove_Duplicates: {
         title: 'Mark_Or_Remove_Duplicates',
@@ -213,7 +199,21 @@ const Commands = {
         formDataArray: [
             ['remove', 'yes']
         ],
-        commandIndex: [2, 1]
+        commandIndex: [5, 2]
+    },
+    Sequence_Depth: {
+        title: 'Sequence_Depth',
+        commandToRun: '/sequence-depth',
+        formDataArray: [],
+        commandIndex: [5, 3]
+    },
+    Sequence_Coverage: {
+        title: 'Sequence_Coverage',
+        commandToRun: '/sequence-coverage',
+        formDataArray: [
+            ['visual', '']
+        ],
+        commandIndex: [5, 4]
     },
 };
 
@@ -243,6 +243,14 @@ async function runCommands() {
         await MakeRequest(Commands.Add_Or_Replace_Read_Groups);
         await MakeRequest(Commands.Bam_Index_Stats);
         await MakeRequest(Commands.Alignment_Summary);
+        // await MakeRequest(Commands.GC_Bias_Summary); // CBTT, doesn't work yet
+        await MakeRequest(Commands.Insert_Size_Summary);
+        await MakeRequest(Commands.Create_Sequence_Dictionary);
+        await MakeRequest(Commands.Flag_Stats);
+        await MakeRequest(Commands.Sequence_Depth);
+        await MakeRequest(Commands.Sequence_Coverage);
+        // await MakeRequest(Commands.Mark_Or_Remove_Duplicates); //CBTT, getting errors
+
     } catch (error) {
         console.error('Error fetching data:', error);
     }
