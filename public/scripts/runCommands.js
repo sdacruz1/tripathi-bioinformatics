@@ -60,7 +60,14 @@ const MakeRequest = (command) => {
             method: 'POST',
             body: formData,
         })
-            .then(response => response.json()) // Assume the server sends JSON data
+            .then(response => {
+                if (!response.ok) {
+                // If response is not OK, throw an error with the status text
+                throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
+                }
+                // Assume the server sends JSON data
+                return response.json();
+            })
             .then(data => {
                 // Handle Response
                 console.log(command.title + ' response:', data);
@@ -68,7 +75,10 @@ const MakeRequest = (command) => {
                 resolve(10);
             })
             .catch(error => {
+                // Handle the error more gracefully
                 console.error('Error with ' + command.title + ' :', error);
+                setStatus(command.commandIndex[0], command.commandIndex[1], 'error');
+                resolve(0);
             });
     });
 };
@@ -116,7 +126,14 @@ const Commands = {
     Trimming: { // CBTT
         title: 'Trimming',
         commandToRun: '/trimming',
-        formDataArray: [],
+        formDataArray: [
+            ['adapter_trim', false],
+            ['read_length_trim', true],
+            ['minlen', '2'],
+            ['quality_score_trim', ''],
+            ['quality', '3'],
+            ['windowSize', '2']
+        ],
         commandIndex: [0, 1]
     },
     Alignment: { // CBTT
@@ -238,18 +255,20 @@ let firstCommandIndex = 7; // This will indicate the first 'true', AKA activated
 
 async function runCommands() {
     try {
-        await MakeRequest(Commands.Sort_BAM_File);
-        await MakeRequest(Commands.Index_BAM_File);
-        await MakeRequest(Commands.Add_Or_Replace_Read_Groups);
-        await MakeRequest(Commands.Bam_Index_Stats);
-        await MakeRequest(Commands.Alignment_Summary);
-        // await MakeRequest(Commands.GC_Bias_Summary); // CBTT, doesn't work yet
-        await MakeRequest(Commands.Insert_Size_Summary);
-        await MakeRequest(Commands.Create_Sequence_Dictionary);
-        await MakeRequest(Commands.Flag_Stats);
-        await MakeRequest(Commands.Sequence_Depth);
-        await MakeRequest(Commands.Sequence_Coverage);
-        // await MakeRequest(Commands.Mark_Or_Remove_Duplicates); //CBTT, getting errors
+        await MakeRequest(Commands.Trimming);
+        // await MakeRequest(Commands.Sam_To_Bam);
+        // await MakeRequest(Commands.Sort_BAM_File);
+        // await MakeRequest(Commands.Index_BAM_File);
+        // await MakeRequest(Commands.Add_Or_Replace_Read_Groups);
+        // await MakeRequest(Commands.Bam_Index_Stats);
+        // await MakeRequest(Commands.Alignment_Summary);
+        // // await MakeRequest(Commands.GC_Bias_Summary); // CBTT, doesn't work yet
+        // await MakeRequest(Commands.Insert_Size_Summary);
+        // await MakeRequest(Commands.Create_Sequence_Dictionary);
+        // await MakeRequest(Commands.Flag_Stats);
+        // await MakeRequest(Commands.Sequence_Depth);
+        // await MakeRequest(Commands.Sequence_Coverage);
+        // // await MakeRequest(Commands.Mark_Or_Remove_Duplicates); //CBTT, getting errors
 
     } catch (error) {
         console.error('Error fetching data:', error);

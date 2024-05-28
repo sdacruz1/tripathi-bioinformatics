@@ -352,42 +352,67 @@ router.post('/fastqc', upload.none(), (req, res) => {
 // ======= COMMANDS ======= //
 
 router.post('/trimming', upload.none(), (req, res) => {
+  console.log('ummmm');
+
 
   // Variables
-  let path_to_Fastq_Read1 = '';
-  let path_to_Fastq_Read2 = '';
+  let path_to_Fastq_Read1 = path.join(__dirname, '..', 'uploads', 'PairedR1.fastq');
+  let path_to_Fastq_Read2 = path.join(__dirname, '..', 'uploads', 'PairedR2.fastq');
   let output_paired_Read1 = path.join(__dirname, '..', 'output', 'output_paired_Read1.fastq.gz');
   let output_unpaired_Read1 = path.join(__dirname, '..', 'output', 'output_unpaired_Read1.fastq.gz');
   let output_paired_Read2 = path.join(__dirname, '..', 'output', 'output_paired_Read2.fastq.gz');
   let output_unpaired_Read2 = path.join(__dirname, '..', 'output', 'output_unpaired_Read2.fastq.gz');
+  let adapter_filepath = '';
 
   // Choices
   let adapt = [];
   let read_length = [];
   let quality_score = [];
 
-  if (req.adapter_trim) {
-    adapt = [('ILLUMINACLIP:' + AdapterFile.path + ':2:30:2')];
+  console.log('before first check');
+  console.log(req.body.adapter_trim);
+  console.log(req.body.read_length_trim);
+  console.log(req.body.quality_score_trim);
+
+
+  if (req.body.adapter_trim) {
+    adapt.push(`ILLUMINACLIP:${adapter_filepath}:2:30:2`); // note: needs adapter file to exist
+  }
+  console.log('after first check');
+  
+
+  if (req.body.read_length_trim) {
+    read_length.push(`MINLEN:${req.body.minlen}`);
   }
 
-  if (req.read_length_trim) {
-    read_length = ['MINLEN: ' + req.minlen];
-  }
+  console.log('after second check');
 
-  if (!(req.quality_score_trim.length === 0)) {
-    if (req.quality_score_trim === 'window') {
-      quality_score = ['SLIDINGWINDOW:' + req.windowSize + ':' + req.quality];
-    } else if (req.quality_score_trim === 'leading') {
-      quality_score = ['LEADING:' + req.quality];
-    } else if (req.quality_score_trim === 'trailing') {
-      quality_score = ['TRAILING:' + req.quality];
+
+  if (req.body.quality_score_trim) {
+    if (req.body.quality_score_trim === 'window') {
+      quality_score.push(`SLIDINGWINDOW:${req.body.windowSize}:${req.body.quality}`);
+    } else if (req.body.quality_score_trim === 'leading') {
+      quality_score.push(`LEADING:${req.body.quality}`);
+    } else if (req.body.quality_score_trim === 'trailing') {
+      quality_score.push(`TRAILING:${req.body.quality}`);
     }
   }
 
-  if (!req.adapter_trim && !req.read_length_trim && (req.quality_score_trim.length === 0)) {
+  console.log('after third check');
+  console.log(req.body.adapter_trim);
+  console.log(req.body.read_length_trim);
+  console.log(req.body.quality_score_trim);
+
+
+  if (!req.body.adapter_trim && !req.body.read_length_trim && !req.body.quality_score_trim) {
     console.log("Error! At least one trim mode must be specified");
-    return;
+    return res.status(400).json({
+      status: 'error',
+      message: 'At least one trim mode must be specified'
+    });
   }
+
+  console.log('okayyy');
 
 
   // Run Command
@@ -410,32 +435,45 @@ router.post('/trimming', upload.none(), (req, res) => {
 
   // .push(...array) will append the contents of the array onto the trimArgs array, and will append nothing if empty, so that we can choose 1 or more trim modes
   const TrimCommand = 'java';
-  const TrimArgs = ['-jar', path.join(__dirname, '..', 'bio_modules', 'trimmomatic-0.39.jar'), 'PE', path_to_Fastq_Read1, path_to_Fastq_Read2,
-                  output_paired_Read1, output_unpaired_Read1, output_paired_Read2, output_unpaired_Read2].push(...adapt).push(...read_length).push(...quality_score);
-
+  const TrimArgs = [
+    '-jar', path.join(__dirname, '..', 'bio_modules', 'Trimmomatic-0.39', 'trimmomatic-0.39.jar'), 
+    'PE', path_to_Fastq_Read1, path_to_Fastq_Read2,
+    output_paired_Read1, output_unpaired_Read1, output_paired_Read2, output_unpaired_Read2,
+    ...adapt, ...read_length, ...quality_score
+  ];
   const runTrim = spawn(TrimCommand, TrimArgs);
 
   // Handle Response
   let outputData = '';
+  let errorData = '';
 
   runTrim.stdout.on('data', (data) => {
-    outputData += data;
+    outputData += data.toString();
     console.log(`stdout: ${data}`);
   });
 
   runTrim.stderr.on('data', (data) => {
+    errorData += data.toString();
     console.error(`stderr: ${data}`);
-    res.json();
   });
 
   runTrim.on('exit', (code) => {
     console.log(`runTrim process exited with code ${code}`);
 
+    if (code !== 0) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Trimming process failed',
+        error: errorData,
+      });
+      return;
+    }
+
     // Prepare the data you want to send back as JSON
     const responseData = {
       status: 'success',
       message: 'Trimming completed successfully',
-      output: outputData, // Include any relevant output data
+      output: outputData,
     };
 
     // Make a downloadable_content entry for each file that exists
@@ -478,8 +516,6 @@ router.post('/trimming', upload.none(), (req, res) => {
     // Send the JSON response
     res.json(responseData);
   });
-
-  
 
 });
 
