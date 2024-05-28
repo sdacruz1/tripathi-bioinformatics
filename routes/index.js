@@ -256,7 +256,7 @@ router.get('/cleanup', (req, res) => {
 
 // Run BCL2FastQ
 // Expects the contents of a BCL File
-router.post('/bcl2fastq' , upload.array('files'), (req, res) => {
+router.post('/bcl2fastq' , upload.array('files'), async (req, res) => {
 
   // =============== Handle the BCL File Folder ===============
   const uploadedFiles = req.files;
@@ -267,7 +267,7 @@ router.post('/bcl2fastq' , upload.array('files'), (req, res) => {
   }
 
   // Create an empty directory to hold them in
-  const BCLdirectory = './uploads/BCLFiles-' + Date.now();
+  const BCLdirectory = path.join(__dirname, 'uploads', 'BCLFiles-' + Date.now());
   if (!fs.existsSync(BCLdirectory)) {
     fs.mkdirSync(BCLdirectory);
   }
@@ -281,37 +281,30 @@ router.post('/bcl2fastq' , upload.array('files'), (req, res) => {
   // =============== Run BCL To FastQ ===============
 
   // Create an empty directory to hold the output
-  const OutputDirectory = './uploads/bclFile';
+  const OutputDirectory = path.join(__dirname, 'output', 'bcl2fastq_Output');
   if (!fs.existsSync(OutputDirectory)) {
     fs.mkdirSync(OutputDirectory);
   }
 
-  // Spawn the process
-  const BCL2FastQCommand = path.join(__dirname, '..', 'bio_modules', 'FastQC.app', 'Contents', 'MacOS', 'bcl2fastq');
-  const BCL2FastQArgs = [' --runfolder-dir ' + BCLdirectory + ' --output-dir ' + OutputDirectory
-                      + ' --sample-sheet ' + path.join(BCLdirectory, 'SampleSheet.csv') + ' --barcode-mismatches 1'];
-  const runBCL2FastQ = spawn(BCL2FastQCommand, BCL2FastQArgs);
+  // Run Command
+  try {
+    const output = await runBCLCommand(BCLdirectory);
 
-  let outputData = '';
+    console.log('Output:', output);
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'BCL2FastQ Output',
+      content: 'bcl2fastq_Output',
+    });
 
-  // Handle the terminal response
-  runBCL2FastQ.stdout.on('data', (data) => {
-    outputData += data;
-    console.log(`stdout: ${data}`);
-  });
-
-  runBCL2FastQ.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    res.json();
-  });
-
-  runBCL2FastQ.on('exit', (code) => {
-    console.log(`BCL2FastQ process exited with code ${code}`);
-  });
-
-  // Respond to the client
-  res.json({ fastQfile:  "nope"});
-  // NOTE: recongifgure run-fastqc to take the file name
+    // Return the results as a JSON
+    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send('Error executing Docker command');
+  }
 
 });
 
@@ -573,9 +566,9 @@ router.post('/sam-to-bam', upload.none(), (req, res) => {
   }
 
   // Run Command
-  // samtools view -bS <path to sam file> > <name of output file>.bam
+  // samtools view -b <path to sam file> > <name of output file>.bam
   const ConvertToBamCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const ConvertToBamArgs = ['view', '-bS', mainFilePath, '>', name_of_output_file_bam];
+  const ConvertToBamArgs = ['view', '-b', mainFilePath, '>', name_of_output_file_bam];
 
   const runConvertToBam = spawn(ConvertToBamCommand, ConvertToBamArgs);
 
@@ -861,10 +854,10 @@ router.post('/alignment-summary', upload.none(), async (req, res) => {
 
   // Run Command
   try {
-    // let r_path = '../refs/Ecoli/Ecoli.fna';
+    let r_path = '../refs/Human/hgch38_index.fna.amb';
     let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
     let o_path = '../output/AlignmentSummary.txt';
-    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -I ' + i_path + ' -O ' + o_path);
+    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -I ' + i_path + ' -O ' + o_path + ' -R ' + r_path);
 
     console.log('Output:', output);
     // Make a downloadable_content entry for the results
@@ -1309,6 +1302,63 @@ async function runPicardCommand(command) {
           Type: 'bind',
           Source: path.join(__dirname, '..', 'ref_genomes'), // Replace with the absolute path to the output folder on your host machine
           Target: '/usr/refs',
+        },
+      ],
+    },
+  });
+
+  await container.start();
+
+  const outputPromise = new Promise((resolve, reject) => {
+    container.wait((err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        console.log('Raw Data:', data); // Log the raw data object
+        resolve(data.toString());
+      }
+    });
+  });
+
+  let output;
+  try {
+    output = await outputPromise;
+  } catch (err) {
+    console.error('Error while waiting for container output:', err);
+    throw new Error('Error waiting for container output');
+  } finally {
+    try {
+      // Get container logs after command execution
+      const logs = await container.logs({ stdout: true, stderr: true });
+      console.log('Container Logs:', logs.toString());
+    } catch (logErr) {
+      console.error('Error getting container logs:', logErr);
+    }
+
+    container.remove(); // Always remove the container after use
+  }
+
+  return output;
+}
+
+async function runBCLCommand(inputDirectory) {
+  const container = await docker.createContainer({
+    Image: 'illumina-bcl2fastq', // Replace with your Docker image name
+    Cmd: ['/bin/bash', '-c', 'bcl2fastq --runfolder-dir /usr/uploads --output-dir /usr/output --ignore-missing-bcls --ignore-missing-filter --ignore-missing-positions '],
+    AttachStdout: true,
+    AttachStderr: true,
+    Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely
+    HostConfig: {
+      Mounts: [
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, 'output', 'bcl2fastq_Output'), // Replace with the absolute path to the output folder on your host machine
+          Target: '/usr/output',
+        },
+        {
+          Type: 'bind',
+          Source: inputDirectory, // Replace with the absolute path to the output folder on your host machine
+          Target: '/usr/uploads',
         },
       ],
     },
