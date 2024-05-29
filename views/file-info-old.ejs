@@ -35,21 +35,11 @@
             <h3>Upload File(s)</h3>
             <br>
             <form id="mainFileForm" enctype="multipart/form-data">
-                <label for="directory">Input Type</label>
-                <select id="directoryOption" name="directory" onchange="changeInputType()">
-                    <option value="SAM">SAM</option>
-                    <option value="BAM">BAM</option>
+                <select id="directoryOption" onchange="changeInputType()">
                     <option value="BCL">BCL</option>
-                    <option value="FastA">FastA</option>
-                    <option value="Fast5">Fast5</option>
-                    <option value="FastQ">Single FastQ</option>
-                    <option value="Paired">Paired End FastQ</option>
+                    <option value="other">Other</option>
                   </select>
-                <br>
-                <label id="file1label" for="file"></label>
-                <input type="file" name="file" id="Main_File_Uploader" webkitdirectory disabled>
-                <label id="file2label" for="file2"></label>
-                <input type="file" name="file2" id="Main_File_Uploader-Second" disabled>
+                <input type="file" name="file" id="Main_File_Uploader" webkitdirectory multiple disabled>
                 <button class="confirm_button" type="button" onclick="processMainFile()">Confirm</button>
             </form>
             <br>

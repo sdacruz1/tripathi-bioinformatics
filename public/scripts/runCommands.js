@@ -130,9 +130,9 @@ const Commands = {
             ['adapter_trim', false],
             ['read_length_trim', true],
             ['minlen', '2'],
-            ['quality_score_trim', ''],
-            ['quality', '3'],
-            ['windowSize', '2']
+            ['window', ['4', '20']],
+            ['leading', '4'],
+            ['trailing', '4'],
         ],
         commandIndex: [0, 1]
     },

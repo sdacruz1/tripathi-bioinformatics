@@ -367,12 +367,11 @@ router.post('/trimming', upload.none(), (req, res) => {
   // Choices
   let adapt = [];
   let read_length = [];
-  let quality_score = [];
+  let window = [];
+  let leading = [];
+  let trailing = [];
 
   console.log('before first check');
-  console.log(req.body.adapter_trim);
-  console.log(req.body.read_length_trim);
-  console.log(req.body.quality_score_trim);
 
 
   if (req.body.adapter_trim) {
@@ -387,21 +386,17 @@ router.post('/trimming', upload.none(), (req, res) => {
 
   console.log('after second check');
 
-
-  if (req.body.quality_score_trim) {
-    if (req.body.quality_score_trim === 'window') {
-      quality_score.push(`SLIDINGWINDOW:${req.body.windowSize}:${req.body.quality}`);
-    } else if (req.body.quality_score_trim === 'leading') {
-      quality_score.push(`LEADING:${req.body.quality}`);
-    } else if (req.body.quality_score_trim === 'trailing') {
-      quality_score.push(`TRAILING:${req.body.quality}`);
-    }
+  if (req.body.window) {
+    window.push(`SLIDINGWINDOW:${req.body.window[0]}:${req.body.window[1]}`);
+  }
+  if (req.body.leading) {
+    leading.push(`LEADING:${req.body.leading}`);
+  }
+  if (req.body.trailing) {
+    trailing.push(`TRAILING:${req.body.trailing}`);
   }
 
   console.log('after third check');
-  console.log(req.body.adapter_trim);
-  console.log(req.body.read_length_trim);
-  console.log(req.body.quality_score_trim);
 
 
   if (!req.body.adapter_trim && !req.body.read_length_trim && !req.body.quality_score_trim) {
@@ -439,7 +434,7 @@ router.post('/trimming', upload.none(), (req, res) => {
     '-jar', path.join(__dirname, '..', 'bio_modules', 'Trimmomatic-0.39', 'trimmomatic-0.39.jar'), 
     'PE', path_to_Fastq_Read1, path_to_Fastq_Read2,
     output_paired_Read1, output_unpaired_Read1, output_paired_Read2, output_unpaired_Read2,
-    ...adapt, ...read_length, ...quality_score
+    ...adapt, ...read_length, ...window, ...leading, ...trailing
   ];
   const runTrim = spawn(TrimCommand, TrimArgs);
 

@@ -10,6 +10,7 @@ let uploadedAdapterFile = "";
 
 let input_type = '';
 let uploadedFile;
+let uploadedFile2;
 
 //#region ... REFERENCES ... 
 
@@ -23,6 +24,9 @@ const rnaSection = document.getElementById('rna_section');
 
 // Get references to the upload button and the file information text
 const Main_File_Uploader = document.getElementById('Main_File_Uploader');
+const Main_File_Uploader_Second = document.getElementById('Main_File_Uploader-Second');
+const File1Label = document.getElementById('file1label');
+const File2Label = document.getElementById('file2label');
 const typeDropdown = document.getElementById('directoryOption');
 
 // Get references to the Adapter objects
@@ -61,8 +65,19 @@ function select_input_type(type) {
 function changeInputType() {
     if (typeDropdown.value === 'BCL') {
         Main_File_Uploader.setAttribute('webkitdirectory', 'true');
+        Main_File_Uploader_Second.disabled = true;
+        File1Label.innerText = "Upload A BCL Folder";
+        File2Label.innerText = "";
+    } else if (typeDropdown.value === 'Paired') {
+        Main_File_Uploader.removeAttribute('webkitdirectory');
+        Main_File_Uploader_Second.disabled = false;
+        File1Label.innerText = "Upload FastQ File Read 1";
+        File2Label.innerText = "Upload FastQ File Read 2";
     } else {
         Main_File_Uploader.removeAttribute('webkitdirectory');
+        Main_File_Uploader_Second.disabled = true;
+        File1Label.innerText = "Upload A " + typeDropdown.value + " File";
+        File2Label.innerText = "";
     }
 }
 
@@ -106,21 +121,31 @@ function processMainFile() {
         }
         return;
     }
-
-    // Make sure they only uploaded one file
-    if (Main_File_Uploader.files.length > 1) {
-        // If not, send an error to the console.
-        // NOTE: Worth revisiting this after everything is done to give betetr feedback.
-        console.log('Please select only one file.');
-        return;
-    }
-
     // If the file somehow doesn't exist, abort process
     uploadedFile = Main_File_Uploader.files[0];
     if (!uploadedFile) {
         return;
     }
+    const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
 
+    if (typeDropdown.value === 'Paired') {
+        // If the second file somehow doesn't exist, abort process
+        uploadedFile2 = Main_File_Uploader_Second.files[0];
+        if (!uploadedFile2) {
+            return;
+        }
+        uploadedFile = new File([uploadedFile], "UploadedFastQRead1.fastq", { type: uploadedFile.type });
+        uploadedFile2 = new File([uploadedFile2], "UploadedFastQRead2.fastq", { type: uploadedFile2.type });
+    } else if (typeDropdown.value === 'FastQ') {
+        uploadedFile = new File([uploadedFile], "UploadedFastQSingle.fastq", { type: uploadedFile.type });
+    } else {
+        uploadedFile = new File([uploadedFile], "Uploaded" + typeDropdown.value + "." + fileExtension, { type: uploadedFile.type });
+    }
+
+    Main_File_Uploader.files[0] = uploadedFile;
+    if (uploadedFile2) {
+        Main_File_Uploader.files[1] = uploadedFile2;
+    }
     // Store it
     storeFiles(Main_File_Uploader.files)
         .then(fileStorage => {
@@ -133,7 +158,6 @@ function processMainFile() {
 
     // If it's not a directory, it's a file
     // Determine the type
-    const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
     switch (fileExtension) {
         case 'bam':
             // No processing, Cleaning BAM is required
@@ -204,17 +228,12 @@ function processMainFile() {
     }
 
     // Set the adapter text/variable and uploader enabled settings accordingly
-    if (trimmed) {
-        adapterSection.hidden = false;
-        ACHeading.textContent = 'Your data appears to have an untrimmed adapter applied. Please upload an adapter trimming file.'
-        adapterFileInput.disabled = false;
-    } else {
-        ACHeading.textContent = 'We found no adapters on your file or your fastQ file has trimmed adapters.'
-        adapterFileInput.disabled = true;
-        // if input type is DNA and there are no adapters, enable the continue button
-        if (input_type === 'DNA') {
-            continue_button.disabled = false;
-        }
+    adapterSection.hidden = false;
+    ACHeading.textContent = 'If applicable, upload an adapter file.'
+    adapterFileInput.disabled = false;
+    // if input type is DNA and there are no adapters, enable the continue button
+    if (input_type === 'DNA') {
+        continue_button.disabled = false;
     }
 
 }
@@ -298,6 +317,9 @@ function runFastQC (fastQFile) {
 // nothing to do!
 // Send it to the backend
 function uploadAdapterFiles() {
+    let adapterFile = adapterFileInput.files[0];
+    const extension = adapterFile.name.split('.').pop().toLowerCase();
+    adapterFile = new File([adapterFile], "UploadedAdapterFile." + extension, { type: adapterFile.type });
     storeFiles(adapterFileInput.files)
         .then(fileStorage => {
             uploadedAdapterFile = fileStorage.storedPath;
