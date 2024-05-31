@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Docker</title>
+</head>
+<body>
+    <h1>Testing Docker Integration</h1>
+    <button id="runDockerCommand">Run Docker Command</button>
+
+    <script>
+        document.getElementById('runDockerCommand').addEventListener('click', async function(event) {
+            event.preventDefault(); // Prevent default form submission behavior
+
+            try {
+                const response = await fetch('/test-docker', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ /* Any data to be sent in the request body */ })
+                });
+
+                if (response.ok) {
+                    console.log('Docker command executed successfully!');
+                } else {
+                    console.error('Error executing Docker command:', response.statusText);
+                }
+            } catch (error) {
+                console.error('An error occurred during the request:', error);
+            }
+        });
+    </script>
+</body>
+</html>

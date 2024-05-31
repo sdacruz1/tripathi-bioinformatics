@@ -102,6 +102,8 @@ let inputType = "";
 // Stored Outputs
 let infoSteps;          // An array that determines which file processing steps will be available in the timeline
 let uploadedFilePath = "";   // The path to the original file that was uploaded or the directory, if it was a BCL folder
+let uploadedPairedPath = "";
+let uploadedAdapterPath = "";
 let uploadedFileType;   // A string representing the original uploaded file type
 let fastQConversion;    // The path to the fastQ file result of any conversions (BCL, FastA, Fast5)
 let fastQCResults;      // The path to the directory containing the results of running FastQC on the uploaded file
@@ -143,7 +145,9 @@ router.post('/dna-goalposts', function (req, res, next) {
   // Store the uploaded file and any conversions
   inputType = req.body.inputType;
   infoSteps = JSON.parse(req.body.infoSteps);
-  // uploadedFilePath = req.body.uploadedFilePath;
+  uploadedFilePath = req.body.uploadedFilePath;
+  uploadedPairedPath = req.body.uploadedPairedPath;
+  uploadedAdapterPath = req.body.uploadedAdapterPath;
   uploadedFileType = req.body.uploadedFileType;
   fastQConversion = req.body.fastQConversion;
   fastQCResults = req.body.fastQCResults;
@@ -206,7 +210,14 @@ router.post('/store-files', upload.array('files'), (req, res) => {
   // If it's just one file, send the new path to that
   if (uploadedFiles.length === 1) {
     uploadedFilePath = path.join(__dirname, '..', 'uploads', uploadedFiles[0].filename);
-    return res.status(200).send({ storedPath: uploadedFilePath });
+    return res.status(200).send({ storedPath: [uploadedFilePath] });
+  }
+
+  // If it's exactly two files, send the new paths to those
+  if (uploadedFiles.length === 1) {
+    uploadedFilePath = path.join(__dirname, '..', 'uploads', uploadedFiles[0].filename);
+    uploadedFilePath2 = path.join(__dirname, '..', 'uploads', uploadedFiles[1].filename);
+    return res.status(200).send({ storedPath: [uploadedFilePath, uploadedFilePath2] });
   }
 
   // Create an empty directory to hold them in
@@ -223,7 +234,7 @@ router.post('/store-files', upload.array('files'), (req, res) => {
 
   uploadedFilePath = BCLdirectory;
   // Send the path to the directory
-  return res.status(200).send({ storedPath: uploadedFilePath });
+  return res.status(200).send({ storedPath: [uploadedFilePath] });
 });
 
 // Route to delete all files in the 'uploads' folder
@@ -351,13 +362,153 @@ router.post('/fastqc', upload.none(), (req, res) => {
 
 // ======= COMMANDS ======= //
 
+router.post('/fast5-to-fastq' , upload.array('files'), async (req, res) => {
+
+  // =============== Handle the BCL File Folder ===============
+  const uploadedFiles = req.files;
+
+  // Check if the files were uploaded
+  if (!uploadedFiles || uploadedFiles.length === 0) {
+    return res.status(400).send('No files were uploaded.');
+  }
+
+  // Create an empty directory to hold them in
+  const folderName = 'Fast5Files-' + Date.now();
+  const Fast5directory = path.join(__dirname, 'uploads', folderName);
+  if (!fs.existsSync(Fast5directory)) {
+    fs.mkdirSync(Fast5directory);
+  }
+
+  // Move each uploaded file to the empty directory
+  uploadedFiles.forEach(file => {
+    const destinationPath = path.join(Fast5directory, file.originalname);
+    fs.renameSync(file.path, destinationPath);
+  });
+
+  // =============== Run BCL To FastQ ===============
+
+  // Create an empty directory to hold the output
+  const OutputFastQ = path.join(__dirname, 'output', 'FastQFromFast5.fastq');
+
+  // Run Command
+  try {
+    const output = await runBCLCommand(folderName, OutputFastQ);
+
+    console.log('Output:', output);
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'FastQ From Fast5',
+      content: OutputFastQ,
+    });
+
+    // Return the results as a JSON
+    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send('Error executing Docker command');
+  }
+
+});
+
+// Run FastQC
+// Expects a single FastQ File
+router.post('/fastqc', upload.none(), (req, res) => {
+  const uploadedFile = req.file;
+
+  // Check if a file was uploaded
+  if (!uploadedFile) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run FastQC
+  const FastQCCommand = path.join(__dirname, '..', 'bio_modules', 'FastQC.app', 'Contents', 'MacOS', 'fastqc');
+  const FastQArgs = [uploadedFile.path];
+
+  const runFastQC = spawn(FastQCCommand, FastQArgs);
+
+  let outputData = '';
+
+  runFastQC.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runFastQC.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+    res.json();
+  });
+
+  runFastQC.on('exit', (code) => {
+    console.log(`FastQC process exited with code ${code}`);
+  });
+
+  // Return the results as a JSON
+  const trimmed = false; // set this based on the result of the QC
+  const demultiplexed = false;
+
+  res.json({ trimmed, demultiplexed });
+
+});
+
+router.post('/fasta-to-fastq', upload.none(), (req, res) => {
+  
+  let convertedOutputFQ = path.join(__dirname, '..', 'output', 'convertedFastQ.fq')
+
+  // We need the file, so check if a file was uploaded
+  if (!fs.existsSync(uploadedFilePath)) {
+    res.status(400).send('No file uploaded');
+    return;
+  }
+
+  // Run Command
+  // ./seqtk seq -F '<char to replace quality scores>' in.fa > out.fq
+  const AtoQCommand = path.join(__dirname, '..', 'bio_modules', 'seqtk');
+  const AtoQArgs = ['seq', '-F', '#', uploadedFilePath, '>', convertedOutputFQ];
+
+  const runAtoQ = spawn(AtoQCommand, AtoQArgs);
+
+  // Handle Response
+  let outputData = '';
+
+  runAtoQ.stdout.on('data', (data) => {
+    outputData += data;
+    console.log(`stdout: ${data}`);
+  });
+
+  runAtoQ.stderr.on('data', (data) => {
+    console.error(`stderr: ${data}`);
+    res.json();
+  });
+
+  runAtoQ.on('exit', (code) => {
+    console.log(`runAtoQ process exited with code ${code}`);
+
+    // Make a downloadable_content entry for the results
+    downloadable_content.push({
+      enabled: false,
+      has_visual_component: false,
+      label: 'FastQ from FastA',
+      content: convertedOutputFQ,
+    });
+
+    // Return the results as a JSON
+    res.json({ });
+  });
+
+});
+
 router.post('/trimming', upload.none(), (req, res) => {
   console.log('ummmm');
 
 
   // Variables
-  let path_to_Fastq_Read1 = path.join(__dirname, '..', 'uploads', 'PairedR1.fastq');
-  let path_to_Fastq_Read2 = path.join(__dirname, '..', 'uploads', 'PairedR2.fastq');
+  let path_to_Single_FastQ = uploadedFilePath;
+  let single_trim_output =  path.join(__dirname, '..', 'output', 'single_trim_output.fastq.gz');
+  let path_to_Fastq_Read1 = uploadedFilePath;
+  let path_to_Fastq_Read2 = uploadedPairedPath;
   let output_paired_Read1 = path.join(__dirname, '..', 'output', 'output_paired_Read1.fastq.gz');
   let output_unpaired_Read1 = path.join(__dirname, '..', 'output', 'output_unpaired_Read1.fastq.gz');
   let output_paired_Read2 = path.join(__dirname, '..', 'output', 'output_paired_Read2.fastq.gz');
@@ -409,7 +560,6 @@ router.post('/trimming', upload.none(), (req, res) => {
 
   console.log('okayyy');
 
-
   // Run Command
   // java -jar trimmomatic-0.39.jar PE <Read1 Fastq(.gz)> <Read2 Fastq(.gz)> <desired name of paired output file R1>
   // <desired name of unpaired output file R1> <desired name of paired output file R2> <desired name of unpaired output file R2>
@@ -430,12 +580,25 @@ router.post('/trimming', upload.none(), (req, res) => {
 
   // .push(...array) will append the contents of the array onto the trimArgs array, and will append nothing if empty, so that we can choose 1 or more trim modes
   const TrimCommand = 'java';
-  const TrimArgs = [
-    '-jar', path.join(__dirname, '..', 'bio_modules', 'Trimmomatic-0.39', 'trimmomatic-0.39.jar'), 
-    'PE', path_to_Fastq_Read1, path_to_Fastq_Read2,
-    output_paired_Read1, output_unpaired_Read1, output_paired_Read2, output_unpaired_Read2,
-    ...adapt, ...read_length, ...window, ...leading, ...trailing
-  ];
+
+  // Paired End or Single End depending what was given
+  let TrimArgs = [];
+  if (uploadedPairedPath) {
+    TrimArgs = [
+      '-jar', path.join(__dirname, '..', 'bio_modules', 'Trimmomatic-0.39', 'trimmomatic-0.39.jar'), 
+      'PE', path_to_Fastq_Read1, path_to_Fastq_Read2,
+      output_paired_Read1, output_unpaired_Read1, output_paired_Read2, output_unpaired_Read2,
+      ...adapt, ...read_length, ...window, ...leading, ...trailing
+    ];
+  } else {
+    TrimArgs = [
+      '-jar', path.join(__dirname, '..', 'bio_modules', 'Trimmomatic-0.39', 'trimmomatic-0.39.jar'), 
+      'SE', path_to_Single_FastQ, single_trim_output,
+      ...adapt, ...read_length, ...window, ...leading, ...trailing
+    ];
+  }
+
+  
   const runTrim = spawn(TrimCommand, TrimArgs);
 
   // Handle Response
@@ -1384,6 +1547,63 @@ async function runBCLCommand(inputDirectory) {
         {
           Type: 'bind',
           Source: path.join(__dirname, 'output', 'bcl2fastq_Output'), // Replace with the absolute path to the output folder on your host machine
+          Target: '/usr/output',
+        },
+        {
+          Type: 'bind',
+          Source: inputDirectory, // Replace with the absolute path to the output folder on your host machine
+          Target: '/usr/uploads',
+        },
+      ],
+    },
+  });
+
+  await container.start();
+
+  const outputPromise = new Promise((resolve, reject) => {
+    container.wait((err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        console.log('Raw Data:', data); // Log the raw data object
+        resolve(data.toString());
+      }
+    });
+  });
+
+  let output;
+  try {
+    output = await outputPromise;
+  } catch (err) {
+    console.error('Error while waiting for container output:', err);
+    throw new Error('Error waiting for container output');
+  } finally {
+    try {
+      // Get container logs after command execution
+      const logs = await container.logs({ stdout: true, stderr: true });
+      console.log('Container Logs:', logs.toString());
+    } catch (logErr) {
+      console.error('Error getting container logs:', logErr);
+    }
+
+    container.remove(); // Always remove the container after use
+  }
+
+  return output;
+}
+
+async function runFast5ToFastQ(inputDirectory, outputFileName) {
+  const container = await docker.createContainer({
+    Image: 'fast5-to-fastq', // Replace with your Docker image name
+    Cmd: ['/usr/uploads/' + folderName,  '>', 'usr/output/FastQFromFast5.fastq'],
+    AttachStdout: true,
+    AttachStderr: true,
+    Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely
+    HostConfig: {
+      Mounts: [
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, 'output'), // Replace with the absolute path to the output folder on your host machine
           Target: '/usr/output',
         },
         {

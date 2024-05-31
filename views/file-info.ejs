@@ -59,9 +59,9 @@
         <h3 id="adapterCheckHeading"></h3>
         <section id="adapter_section" hidden>
             <br>
-            <form id="adapterFileForm" action="/store-files" method="post" enctype="multipart/form-data">
-                <input type="file" name="file" id="Adapter_File_Uploader" multiple disabled>
-                <button class="confirm_button" id="adapterUploadButton" onclick="submitAdapterFile()">Confirm</button>
+            <form id="adapterFileForm">
+                <input type="file" name="file" id="Adapter_File_Uploader" disabled>
+                <button class="confirm_button" type="button" id="adapterUploadButton" onclick="uploadAdapterFiles()">Confirm</button>
             </form>
             <br>
         </section>
@@ -82,7 +82,9 @@
         <form id="continueForm" action="/dna-goalposts" method="post">
             <!-- Hidden input fields for variables -->
             <input type="hidden" name="infoSteps" id="infoStepsInput">
-            <input type="hidden" name="uploadedFile" id="uploadedFileInput">
+            <input type="hidden" name="uploadedFilePath" id="uploadedFileInput">
+            <input type="hidden" name="uploadedPairedPath" id="uploadedFileInput">
+            <input type="hidden" name="uploadedAdapterFile" id="uploadedAdapter">
             <input type="hidden" name="uploadedFileType" id="uploadedFileTypeInput">
             <input type="hidden" name="inputType" id="inputTypeInput">
             <input type="hidden" name="fastQConversion" id="fastQConversionInput">

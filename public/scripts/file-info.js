@@ -126,30 +126,14 @@ function processMainFile() {
     if (!uploadedFile) {
         return;
     }
-    const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
 
-    if (typeDropdown.value === 'Paired') {
-        // If the second file somehow doesn't exist, abort process
-        uploadedFile2 = Main_File_Uploader_Second.files[0];
-        if (!uploadedFile2) {
-            return;
-        }
-        uploadedFile = new File([uploadedFile], "UploadedFastQRead1.fastq", { type: uploadedFile.type });
-        uploadedFile2 = new File([uploadedFile2], "UploadedFastQRead2.fastq", { type: uploadedFile2.type });
-    } else if (typeDropdown.value === 'FastQ') {
-        uploadedFile = new File([uploadedFile], "UploadedFastQSingle.fastq", { type: uploadedFile.type });
-    } else {
-        uploadedFile = new File([uploadedFile], "Uploaded" + typeDropdown.value + "." + fileExtension, { type: uploadedFile.type });
-    }
-
-    Main_File_Uploader.files[0] = uploadedFile;
-    if (uploadedFile2) {
-        Main_File_Uploader.files[1] = uploadedFile2;
-    }
     // Store it
     storeFiles(Main_File_Uploader.files)
         .then(fileStorage => {
-            uploadedFilePath = fileStorage.storedPath;
+            uploadedFilePath = fileStorage.storedPath[0];
+            if (fileStorage.storedPath.length > 1) {
+                uploadedPairedPath = fileStorage.storedPath[1];
+            }
         })
         .catch(error => {
             // Handle any errors
@@ -158,8 +142,8 @@ function processMainFile() {
 
     // If it's not a directory, it's a file
     // Determine the type
-    switch (fileExtension) {
-        case 'bam':
+    switch (typeDropdown.value) {
+        case 'BAM':
             // No processing, Cleaning BAM is required
             infoSteps = [0, 0, 0, 0, 0, 2];
             uploadedFileType = 'BAM';
@@ -176,7 +160,7 @@ function processMainFile() {
                 // NOTE: Return here for RNA
             }
             return;
-        case 'sam':
+        case 'SAM':
             // No processing, Convert to BAM is required, Clean BAM is optional
             infoSteps = [0, 0, 0, 0, 2, 1];
             uploadedFileType = 'SAM';
@@ -193,7 +177,8 @@ function processMainFile() {
                 // NOTE: Return here for RNA
             }
             return;
-        case 'fastq':
+        case 'FastQ':
+        case 'Paired':
             // Leave all of the steps on
             infoSteps = [1, 1, 1, 1, 1, 1];
             uploadedFileType = 'FastQ';
@@ -218,8 +203,8 @@ function processMainFile() {
                     console.error('Error analyzing file:', error);
                 });
             break;
-        case 'fasta':
-        case 'fast5':
+        case 'FastA':
+        case 'Fast5':
             // NOTE: Nothing yet, come back to this after meeting
             break;
         default:
@@ -318,11 +303,12 @@ function runFastQC (fastQFile) {
 // Send it to the backend
 function uploadAdapterFiles() {
     let adapterFile = adapterFileInput.files[0];
-    const extension = adapterFile.name.split('.').pop().toLowerCase();
-    adapterFile = new File([adapterFile], "UploadedAdapterFile." + extension, { type: adapterFile.type });
+    if (!adapterFile) {
+        return;
+    }
     storeFiles(adapterFileInput.files)
         .then(fileStorage => {
-            uploadedAdapterFile = fileStorage.storedPath;
+            uploadedAdapterFile = fileStorage.storedPath[0];
         })
         .catch(error => {
             // Handle any errors
@@ -402,6 +388,8 @@ function submitContinueForm() {
 
     document.getElementById('infoStepsInput').value = JSON.stringify(infoSteps);
     document.getElementById('uploadedFileInput').value = uploadedFilePath;
+    document.getElementById('uploadedFileInput2').value = uploadedPairedPath;
+    document.getElementById('uploadedAdapter').value = uploadedAdapterFile;
     document.getElementById('uploadedFileTypeInput').value = uploadedFileType;
     document.getElementById('inputTypeInput').value = input_type;
     document.getElementById('fastQConversionInput').value = fastQConversion;
