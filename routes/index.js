@@ -392,7 +392,7 @@ router.post('/fast5-to-fastq' , upload.array('files'), async (req, res) => {
 
   // Run Command
   try {
-    const output = await runBCLCommand(folderName, OutputFastQ);
+    const output = await runBCLCommand(folderName);
 
     console.log('Output:', output);
     // Make a downloadable_content entry for the results
@@ -491,7 +491,7 @@ router.post('/fasta-to-fastq', upload.none(), (req, res) => {
       enabled: false,
       has_visual_component: false,
       label: 'FastQ from FastA',
-      content: convertedOutputFQ,
+      content: 'convertedFastQ.fq',
     });
 
     // Return the results as a JSON
@@ -679,34 +679,37 @@ router.post('/trimming', upload.none(), (req, res) => {
 
 router.post('/alignment', upload.none(), (req, res) => {
 
+  // Request should have: reference file option, choice of mode
+
+  // ref finder
+  let chosenRef = '';
+  chosenRef = req.body.ref;
+  let path_to_reference_fastA = path.join(__dirname, '..', 'ref_genomes', chosenRef, chosenRef + '.fna');
+
   // Variables
-  let reference_file_name = '';
-  let Read1_FastQ_file = '';
-  let Read2_FastQ_file = '';
   let name_of_output_file = path.join(__dirname, '..', 'output', 'AlignedSAM.sam');
 
   // Run Command
-  let AlignmentCommand =' ';
+  let AlignmentCommand ='';
   let AlignmentArgs = [];
 
   // --- BWA MEM
   // bwa mem <reference file name> <Read1 FastQ file (paired file from trimming)> <Read2 FastQ file (paired file from trimming)> > <name of output file>.sam
-  if (req.type === 'bwa') {
+  if (req.body.type === 'bwa') {
     AlignmentCommand = path.join(__dirname, '..', 'bio_modules', 'bwa');
-    AlignmentArgs = ['mem', reference_file_name, Read1_FastQ_file, Read2_FastQ_file, '>', name_of_output_file];
+    AlignmentArgs = ['mem', path.join(__dirname, '..', 'ref_genomes', chosenRef), uploadedFilePath, uploadedPairedPath, '>', name_of_output_file];
   }
   // --- BOWTIE
   // bowtie [options]* -x <ebwt> {-1 <m1> -2 <m2> | --12 <r> | --interleaved <i> | <s>} -S <output sam file>
-  else if (req.type === 'bowtie') {
+  else if (req.body.type === 'bowtie') {
     AlignmentCommand = path.join(__dirname, '..', 'bio_modules', 'bowtie');
-    AlignmentArgs = ['-x', req.ref, '--12', 'r', uploadedFiles[0].path + ', ' + uploadedFiles[1].path , '-S', name_of_output_file];
+    AlignmentArgs = ['-x', path_to_reference_fastA, '--12', 'r', uploadedFilePath + ', ' + uploadedPairedPath , '-S', name_of_output_file];
   } 
   // --- BOWTIE2
   // bowtie2 [options]* -x <bt2-idx> {-1 <m1> -2 <m2> | -U <r> | --interleaved <i> | b <bam>} -S [<sam>]
   else {
     AlignmentCommand = path.join(__dirname, '..', 'bio_modules', 'bowtie2');
-    // NOTE: Can come back later and add the option to run this on a fastQ file if I do the m1 m2 option instead
-    AlignmentArgs = ['-x', req.ref, 'b', uploadedFiles[0].path, '-S', name_of_output_file];
+    AlignmentArgs = ['-x', path.join(__dirname, '..', 'ref_genomes', chosenRef), '-U', 'r', uploadedFilePath, + ', ' + uploadedPairedPath, '-S', name_of_output_file];
   } 
   
   const runAlignment = spawn(AlignmentCommand, AlignmentArgs);
@@ -731,7 +734,7 @@ router.post('/alignment', upload.none(), (req, res) => {
     downloadable_content.push({
       enabled: false,
       has_visual_component: false,
-      label: 'Aligned SAM File: ' + req.type,
+      label: 'Aligned SAM File: ' + req.body.type,
       content: 'AlignedSAM.sam',
     });
   
@@ -1030,9 +1033,6 @@ router.post('/alignment-summary', upload.none(), async (req, res) => {
   // Variables
   let chosenRef = '';
   chosenRef = req.body.ref;
-  let path_to_reference_fastA = path.join(__dirname, '..', 'ref_genomes', chosenRef, chosenRef + '.fna');
-
-  let output_file_name_txt = path.join(__dirname, '..', 'output', 'AlignmentSummary.txt');
 
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
@@ -1048,7 +1048,8 @@ router.post('/alignment-summary', upload.none(), async (req, res) => {
 
   // Run Command
   try {
-    let r_path = '../refs/Human/hgch38_index.fna.amb';
+    // let r_path = '../refs/Human/hgch38_index.fna.amb';
+    let r_path = '../refs/' + chosenRef + '/' + chosenRef + '.fna';
     let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
     let o_path = '../output/AlignmentSummary.txt';
     const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -I ' + i_path + ' -O ' + o_path + ' -R ' + r_path);
@@ -1592,7 +1593,7 @@ async function runBCLCommand(inputDirectory) {
   return output;
 }
 
-async function runFast5ToFastQ(inputDirectory, outputFileName) {
+async function runFast5ToFastQ(inputDirectory) {
   const container = await docker.createContainer({
     Image: 'fast5-to-fastq', // Replace with your Docker image name
     Cmd: ['/usr/uploads/' + folderName,  '>', 'usr/output/FastQFromFast5.fastq'],
