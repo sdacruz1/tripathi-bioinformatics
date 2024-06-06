@@ -1,0 +1,20 @@
+# Use a Python base image
+FROM python:3
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Clone the repository
+RUN git clone https://github.com/rrwick/Fast5-to-Fastq.git
+
+# Change directory to the repository
+WORKDIR /app/Fast5-to-Fastq
+
+# Install HDF5 library and dependencies
+RUN apt-get update && apt-get install -y libhdf5-dev
+
+# Install dependencies
+RUN pip install h5py
+
+# Set the entry point for running the tool
+ENTRYPOINT ["python", "fast5_to_fastq.py"]

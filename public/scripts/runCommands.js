@@ -139,7 +139,10 @@ const Commands = {
     Alignment: { // CBTT
         title: 'Alignment',
         commandToRun: '/alignment',
-        formDataArray: [],
+        formDataArray: [
+            ['ref', 'Human'],
+            ['type', 'bwa']
+        ],
         commandIndex: [0, 2]
     },
     Sam_To_Bam: {
@@ -175,7 +178,7 @@ const Commands = {
         commandIndex: [1, 1]
     },
     Alignment_Summary: {
-        title: 'Alignment',
+        title: 'Alignment Summary',
         commandToRun: '/alignment-summary',
         formDataArray: [
             ['ref', 'Ecoli']
@@ -255,14 +258,15 @@ let firstCommandIndex = 7; // This will indicate the first 'true', AKA activated
 
 async function runCommands() {
     try {
-        await MakeRequest(Commands.Trimming);
+        await MakeRequest(Commands.Alignment);
+        // await MakeRequest(Commands.Trimming);
         // await MakeRequest(Commands.Sam_To_Bam);
         // await MakeRequest(Commands.Sort_BAM_File);
         // await MakeRequest(Commands.Index_BAM_File);
         // await MakeRequest(Commands.Add_Or_Replace_Read_Groups);
         // await MakeRequest(Commands.Bam_Index_Stats);
         // await MakeRequest(Commands.Alignment_Summary);
-        // // await MakeRequest(Commands.GC_Bias_Summary); // CBTT, doesn't work yet
+        // await MakeRequest(Commands.GC_Bias_Summary);
         // await MakeRequest(Commands.Insert_Size_Summary);
         // await MakeRequest(Commands.Create_Sequence_Dictionary);
         // await MakeRequest(Commands.Flag_Stats);

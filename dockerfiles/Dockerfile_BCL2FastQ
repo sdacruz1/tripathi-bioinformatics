@@ -1,0 +1,38 @@
+# Start with a base image
+FROM ubuntu:latest
+
+# Update and install necessary packages
+RUN apt-get update && \
+    apt-get install -y wget && \
+    apt-get install -y bzip2 && \
+    apt-get install -y libxml2-dev && \
+    apt-get install -y libz-dev && \
+    apt-get install -y libpthread-stubs0-dev && \
+    apt-get install -y make && \
+    apt-get install -y unzip && \
+    apt-get install -y rpm2cpio && \
+    apt-get install -y cpio && \
+    apt-get clean
+
+# Copy the bcl2fastq zip file to the container
+COPY bcl2fastq2-v2-20-0-linux-x86-64.zip /tmp/
+
+# Install bcl2fastq
+RUN cd /tmp && \
+    unzip bcl2fastq2-v2-20-0-linux-x86-64.zip && \
+    rm bcl2fastq2-v2-20-0-linux-x86-64.zip && \
+    rpm2cpio bcl2fastq2-v2.20.0.422-Linux-x86_64.rpm | cpio -idmv && \
+    rm bcl2fastq2-v2.20.0.422-Linux-x86_64.rpm && \
+    cp -r ./usr/local/bin/* /usr/local/bin/ && \
+    cp -r ./usr/local/lib/* /usr/local/lib/ && \
+    cp -r ./usr/local/share/* /usr/local/share/ && \
+    rm -rf ./usr
+
+# Add bcl2fastq to PATH
+ENV PATH="/usr/local/bin:${PATH}"
+
+# Set the working directory
+WORKDIR /data
+
+# Default command
+CMD ["bcl2fastq"]

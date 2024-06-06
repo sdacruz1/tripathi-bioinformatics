@@ -364,7 +364,7 @@ router.post('/fastqc', upload.none(), (req, res) => {
 
 router.post('/fast5-to-fastq' , upload.array('files'), async (req, res) => {
 
-  // =============== Handle the BCL File Folder ===============
+  // =============== Handle the fast5 File Folder ===============
   const uploadedFiles = req.files;
 
   // Check if the files were uploaded
@@ -392,7 +392,7 @@ router.post('/fast5-to-fastq' , upload.array('files'), async (req, res) => {
 
   // Run Command
   try {
-    const output = await runBCLCommand(folderName);
+    const output = await runFast5ToFastQ(folderName);
 
     console.log('Output:', output);
     // Make a downloadable_content entry for the results
@@ -1048,8 +1048,8 @@ router.post('/alignment-summary', upload.none(), async (req, res) => {
 
   // Run Command
   try {
-    // let r_path = '../refs/Human/hgch38_index.fna.amb';
-    let r_path = '../refs/' + chosenRef + '/' + chosenRef + '.fna';
+    let r_path = '../refs/Human/hgch38_index.fna';
+    // let r_path = '../refs/' + chosenRef + '/' + chosenRef + '.fna';
     let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
     let o_path = '../output/AlignmentSummary.txt';
     const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -I ' + i_path + ' -O ' + o_path + ' -R ' + r_path);
@@ -1101,10 +1101,9 @@ router.post('/gc-bias-summary', upload.none(), async (req, res) => {
   // Run Command
   // java -jar picard.jar CollectGcBiasMetrics -I <path to sorted BAM> -O <output GC bias metrics.txt> -CHART <GC bias ouputchart.pdf> -S <GC Bias summary output.txt> -R <reference fasta>
   try {
-    // let r_path = '../refs/Ecoli/Ecoli.fna';
+    let r_path = '../refs/Human/hgch38_index.fna';
     let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
-    // const output = await runPicardCommand('java -jar ../picard/picard.jar CollectGcBiasMetrics -I ' + i_path + ' -O ' + output_GC_bias_metrics_txt + ' -CHART ' + GC_bias_outputchart_pdf + ' -S ' + GC_Bias_summary_output_txt);
-    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectGcBiasMetrics -I ' + i_path + ' -O ' + output_GC_bias_metrics_txt + ' -CHART ' + GC_bias_outputchart_pdf + ' -S ' + GC_Bias_summary_output_txt + ' -R ' + path_to_reference_fastA);
+    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectGcBiasMetrics -I ' + i_path + ' -O ' + output_GC_bias_metrics_txt + ' -CHART ' + GC_bias_outputchart_pdf + ' -S ' + GC_Bias_summary_output_txt + ' -R ' + r_path);
 
     console.log('Output:', output);
     // Make a downloadable_content entry for the results
@@ -1539,7 +1538,7 @@ async function runPicardCommand(command) {
 async function runBCLCommand(inputDirectory) {
   const container = await docker.createContainer({
     Image: 'illumina-bcl2fastq', // Replace with your Docker image name
-    Cmd: ['/bin/bash', '-c', 'bcl2fastq --runfolder-dir /usr/uploads --output-dir /usr/output --ignore-missing-bcls --ignore-missing-filter --ignore-missing-positions '],
+    Cmd: ['/bin/bash', '-c', 'bcl2fastq --runfolder-dir /usr/uploads --output-dir /usr/output --processing-threads 1 --no-lane-splitting'], // the options are for RAM
     AttachStdout: true,
     AttachStderr: true,
     Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely
