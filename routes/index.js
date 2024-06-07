@@ -6,6 +6,7 @@ const fs = require('fs');
 const bodyParser = require('body-parser');
 const Docker = require('dockerode');
 
+const {Command, Parameter} = require('../data/Structure');
 const docker = new Docker();
 var router = express.Router();
 
@@ -34,6 +35,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 //#region  ... Constants ...
+
+
 
 // Categories
 let files = ["File Processing",
