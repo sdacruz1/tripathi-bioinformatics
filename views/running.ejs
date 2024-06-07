@@ -37,35 +37,31 @@
 
     <h4>Your Timeline:</h4>
 
-    <% for (let i=0; i < categories.length; i++) { %>
-        <div id="section<%= i %>">
-            <% for (let j=0; j < categories[i][1].length; j++) {
-                if (!categories[i][1][j][1]) { continue; } %>
-                <div style="display: flex;">
-                    <div style="width: 4rem; margin-right: 1rem;" >
-                        <img class="status_img" id="status_img_<%= i %>_<%= j %>" src="../images/Unchecked_Circle.png">
-                        <h3 class="status_text_none" id="status_text_<%= i %>_<%= j %>">Waiting</h3>
-                    </div>
-                    <div class="info_box">
-                        <h3>
-                            <%= categories[i][1][j][0] %>
-                        </h3>
+    <% DNACommands.forEach(command => { %>
+        if (!command.isEnabled) { continue; } %>
+        <div style="display: flex;">
+            <div style="width: 4rem; margin-right: 1rem;" >
+                <img class="status_img" id="status_img_<%= command.serverCall %>" src="../images/Unchecked_Circle.png">
+                <h3 class="status_text_none" id="status_text_<%= command.serverCall %>">Waiting</h3>
+            </div>
+            <div class="info_box">
+                <h3>
+                    <%= command.title %>
+                </h3>
 
-                        <div id="selections_display_<%= i %>_<%= j %>" class="selections-display hidden">
-                            <!-- Display selections -->
-                            <% for (let k=0; k < categories[i][1][j][2].length; k++) { %>
-                                <div style="display: flex;">
-                                <p style="color: #b985d9;"> <%=categories[i][1][j][2][k][0]%>: </p>
-                                <p style="margin-left: 1rem;" id="option_<%= i %>_<%= j %>_<%= k %>_display"><%=categories[i][1][j][2][k][3]%></p>
-                                <br></div>
-                            <% } %>
-                        </div>
-                    </div>
+                <div id="selections_display_<%= command.serverCall %>" class="selections-display hidden">
+                    <!-- Display selections -->
+                    <% DNAParameters.get(command.serverCall).forEach(parameter => { %>
+                        <div style="display: flex;">
+                        <p style="color: #b985d9;"> <%= parameter.title %>: </p>
+                        <p style="margin-left: 1rem;" id="option_<%= parameter.title %>_display"><%= parameter.value %></p>
+                        <br></div>
+                    <% }) %>
                 </div>
-                    <br>
-            <% } %>
+            </div>
         </div>
-    <% } %>
+        <br>
+    <% }) %>
 
     <form id="runningForm" action="/output" method="post">
         <button class="running_continue_button"><h3 style="color: black" disabled>Continue</h3></button>

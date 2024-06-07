@@ -18,71 +18,69 @@
         <h3 style="color:black;">Select a goalpost for the end of your timeline</h3>
 
         <form id="goalpostForm" action="/dna-pipeline" method="post">
-            <% for (let i=0; i < categories.length; i++) { %>
+            <% DNACategories.forEach(category => { %>
 
-                <button type="button" class="collapsible" onclick="toggleCollapsible('section<%= i %>')">
+                <button type="button" class="collapsible" onclick="toggleCollapsible('section_<%= category.title%>')">
                     <h3>
-                        <%=categories[i][0] %>
+                        <%=category.title %>
                     </h3>
                 </button>
 
-                <div class="content" id="section<%= i %>">
-                    <% for (let j=0; j < categories[i][1].length; j++) {
-                        if (categories[i][0] === "File Processing") {
+                <div class="content" id="section_<%= category.title %>">
+                    <% for (let j=0; j < category.entries.length; j++) {
+                        if (category.title === "File Processing") {
                             if (infoSteps[j] === 0) { continue; }
-                        } %>
+                        }
+                        let entry = DNACommands.get(category.entries[j]);
+                        %>
                         <div style="display: flex;">
                         <label class="checkbox-container">
-                            <input type="checkbox" name="checkbox_<%= i %>_<%= j %>" <% if (categories[i][1][j][1]) {
+                            <input type="checkbox" name="<%= entry.serverCall %>" <% if (entry.isEnabled) {
                                 %>checked
                             <% } %>>
                             <span class="checkmark"></span>
-                                <h4 class="category_labels"><%= categories[i][1][j][0] %></h4>
+                                <h4 class="category_labels"><%= entry.title %></h4>
                         </label>
                     </div>
                         <% } %>
                 </div>
-                <% } %>
+                <% }) %>
 
                 <%- '<script>' %>
                     const form = document.getElementById('goalpostForm');
-                    const categories = JSON.parse('<%- JSON.stringify(categories) %>');
+                    const DNACommands = JSON.parse('<%- JSON.stringify(categories) %>');
+                    const DNACategories = JSON.parse('<%- JSON.stringify(categories) %>');
                     const infoSteps = JSON.parse('<%- JSON.stringify(infoSteps) %>');
-                    console.log('Categories:', categories);
-                    console.log('InfoSteps:', infoSteps);
 
                     form.addEventListener('change', function (event) {
-                    if (event.target.type === 'checkbox') {
-                    // Extract i and j from the checkbox name
-                    const checkboxName = event.target.name;
-                    const [, i, j] = checkboxName.split('_').map(Number);
-
-                    // Set the correct array element accordingly
-                    categories[i][1][j][1] = event.target.checked;
-                    }
+                        if (event.target.type === 'checkbox') {
+                            // Set the correct array element accordingly
+                            changingEntry = DNACommands.get(event.target.name);
+                            DNACommands.set(event.target.name, changingEntry.setEnabled(event.target.checked));
+                        }
                     });
 
                     form.addEventListener('submit', function(event) {
-                    // prevent submission for now
-                    event.preventDefault();
+                        // prevent submission for now
+                        event.preventDefault();
 
-                    // send the categories array as a hidden input
-                    const sendCategories = document.querySelector('[name="categories"]');
-                    sendCategories.value = encodeURIComponent(JSON.stringify(categories));
+                        // send the DNACommands array as a hidden input, to make sure it updates BTS
+                        const sendCommands = document.querySelector('[name="DNACommands"]');
+                        sendCommands.value = encodeURIComponent(JSON.stringify(DNACommands));
 
-                    // Submit the form
-                    form.submit();
+                        // Submit the form
+                        form.submit();
                     });
 
                     // JavaScript to handle the toggling
                     function toggleCollapsible(sectionId) {
-                    const collapsibleContent = document.getElementById(sectionId);
-                    collapsibleContent.classList.toggle('active');
+                        const collapsibleContent = document.getElementById(sectionId);
+                        collapsibleContent.classList.toggle('active');
                     }
 
                 <%- '</script>' %>
 
-                <input type="hidden" name="categories">
+                <input type="hidden" name="DNACommands">
 
                 <button class="goals_continue_button" type="submit"><h3 style="color: black">Generate Timeline</h3></button>
         </form>

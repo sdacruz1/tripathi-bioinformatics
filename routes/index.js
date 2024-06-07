@@ -155,21 +155,22 @@ router.post('/dna-goalposts', function (req, res, next) {
   fastQConversion = req.body.fastQConversion;
   fastQCResults = req.body.fastQCResults;
 
-  res.render('dna-goalposts', { toolbar_index: 3, categories, infoSteps });
+  res.render('dna-goalposts', { toolbar_index: 3, DNACategories, DNACommands, infoSteps });
 });
 
 /* DNA Pipeline */
 router.post('/dna-pipeline', function (req, res, next) {
-  categories = JSON.parse(decodeURIComponent(req.body.categories || '[]'));
+  DNACommands = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
+  // categories = JSON.parse(decodeURIComponent(req.body.categories || '[]'));
 
-  res.render('dna-pipeline', { toolbar_index: 4, categories, infoSteps });
+  res.render('dna-pipeline', { toolbar_index: 4, DNACategories, DNACommands, DNAParameters, infoSteps });
 });
 
 /* Running Page */
 router.post('/running', function (req, res, next) {
   const categories = JSON.parse(decodeURIComponent(req.body.categories || '[]'));
 
-  res.render('running', { toolbar_index: 5, categories, uploadedFilePath });
+  res.render('running', { toolbar_index: 5, DNACommands, DNAParameters, uploadedFilePath });
 });
 
 /* Running Page */
