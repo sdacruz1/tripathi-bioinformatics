@@ -1,3 +1,5 @@
+const {Command, Parameter} = require('../data/Structure');
+
 // ==== Helper Functions ==== //
 
 // Set Status

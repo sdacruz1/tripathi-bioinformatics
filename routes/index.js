@@ -6,7 +6,7 @@ const fs = require('fs');
 const bodyParser = require('body-parser');
 const Docker = require('dockerode');
 
-const {Command, Parameter} = require('../data/Structure');
+const {DNACategories, DNACommands, DNAParameters} = require('../public/data/SiteData');
 const docker = new Docker();
 var router = express.Router();
 
@@ -35,68 +35,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 //#region  ... Constants ...
-
-
-
-// Categories
-let files = ["File Processing",
-  [
-    // name, toggle, options, file
-    ["Convert to FastQ", false, [], []],
-
-    ["Trimming", false, [
-      // name, input type, options, selected
-      ["Trim Type", "select", ["Adapter Trim", "Read Length Trim", "Quality Score Trim", "Duplicate Trim"], []]
-    ], []],
-
-    ["Alignment", false, [
-      ["Type of Alignment", "select", ["BWA mem", "Bowtie", "Bowtie 2"], []],
-      ["Number of Mismatches", "number", [], [0]],
-      ["Discard Unpaired", "checkbox", [], []],
-    ], []],
-
-    ["Demultiplex FastQ", false, [], []],
-
-    ["Convert to BAM File", false, [], []],
-
-    ["Cleanup BAM File", false, [
-      ["Sort", "checkbox", [], []],
-      ["Index", "checkbox", [], []],
-    ], []],
-  ]];
-let stats = ["Statistics",
-  [
-    ["Add or Replace Read Groups", false, [], []],
-    ["Bam Index Stats", false, [], []],
-  ]];
-let summary = ["Summary",
-  [
-    ["Alignment Summary", false, [], []],
-    ["GC Bias Summary", false, [], []],
-    ["Insert Size Summary", false, [], []],
-  ]];
-let graphs = ["Graphs",
-  [
-    ["Alignment Graph", false, [], []],
-    ["GC Bias Graphs", false, [], []],
-    ["Insert Size Graphs", false, [], []],
-  ]];
-let metrics = ["Metrics",
-  [
-    ["Quality Yield Metrics", false, [], []],
-    ["Whole Genome Sequencing Metrics", false, [], []],
-    ["Targeted PCR Metrics", false, [], []],
-  ]];
-let cleanup = ["Cleanup and Sequencing",
-  [
-    ["Create Sequence Dictionary", false, [], []],
-    ["Flag Stats", false, [], []],
-    ["Mark Duplicates", false, [], []],
-    ["Sequencing Depth", false, [], []],
-    ["Sequencing Coverage", false, [], []],
-  ]];
-
-let categories = [files, stats, summary, graphs, metrics, cleanup];
 
 // Program Mode and Input Type
 let mode = "";
@@ -155,20 +93,34 @@ router.post('/dna-goalposts', function (req, res, next) {
   fastQConversion = req.body.fastQConversion;
   fastQCResults = req.body.fastQCResults;
 
+  console.log(DNACategories);
+
   res.render('dna-goalposts', { toolbar_index: 3, DNACategories, DNACommands, infoSteps });
 });
 
 /* DNA Pipeline */
 router.post('/dna-pipeline', function (req, res, next) {
-  DNACommands = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
-  // categories = JSON.parse(decodeURIComponent(req.body.categories || '[]'));
+  // DNACommands = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
+
+  // // Clear the existing commands
+  // DNACommands.clear();
+
+  // // Convert the plain object to a Map and then iterate over it
+  // const dnaCommandsMap = new Map(JSON.parse(req.body.DNACommands));
+  // for (const [key, value] of dnaCommandsMap) {
+  //     DNACommands.set(key, value);
+  // }
+  
+  // console.log(dnaCommandsMap);
+
 
   res.render('dna-pipeline', { toolbar_index: 4, DNACategories, DNACommands, DNAParameters, infoSteps });
 });
 
 /* Running Page */
 router.post('/running', function (req, res, next) {
-  const categories = JSON.parse(decodeURIComponent(req.body.categories || '[]'));
+  DNACommands = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
+  DNAParameters = JSON.parse(decodeURIComponent(req.body.DNAParameters || '[]'));
 
   res.render('running', { toolbar_index: 5, DNACommands, DNAParameters, uploadedFilePath });
 });
@@ -176,7 +128,7 @@ router.post('/running', function (req, res, next) {
 /* Running Page */
 router.get('/running', function (req, res, next) {
   // Render the 'output' view
-  res.render('running', { categories, uploadedFilePath, toolbar_index: 5 });
+  res.render('running', {  DNACommands, DNAParameters, uploadedFilePath, toolbar_index: 5 });
 });
 
 /* Output Page */

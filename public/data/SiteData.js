@@ -1,4 +1,4 @@
-const {Command, Parameter} = require('../data/Structure');
+const {Command, Parameter} = require('./Structure');
 
 // ---- DNA ---- //
 
@@ -7,7 +7,7 @@ const DNACategories = [
     { title: "File Processing", entries: ['sort-bam', 'index-bam', 'fastqc', 'trimming', 'alignment', 'mark-or-remove-duplicates']},
     { title: "Statistics", entries: ['add-or-replace-read-groups', 'bam-index-stats', 'flag-stats']},
     { title: "Summary and Graphs", entries: ['alignment-summary', 'gc-bias-summary', 'insert-size-summary']},
-    { title: "Metrics", entries: ['', '', '']}, // CBTT
+    // { title: "Metrics", entries: ['', '', '']}, // CBTT
     { title: "Sequencing", entries: ['create-sequence-dictionary', 'sequence-depth', 'sequence-coverage']},
 ];
 
@@ -65,7 +65,7 @@ let DNAParameters = new Map([
             new Parameter("Leading Trim: Input", true, 'number', [], 'leading', ''),
         new Parameter("Perform Trailing Trim", false, 'checkbox', [], 'trailing_trim', false),
             new Parameter("Trailing Trim: Input", true, 'checkbox', [], 'trailing', false),
-    ]]
+    ]],
     ['alignment', [
         new Parameter("Reference Genome", false, 'select', ['Human', 'Mouse', 'Ecoli', 'HIV', 'Pig', 'Staphylococcus_aureus'], 'ref_genome', 'Human'),
         new Parameter("Alignment Mode", false, 'select', ['BWA', 'Bowtie', 'Bowtie2'], 'mode', 'BWA'),
@@ -104,3 +104,5 @@ let DNAParameters = new Map([
         new Parameter("Create Graph", false, 'checkbox', [], 'isVisual', false),
     ]]
 ]);
+
+module.exports = {DNACategories, DNACommands, DNAParameters};

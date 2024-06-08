@@ -14,181 +14,144 @@
     <%- include('partials/toolbar') %>
 
     <div class="timeline_content">
-    <h1>Recommended Pipeline</h1>
-    <h3 style="color:black;">Edit your timeline if necessary:</h3>
+        <h1>Recommended Pipeline</h1>
+        <h3 style="color:black;">Edit your timeline if necessary:</h3>
 
-    <form id="dnaPipelineForm" action="/running" method="post">
+        <form id="dnaPipelineForm" action="/running" method="post">
+            <% DNACategories.forEach(category => { %>
+                <button type="button" class="collapsible" onclick="toggleCollapsible('section_<%= category.title %>')">
+                    <h3><%= category.title %></h3>
+                </button>
 
-        <% DNACategories.forEach(category => { %>
-        
-        <button type="button" class="collapsible" onclick="toggleCollapsible('section_<%= category.title %>')">
-            <h3> <%=category.title %> </h3>
-        </button>
+                <div class="content" id="section_<%= category.title %>">
+                    <% for (let j = 0; j < category.entries.length; j++) { %>
+                        <% if (category.title === "File Processing" && infoSteps[j] === 0) { continue; } %>
+                        <% let entry = DNACommands.get(category.entries[j]); %>
+                        <% let parameters = DNAParameters.get(entry.serverCall); %>
 
-        <div class="content" id="section_<%= category.title %>">
-            <% for (let j=0; j < category.entries.length; j++) {
-                if (category.title === "File Processing") {
-                    if (infoSteps[j] === 0) { continue; }
-                }
-                let entry = DNACommands.get(category.entries[j]);
-                let parameters = DNAParameters.get(entry.serverCall);
-                %>
-                <div>
-                    <label>
-                        <div style="display: flex;">
-                        <input type="range" min="0" max="1" step="1" value="<%= entry.isEnabled ? 1 : 0;%>" name="slider_<%= entry.serverCall %>">
-                        <h4 class="category_labels"><%= entry.title %></h4>
-                    </div>
-                    </label>
+                        <div>
+                            <label>
+                                <div style="display: flex;">
+                                    <input type="range" min="0" max="1" step="1" value="<%= entry.isEnabled ? 1 : 0 %>" name="slider_<%= entry.serverCall %>">
+                                    <h4 class="category_labels"><%= entry.title %></h4>
+                                </div>
+                            </label>
 
-                    <!-- if there are no options for this setting, don't bother with all that -->
-                    <% if (parameters.length == 0) { %>
+                            <% if (parameters.length === 0) { %>
+                                </div>
+                                <% continue; } %>
+
+                            <div id="options_<%= entry.serverCall %>" class="options-container <%= entry.isEnabled ? '' : 'hidden' %>">
+                                <% parameters.forEach(parameter => { %>
+                                    <div style="display: flex;">
+                                        <label for="<%= parameter.title %>"><%= parameter.title %>:</label>
+                                        <% if (parameter.type === "number") { %>
+                                            <input class="option_input" type="number" id="<%= parameter.title %>" value="<%= parameter.value %>">
+                                        <% } else if (parameter.type === "checkbox") { %>
+                                            <input class="option_input" type="checkbox" id="<%= parameter.title %>" <% if (parameter.value) { %>checked<% } %>>
+                                        <% } else { %>
+                                            <select class="option_input" id="<%= parameter.title %>">
+                                                <% parameter.options.forEach(option => { %>
+                                                    <option value="<%= option %>" <% if (option === parameter.value) { %>selected<% } %>><%= option %></option>
+                                                <% }) %>
+                                            </select>
+                                        <% } %>
+                                    </div>
+                                <% }) %>
+                                <button type="button" class="save-btn" onclick="saveButton('<%= entry.serverCall %>')">Save</button>
+                            </div>
+
+                            <div id="options_display_<%= entry.serverCall %>" class="options-display hidden">
+                                <% parameters.forEach(parameter => { %>
+                                    <div style="display: flex;">
+                                        <p style="color: #b985d9;"><%= parameter.title %>:</p>
+                                        <p style="margin-left: 1rem;" id="option_<%= parameter.title %>_display"></p>
+                                    </div>
+                                <% }) %>
+                                <button type="button" onclick="editButton('<%= entry.serverCall %>')" class="edit-btn">Edit</button>
+                            </div>
                         </div>
-                    <% continue; } %>
-
-                    <!-- The set parameters container. For each parameter, make an input and save its value to the array slot -->
-                    <div id="options_<%= entry.serverCall %>" class="options-container <%= entry.isEnabled ? '' : 'hidden' %>">
-                        <% parameters.forEach(parameter => {; %>
-                        <div style="display: flex;">
-                            <label for="<%=parameter.title%>"><%=parameter.title%>:</label>
-
-                            <% if (parameter.type == "number") { %>
-                                <input class="option_input" type="number" id="<%=parameter.title%>" value="<%=parameter.value%>">
-                            <br>
-                            <% } else if (parameter.type == "checkbox") { %>
-                                <input class="option_input" type="checkbox" id="<%=parameter.title%>" <% if (parameter.value) { %>checked<% } %>>
-                            <br>
-                            <% } else { %>
-                                <select class="option_input" id="<%=parameter.title%>">
-                                    <% for (let l=0; l < parameter.options.length; l++) { %>
-                                    <option value="<%=parameter.options[l]%>"><%=parameter.options[l]%></option>
-                                    <% } %>
-                                </select>
-                            <br>
-                            <% } %>
-                        </div>
-                        <% }) %>
-
-                        <!-- Switch container visibilites -->
-                        <button type="button" class="save-btn" onclick="saveButton(entry.serverCall)">Save</button>
-                    </div>
-                
-                    <!-- The display parameters container. For each parameter, display the value in its array slot -->
-                    <div id="options_display_<%= entry.serverCall %>" class="options-display hidden">
-                        <!-- Display options -->
-                        <% parameters.forEach(parameter => { %>
-                            <div style="display: flex;">
-                            <p style="color: #b985d9;"><%=parameter.title%>:</p>
-                            <p style="margin-left: 1rem;" id="option_<%= parameter.title %>_display"></p>
-                        </div>
-                        <% }) %>
-                        <!-- Switch container visibilities -->
-                        <button type="button" onclick="editButton(entry.serverCall)" class="edit-btn">Edit</button>
-                    </div>
-                
-                    
+                    <% } %>
                 </div>
-            <% } %>
-        </div>
-        <% } %>
+            <% }) %>
 
-        <%- '<script>' %>
-            const form = document.getElementById('dnaPipelineForm');
-            const DNACommands = JSON.parse('<%- JSON.stringify(DNACommands) %>');
-            const DNAParameters = JSON.parse('<%- JSON.stringify(DNAParameters) %>');
+            <input type="hidden" name="DNACommands">
+            <input type="hidden" name="DNAParameters">
+            <button class="pipeline_continue_button"><h3 style="color: black">Continue</h3></button>
+        </form>
+    </div>
 
-            function saveButton(entryTag) {
-                // Save the selected values
-                let parameters = DNAParameters.get(entryTag);
+    <script>
+        const form = document.getElementById('dnaPipelineForm');
+        let DNACommands = new Map(Object.entries(JSON.parse('<%= JSON.stringify(Object.fromEntries(DNACommands)) %>')));
+        let DNAParameters = new Map(Object.entries(JSON.parse('<%= JSON.stringify(Object.fromEntries(DNAParameters)) %>')));
 
-                parameters.forEach(parameter => {
-                    optionInput = document.getElementById(parameter.title);
-                    optionDisplayTag = document.getElementById(('option_' + parameter.title + '_display'));
-                    let newValue;
-                    switch(parameter.type) {
-                        case "number":
-                            newValue = optionInput.value;
-                            break;
-                        case "checkbox":
-                            newValue = optionInput.checked;
-                            break;
-                        case "select":
-                            newValue = optionInput.value;
-                            break;
-                        default:
-                            console.log("Not a valid input type");
-                    }
-                    DNAParameters.set(entryTag, parameter.setValue(newValue));
-                    optionDisplayTag.innerText = newValue.toString();
-                });
-
-                // Switch to the display div
-                optionsDiv = document.getElementById('options_' + entryTag);
-                displayDiv = document.getElementById('options_display_' + entryTag);
-
-                optionsDiv.classList.add('hidden');
-                displayDiv.classList.remove('hidden');
-            }
-
-            function editButton(entryTag) {
-                // Switch to the options div
-                optionsDiv = document.getElementById('options_' + entryTag);
-                displayDiv = document.getElementById('options_display_' + entryTag);
-
-                displayDiv.classList.add('hidden');
-                optionsDiv.classList.remove('hidden');
-            }
-    
-            form.addEventListener('change', function (event) {
-                if (event.target.type === 'range') {
-                    // Extract the tag from the slider name
-                    const sliderName = event.target.name;
-                    const [, tag] = sliderName.split('_').map(Number);
-    
-                    // Set the correct array element accordingly
-                    DNACommands.set(tag, DNACommands.get(tag).setEnabled(event.target.value == 1));
-
-                    optionsDiv = document.getElementById('options_' + tag);
-                    displayDiv = document.getElementById('options_display_' + tag);
-
-                    if (DNACommands.get(tag).isEnabled) {
-                        displayDiv.classList.remove('hidden');
-                    } else {
-                        optionsDiv.classList.add('hidden');
-                        displayDiv.classList.add('hidden');
-                    }
+        function saveButton(entryTag) {
+            let parameters = DNAParameters.get(entryTag);
+            parameters.forEach(parameter => {
+                let optionInput = document.getElementById(parameter.title);
+                let optionDisplayTag = document.getElementById('option_' + parameter.title + '_display');
+                let newValue;
+                switch (parameter.type) {
+                    case "number":
+                        newValue = optionInput.value;
+                        break;
+                    case "checkbox":
+                        newValue = optionInput.checked;
+                        break;
+                    case "select":
+                        newValue = optionInput.value;
+                        break;
+                    default:
+                        console.log("Not a valid input type");
                 }
+                parameter.value = newValue;
+                optionDisplayTag.innerText = newValue.toString();
             });
 
-            form.addEventListener('submit', function(event) {
-                // prevent submission for now
-                event.preventDefault();
+            let optionsDiv = document.getElementById('options_' + entryTag);
+            let displayDiv = document.getElementById('options_display_' + entryTag);
+            optionsDiv.classList.add('hidden');
+            displayDiv.classList.remove('hidden');
+        }
 
-                // send the categories array as a hidden input
-                const sendCommands = document.querySelector('[name="DNACommands"]');
-                sendCommands.value = encodeURIComponent(JSON.stringify(DNACommands));
+        function editButton(entryTag) {
+            let optionsDiv = document.getElementById('options_' + entryTag);
+            let displayDiv = document.getElementById('options_display_' + entryTag);
+            displayDiv.classList.add('hidden');
+            optionsDiv.classList.remove('hidden');
+        }
 
-                const sendParameters = document.querySelector('[name="DNAParameters"]');
-                sendParameters.value = encodeURIComponent(JSON.stringify(DNAParameters));
-    
-                // Submit the form
-                form.submit();
-            });
+        form.addEventListener('change', function (event) {
+            if (event.target.type === 'range') {
+                const sliderName = event.target.name;
+                const tag = sliderName.split('_')[1];
+                DNACommands.get(tag).isEnabled = event.target.value == 1;
 
-            
-            // JavaScript to handle the toggling
-            function toggleCollapsible(sectionId) {
-                const collapsibleContent = document.getElementById(sectionId);
-                collapsibleContent.classList.toggle('active');
+                let optionsDiv = document.getElementById('options_' + tag);
+                let displayDiv = document.getElementById('options_display_' + tag);
+
+                if (DNACommands.get(tag).isEnabled) {
+                    displayDiv.classList.remove('hidden');
+                } else {
+                    optionsDiv.classList.add('hidden');
+                    displayDiv.classList.add('hidden');
+                }
             }
-        <%- '</script>' %>
+        });
 
-        <input type="hidden" name="DNACommands" >
-        <input type="hidden" name="DNAParameters" >
-        <button class="pipeline_continue_button"><h3 style="color: black">Continue</h3></button>
-        </div>
-    </form>
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            document.querySelector('[name="DNACommands"]').value = encodeURIComponent(JSON.stringify(Object.fromEntries(DNACommands)));
+            document.querySelector('[name="DNAParameters"]').value = encodeURIComponent(JSON.stringify(Object.fromEntries(DNAParameters)));
+            form.submit();
+        });
 
+        function toggleCollapsible(sectionId) {
+            const collapsibleContent = document.getElementById(sectionId);
+            collapsibleContent.classList.toggle('active');
+        }
+    </script>
 </body>
 
 </html>
