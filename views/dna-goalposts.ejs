@@ -46,9 +46,6 @@
                 </div>
                 <% }) %>
 
-
-                <script src="/data/Structure.js"></script>
-
                 <%- '<script>' %>
 
                     const form = document.getElementById('goalpostForm');
@@ -59,16 +56,9 @@
                     form.addEventListener('change', function (event) {
                         if (event.target.type === 'checkbox') {
                             // Set the correct array element accordingly
-                            console.log ("BEFORE");
-                            console.log(DNACommands);
-                            console.log(DNACommands.get(event.target.name));
                             
                             changingEntry = DNACommands.get(event.target.name);
-                            DNACommands.set(event.target.name, new Command(changingEntry.title, event.target.checked, changingEntry.serverCall));
-
-                            console.log ("AFTER");
-                            console.log(DNACommands);
-                            console.log(DNACommands.get(event.target.name));
+                            DNACommands.set(event.target.name, {title: changingEntry.title, isEnabled: event.target.checked, serverCall: changingEntry.serverCall});
 
                         }
                     });

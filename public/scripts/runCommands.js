@@ -1,5 +1,3 @@
-const {Command, Parameter} = require('../data/Structure');
-
 // ==== Helper Functions ==== //
 
 // Set Status
@@ -27,10 +25,10 @@ function setStatus(tag, status) {
 }
 
 // Make Request
-const MakeRequest = (command) => {
+const MakeRequest = (command, parameters) => {
     return new Promise((resolve) => {
         let formData = new FormData();
-        DNAParameters.get(command.serverCall).forEach(parameter => {
+        parameters.forEach(parameter => {
             formData.append(parameter.serverTag, parameter.value);
         });
 
@@ -73,14 +71,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ==== Variables and Data Structures ==== //
 
-const DNACommands = JSON.parse('<%- JSON.stringify(DNACommands) %>');
-const DNAParameters = JSON.parse('<%- JSON.stringify(DNAParameters) %>');
 
-async function runCommands() {
+function runCommands() {
+    let DNACommands = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNACommands.entries())) %>'));
+    let DNAParameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNAParameters.entries())) %>'));
+    console.log(DNACommands);
+
     try {
         DNACommands.forEach(async command => {
             if (command.isEnabled) {
-                await MakeRequest(command);
+                await MakeRequest(command, DNAParameters.get(command.serverCall));
             }
         })
     } catch (error) {

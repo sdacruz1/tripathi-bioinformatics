@@ -93,41 +93,50 @@ router.post('/dna-goalposts', function (req, res, next) {
   fastQConversion = req.body.fastQConversion;
   fastQCResults = req.body.fastQCResults;
 
-  console.log(DNACategories);
-
   res.render('dna-goalposts', { toolbar_index: 3, DNACategories, DNACommands, infoSteps });
 });
 
 /* DNA Pipeline */
 router.post('/dna-pipeline', function (req, res, next) {
-  // DNACommands = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
+  let temp = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
 
-  // // Clear the existing commands
-  // DNACommands.clear();
+  // Clear the existing commands
+  DNACommands.clear();
 
-  // // Convert the plain object to a Map and then iterate over it
-  // const dnaCommandsMap = new Map(JSON.parse(req.body.DNACommands));
-  // for (const [key, value] of dnaCommandsMap) {
-  //     DNACommands.set(key, value);
-  // }
-  
-  // console.log(dnaCommandsMap);
-
+  // Convert the plain object to a Map and then iterate over it
+  const dnaCommandsMap = new Map(temp);
+  for (const [key, value] of dnaCommandsMap) {
+      DNACommands.set(key, value);
+  }
 
   res.render('dna-pipeline', { toolbar_index: 4, DNACategories, DNACommands, DNAParameters, infoSteps });
 });
 
 /* Running Page */
 router.post('/running', function (req, res, next) {
-  DNACommands = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
-  DNAParameters = JSON.parse(decodeURIComponent(req.body.DNAParameters || '[]'));
+  let tempCOM = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
+  let tempPAR = JSON.parse(decodeURIComponent(req.body.DNAParameters || '[]'));
+
+  // Clear the existing commands
+  DNACommands.clear();
+  DNAParameters.clear();
+
+  // Convert the plain object to a Map and then iterate over it
+  const dnaCommandsMap = new Map(tempCOM);
+  for (const [key, value] of dnaCommandsMap) {
+      DNACommands.set(key, value);
+  }
+  const dnaParametersMap = new Map(tempPAR);
+  for (const [key, value] of dnaParametersMap) {
+      DNAParameters.set(key, value);
+  }
 
   res.render('running', { toolbar_index: 5, DNACommands, DNAParameters, uploadedFilePath });
 });
 
 /* Running Page */
 router.get('/running', function (req, res, next) {
-  // Render the 'output' view
+  // Render the 'running' view TEMP
   res.render('running', {  DNACommands, DNAParameters, uploadedFilePath, toolbar_index: 5 });
 });
 
@@ -139,7 +148,7 @@ router.post('/output', function (req, res, next) {
 
 /* Output Page */
 router.get('/output', function (req, res, next) {
-  // Render the 'output' view
+  // Render the 'output' view TEMP
   res.render('output', { downloadable_content, toolbar_index: 5 });
 });
 
@@ -874,6 +883,8 @@ router.post('/add-or-replace-read-groups', upload.none(), (req, res) => {
   // Specific Variables
   // let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
   // let editMode = 'overwrite_all';
+  console.log("hewwo?");
+
 
   let editMode = req.body.editMode; // overwrite_all or orphan_only depending on user selected mode
   let newReadGroupLine = req.body.newReadGroupLine; // This is the string that will be replaced/added to the file
@@ -882,7 +893,11 @@ router.post('/add-or-replace-read-groups', upload.none(), (req, res) => {
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
+  console.log("anybobdy?");
+
+
   if (!fs.existsSync(mainFilePath)) {
+    console.log("where is file");
     mainFilePath = uploadedFilePath;
     // We need the file, so check if a file was uploaded
     if (!fs.existsSync(uploadedFilePath)) {

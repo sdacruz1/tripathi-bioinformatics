@@ -49,6 +49,11 @@
                                             <input class="option_input" type="number" id="<%= parameter.title %>" value="<%= parameter.value %>">
                                         <% } else if (parameter.type === "checkbox") { %>
                                             <input class="option_input" type="checkbox" id="<%= parameter.title %>" <% if (parameter.value) { %>checked<% } %>>
+                                        <% } else if (parameter.type === "upload") { %>
+                                            <input class="option_input" type="file" id="<%= parameter.title %>">
+                                            <button type="button" onclick="uploadParameterFile('<%= parameter.title %>')"></button>
+                                        <% } else if (parameter.type === "text") { %>
+                                            <input class="option_input" type="text" id="<%= parameter.title %>" value="<%= parameter.value %>">
                                         <% } else { %>
                                             <select class="option_input" id="<%= parameter.title %>">
                                                 <% parameter.options.forEach(option => { %>
@@ -75,83 +80,94 @@
                 </div>
             <% }) %>
 
+            <%- '<script>' %>
+                const form = document.getElementById('dnaPipelineForm');
+        
+                let DNACommands = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNACommands.entries())) %>'));
+                let DNAParameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNAParameters.entries())) %>'));
+        
+                function saveButton(entryTag) {
+                    let parameters = DNAParameters.get(entryTag);
+                    for (let parameter of parameters) {
+                        let optionInput = document.getElementById(parameter.title);
+                        let optionDisplayTag = document.getElementById('option_' + parameter.title + '_display');
+                        let newValue;
+                        switch (parameter.type) {
+                            case "number":
+                            case "text":
+                                newValue = optionInput.value;
+                                break;
+                            case "checkbox":
+                                newValue = optionInput.checked;
+                                break;
+                            case "select":
+                                newValue = optionInput.value;
+                                break;
+                            case "upload":
+                                continue;
+                            default:
+                                console.log("Not a valid input type");
+                        }
+                        if (newValue === "") {
+                            // no value was entered, dip
+                            continue;
+                        }
+                        parameter.value = newValue;
+                        optionDisplayTag.innerText = newValue.toString();
+                    };
+                    DNAParameters.set(entryTag, parameters);
+        
+                    let optionsDiv = document.getElementById('options_' + entryTag);
+                    let displayDiv = document.getElementById('options_display_' + entryTag);
+                    optionsDiv?.classList.add('hidden');
+                    displayDiv?.classList.remove('hidden');
+                }
+        
+                function editButton(entryTag) {
+                    let optionsDiv = document.getElementById('options_' + entryTag);
+                    let displayDiv = document.getElementById('options_display_' + entryTag);
+                    displayDiv?.classList.add('hidden');
+                    optionsDiv?.classList.remove('hidden');
+                }
+        
+                form.addEventListener('change', function (event) {
+                    if (event.target.type === 'range') {
+                        const sliderName = event.target.name;
+                        const tag = sliderName.split('_')[1];
+                        changingEntry = DNACommands.get(tag);
+                        DNACommands.set(tag, {title: changingEntry.title, isEnabled: (event.target.value == 1), serverCall: changingEntry.serverCall});
+        
+                        let optionsDiv = document.getElementById('options_' + tag);
+                        let displayDiv = document.getElementById('options_display_' + tag);
+        
+                        if (DNACommands.get(tag).isEnabled) {
+                            displayDiv?.classList.remove('hidden');
+                        } else {
+                            optionsDiv?.classList.add('hidden');
+                            displayDiv?.classList.add('hidden');
+                        }
+                    }
+                });
+        
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    document.querySelector('[name="DNACommands"]').value = JSON.stringify(Array.from(DNACommands.entries()));
+                    document.querySelector('[name="DNAParameters"]').value = JSON.stringify(Array.from(DNAParameters.entries()));
+
+                    form.submit();
+                });
+        
+                function toggleCollapsible(sectionId) {
+                    const collapsibleContent = document.getElementById(sectionId);
+                    collapsibleContent.classList.toggle('active');
+                }
+                <%- '</script>' %>
+
             <input type="hidden" name="DNACommands">
             <input type="hidden" name="DNAParameters">
             <button class="pipeline_continue_button"><h3 style="color: black">Continue</h3></button>
         </form>
     </div>
-
-    <script>
-        const form = document.getElementById('dnaPipelineForm');
-        let DNACommands = new Map(Object.entries(JSON.parse('<%= JSON.stringify(Object.fromEntries(DNACommands)) %>')));
-        let DNAParameters = new Map(Object.entries(JSON.parse('<%= JSON.stringify(Object.fromEntries(DNAParameters)) %>')));
-
-        function saveButton(entryTag) {
-            let parameters = DNAParameters.get(entryTag);
-            parameters.forEach(parameter => {
-                let optionInput = document.getElementById(parameter.title);
-                let optionDisplayTag = document.getElementById('option_' + parameter.title + '_display');
-                let newValue;
-                switch (parameter.type) {
-                    case "number":
-                        newValue = optionInput.value;
-                        break;
-                    case "checkbox":
-                        newValue = optionInput.checked;
-                        break;
-                    case "select":
-                        newValue = optionInput.value;
-                        break;
-                    default:
-                        console.log("Not a valid input type");
-                }
-                parameter.value = newValue;
-                optionDisplayTag.innerText = newValue.toString();
-            });
-
-            let optionsDiv = document.getElementById('options_' + entryTag);
-            let displayDiv = document.getElementById('options_display_' + entryTag);
-            optionsDiv.classList.add('hidden');
-            displayDiv.classList.remove('hidden');
-        }
-
-        function editButton(entryTag) {
-            let optionsDiv = document.getElementById('options_' + entryTag);
-            let displayDiv = document.getElementById('options_display_' + entryTag);
-            displayDiv.classList.add('hidden');
-            optionsDiv.classList.remove('hidden');
-        }
-
-        form.addEventListener('change', function (event) {
-            if (event.target.type === 'range') {
-                const sliderName = event.target.name;
-                const tag = sliderName.split('_')[1];
-                DNACommands.get(tag).isEnabled = event.target.value == 1;
-
-                let optionsDiv = document.getElementById('options_' + tag);
-                let displayDiv = document.getElementById('options_display_' + tag);
-
-                if (DNACommands.get(tag).isEnabled) {
-                    displayDiv.classList.remove('hidden');
-                } else {
-                    optionsDiv.classList.add('hidden');
-                    displayDiv.classList.add('hidden');
-                }
-            }
-        });
-
-        form.addEventListener('submit', function (event) {
-            event.preventDefault();
-            document.querySelector('[name="DNACommands"]').value = encodeURIComponent(JSON.stringify(Object.fromEntries(DNACommands)));
-            document.querySelector('[name="DNAParameters"]').value = encodeURIComponent(JSON.stringify(Object.fromEntries(DNAParameters)));
-            form.submit();
-        });
-
-        function toggleCollapsible(sectionId) {
-            const collapsibleContent = document.getElementById(sectionId);
-            collapsibleContent.classList.toggle('active');
-        }
-    </script>
 </body>
 
 </html>
