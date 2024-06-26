@@ -67,7 +67,7 @@
         </section>
 
         <!-- Upload RNA Genome Files (Optional) -->
-        <section id="rna_section" hidden>
+        <section id="genome_section" hidden>
             <h3>Reference Genome/Transcriptome</h3>
             <br>
             <form id="genomeFileForm" enctype="multipart/form-data">
@@ -92,6 +92,7 @@
             <input type="hidden" name="trimmed" id="trimmedInput">
             <input type="hidden" name="demultiplexed" id="demultiplexedInput">
             <input type="hidden" name="uploadedAdapterFile" id="uploadedAdapterFileInput">
+            <input type="hidden" name="uploadedGenomeFile" id="uploadedGenomeFileInput">
         
             <!-- Continue button -->
             <button type="submit" class="continue_button" id="file_info_continue_button" disabled onclick="submitContinueForm()">

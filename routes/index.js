@@ -6,7 +6,7 @@ const fs = require('fs');
 const bodyParser = require('body-parser');
 const Docker = require('dockerode');
 
-const {DNACategories, DNACommands, DNAParameters} = require('../public/data/SiteData');
+const { DNACategories, DNACommands, DNAParameters } = require('../public/data/SiteData');
 const docker = new Docker();
 var router = express.Router();
 
@@ -45,6 +45,7 @@ let infoSteps;          // An array that determines which file processing steps 
 let uploadedFilePath = "";   // The path to the original file that was uploaded or the directory, if it was a BCL folder
 let uploadedPairedPath = "";
 let uploadedAdapterPath = "";
+let uploadedGenomeFile = "";
 let uploadedFileType;   // A string representing the original uploaded file type
 let fastQConversion;    // The path to the fastQ file result of any conversions (BCL, FastA, Fast5)
 let fastQCResults;      // The path to the directory containing the results of running FastQC on the uploaded file
@@ -56,12 +57,18 @@ let downloadable_content = [  // An object array holding the result of the steps
   //     label: "Test Object BAM",
   //     content: "../output/SortedBAM.bam"
   // },
-  // {
-  //     enabled: false,
-  //     has_visual_component: true,
-  //     label: "Test Object 2",
-  //     content: "../images/Checked_Circle.png"
-  // },
+  {
+      enabled: false,
+      has_visual_component: true,
+      label: "GC Bias Summary Graph",
+      content: "../output/GC_Bias_Summary.png"
+  },
+  {
+    enabled: false,
+    has_visual_component: true,
+    label: "Insert Size Summary Graph",
+    content: "../output/Insert_Size_Graph.png"
+  },
 ];
 
 //#endregion
@@ -78,7 +85,7 @@ router.get('/', function (req, res, next) {
 router.post('/file-information', function (req, res, next) {
   // Set the mode
   mode = req.body.mode;
-  res.render('file-info', { toolbar_index: 2});
+  res.render('file-info', { toolbar_index: 2 });
 });
 
 /* DNA Goalposts */
@@ -92,6 +99,7 @@ router.post('/dna-goalposts', function (req, res, next) {
   uploadedFileType = req.body.uploadedFileType;
   fastQConversion = req.body.fastQConversion;
   fastQCResults = req.body.fastQCResults;
+  uploadedGenomeFile = req.body.uploadedGenomeFile;
 
   res.render('dna-goalposts', { toolbar_index: 3, DNACategories, DNACommands, infoSteps });
 });
@@ -106,7 +114,7 @@ router.post('/dna-pipeline', function (req, res, next) {
   // Convert the plain object to a Map and then iterate over it
   const dnaCommandsMap = new Map(temp);
   for (const [key, value] of dnaCommandsMap) {
-      DNACommands.set(key, value);
+    DNACommands.set(key, value);
   }
 
   res.render('dna-pipeline', { toolbar_index: 4, DNACategories, DNACommands, DNAParameters, infoSteps });
@@ -124,11 +132,11 @@ router.post('/running', function (req, res, next) {
   // Convert the plain object to a Map and then iterate over it
   const dnaCommandsMap = new Map(tempCOM);
   for (const [key, value] of dnaCommandsMap) {
-      DNACommands.set(key, value);
+    DNACommands.set(key, value);
   }
   const dnaParametersMap = new Map(tempPAR);
   for (const [key, value] of dnaParametersMap) {
-      DNAParameters.set(key, value);
+    DNAParameters.set(key, value);
   }
 
   res.render('running', { toolbar_index: 5, DNACommands, DNAParameters, uploadedFilePath });
@@ -137,7 +145,7 @@ router.post('/running', function (req, res, next) {
 /* Running Page */
 router.get('/running', function (req, res, next) {
   // Render the 'running' view TEMP
-  res.render('running', {  DNACommands, DNAParameters, uploadedFilePath, toolbar_index: 5 });
+  res.render('running', { DNACommands, DNAParameters, uploadedFilePath, toolbar_index: 5 });
 });
 
 /* Output Page */
@@ -232,7 +240,7 @@ router.get('/cleanup', (req, res) => {
 
 // Run BCL2FastQ
 // Expects the contents of a BCL File
-router.post('/bcl2fastq' , upload.array('files'), async (req, res) => {
+router.post('/bcl2fastq', upload.array('files'), async (req, res) => {
 
   // =============== Handle the BCL File Folder ===============
   const uploadedFiles = req.files;
@@ -284,50 +292,9 @@ router.post('/bcl2fastq' , upload.array('files'), async (req, res) => {
 
 });
 
-// Run FastQC
-// Expects a single FastQ File
-router.post('/fastqc', upload.none(), (req, res) => {
-  const uploadedFile = req.file;
-
-  // Check if a file was uploaded
-  if (!uploadedFile) {
-    res.status(400).send('No file uploaded');
-    return;
-  }
-
-  // Run FastQC
-  const FastQCCommand = path.join(__dirname, '..', 'bio_modules', 'FastQC.app', 'Contents', 'MacOS', 'fastqc');
-  const FastQArgs = [uploadedFile.path];
-
-  const runFastQC = spawn(FastQCCommand, FastQArgs);
-
-  let outputData = '';
-
-  runFastQC.stdout.on('data', (data) => {
-    outputData += data;
-    console.log(`stdout: ${data}`);
-  });
-
-  runFastQC.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    res.json();
-  });
-
-  runFastQC.on('exit', (code) => {
-    console.log(`FastQC process exited with code ${code}`);
-  });
-
-  // Return the results as a JSON
-  const trimmed = false; // set this based on the result of the QC
-  const demultiplexed = false;
-
-  res.json({ trimmed, demultiplexed });
-
-});
-
 // ======= COMMANDS ======= //
 
-router.post('/fast5-to-fastq' , upload.array('files'), async (req, res) => {
+router.post('/fast5-to-fastq', upload.array('files'), async (req, res) => {
 
   // =============== Handle the fast5 File Folder ===============
   const uploadedFiles = req.files;
@@ -380,17 +347,15 @@ router.post('/fast5-to-fastq' , upload.array('files'), async (req, res) => {
 // Run FastQC
 // Expects a single FastQ File
 router.post('/fastqc', upload.none(), (req, res) => {
-  const uploadedFile = req.file;
-
   // Check if a file was uploaded
-  if (!uploadedFile) {
+  if (!fs.existsSync(uploadedFilePath)) {
     res.status(400).send('No file uploaded');
     return;
   }
 
   // Run FastQC
   const FastQCCommand = path.join(__dirname, '..', 'bio_modules', 'FastQC.app', 'Contents', 'MacOS', 'fastqc');
-  const FastQArgs = [uploadedFile.path];
+  const FastQArgs = [uploadedFilePath];
 
   const runFastQC = spawn(FastQCCommand, FastQArgs);
 
@@ -403,7 +368,8 @@ router.post('/fastqc', upload.none(), (req, res) => {
 
   runFastQC.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runFastQC.on('exit', (code) => {
@@ -418,8 +384,9 @@ router.post('/fastqc', upload.none(), (req, res) => {
 
 });
 
+
 router.post('/fasta-to-fastq', upload.none(), (req, res) => {
-  
+
   let convertedOutputFQ = path.join(__dirname, '..', 'output', 'convertedFastQ.fq')
 
   // We need the file, so check if a file was uploaded
@@ -445,7 +412,8 @@ router.post('/fasta-to-fastq', upload.none(), (req, res) => {
 
   runAtoQ.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runAtoQ.on('exit', (code) => {
@@ -460,7 +428,8 @@ router.post('/fasta-to-fastq', upload.none(), (req, res) => {
     });
 
     // Return the results as a JSON
-    res.json({ });
+    res.json({});
+    return;
   });
 
 });
@@ -471,7 +440,7 @@ router.post('/trimming', upload.none(), (req, res) => {
 
   // Variables
   let path_to_Single_FastQ = uploadedFilePath;
-  let single_trim_output =  path.join(__dirname, '..', 'output', 'single_trim_output.fastq.gz');
+  let single_trim_output = path.join(__dirname, '..', 'output', 'single_trim_output.fastq.gz');
   let path_to_Fastq_Read1 = uploadedFilePath;
   let path_to_Fastq_Read2 = uploadedPairedPath;
   let output_paired_Read1 = path.join(__dirname, '..', 'output', 'output_paired_Read1.fastq.gz');
@@ -494,7 +463,7 @@ router.post('/trimming', upload.none(), (req, res) => {
     adapt.push(`ILLUMINACLIP:${adapter_filepath}:2:30:2`); // note: needs adapter file to exist
   }
   console.log('after first check');
-  
+
 
   if (req.body.read_length_trim) {
     read_length.push(`MINLEN:${req.body.minlen}`);
@@ -550,20 +519,20 @@ router.post('/trimming', upload.none(), (req, res) => {
   let TrimArgs = [];
   if (uploadedPairedPath) {
     TrimArgs = [
-      '-jar', path.join(__dirname, '..', 'bio_modules', 'Trimmomatic-0.39', 'trimmomatic-0.39.jar'), 
+      '-jar', path.join(__dirname, '..', 'bio_modules', 'Trimmomatic-0.39', 'trimmomatic-0.39.jar'),
       'PE', path_to_Fastq_Read1, path_to_Fastq_Read2,
       output_paired_Read1, output_unpaired_Read1, output_paired_Read2, output_unpaired_Read2,
       ...adapt, ...read_length, ...window, ...leading, ...trailing
     ];
   } else {
     TrimArgs = [
-      '-jar', path.join(__dirname, '..', 'bio_modules', 'Trimmomatic-0.39', 'trimmomatic-0.39.jar'), 
+      '-jar', path.join(__dirname, '..', 'bio_modules', 'Trimmomatic-0.39', 'trimmomatic-0.39.jar'),
       'SE', path_to_Single_FastQ, single_trim_output,
       ...adapt, ...read_length, ...window, ...leading, ...trailing
     ];
   }
 
-  
+
   const runTrim = spawn(TrimCommand, TrimArgs);
 
   // Handle Response
@@ -648,14 +617,16 @@ router.post('/alignment', upload.none(), (req, res) => {
 
   // ref finder
   let chosenRef = '';
-  chosenRef = req.body.ref;
+  chosenRef = req.body.ref_genome;
+  if (chosenRef = 'Human') { chosenRef = 'hgch38_index'; }
+  if (chosenRef = 'House_Mouse') { chosenRef = 'House_Mouse_GRCm39'; }
   let path_to_reference_fastA = path.join(__dirname, '..', 'ref_genomes', chosenRef, chosenRef + '.fna');
 
   // Variables
   let name_of_output_file = path.join(__dirname, '..', 'output', 'AlignedSAM.sam');
 
   // Run Command
-  let AlignmentCommand ='';
+  let AlignmentCommand = '';
   let AlignmentArgs = [];
 
   // --- BWA MEM
@@ -668,15 +639,15 @@ router.post('/alignment', upload.none(), (req, res) => {
   // bowtie [options]* -x <ebwt> {-1 <m1> -2 <m2> | --12 <r> | --interleaved <i> | <s>} -S <output sam file>
   else if (req.body.type === 'bowtie') {
     AlignmentCommand = path.join(__dirname, '..', 'bio_modules', 'bowtie');
-    AlignmentArgs = ['-x', path_to_reference_fastA, '--12', 'r', uploadedFilePath + ', ' + uploadedPairedPath , '-S', name_of_output_file];
-  } 
+    AlignmentArgs = ['-x', path_to_reference_fastA, '--12', 'r', uploadedFilePath + ', ' + uploadedPairedPath, '-S', name_of_output_file];
+  }
   // --- BOWTIE2
   // bowtie2 [options]* -x <bt2-idx> {-1 <m1> -2 <m2> | -U <r> | --interleaved <i> | b <bam>} -S [<sam>]
   else {
     AlignmentCommand = path.join(__dirname, '..', 'bio_modules', 'bowtie2');
     AlignmentArgs = ['-x', path.join(__dirname, '..', 'ref_genomes', chosenRef), '-U', 'r', uploadedFilePath, + ', ' + uploadedPairedPath, '-S', name_of_output_file];
-  } 
-  
+  }
+
   const runAlignment = spawn(AlignmentCommand, AlignmentArgs);
 
   // Handle Response
@@ -689,7 +660,8 @@ router.post('/alignment', upload.none(), (req, res) => {
 
   runAlignment.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runAlignment.on('exit', (code) => {
@@ -702,10 +674,11 @@ router.post('/alignment', upload.none(), (req, res) => {
       label: 'Aligned SAM File: ' + req.body.type,
       content: 'AlignedSAM.sam',
     });
-  
+
     // Return the results as a JSON
     // Need to find and return the path of the output: Aligned SAM file in same directory
-    res.json();
+    res.json({});
+    return;
   });
 
 
@@ -744,7 +717,8 @@ router.post('/sam-to-bam', upload.none(), (req, res) => {
 
   runConvertToBam.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runConvertToBam.on('exit', (code) => {
@@ -757,10 +731,11 @@ router.post('/sam-to-bam', upload.none(), (req, res) => {
       label: 'Converted BAM File',
       content: 'AlignedSAM.sam',
     });
-  
+
     // Return the results as a JSON
     // Need to find and return the path of the output: Aligned SAM file in same directory
-    res.json();
+    res.json({});
+    return;
   });
 
 });
@@ -799,7 +774,8 @@ router.post('/sort-bam-file', upload.none(), (req, res) => {
 
   runSortBam.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runSortBam.on('exit', (code) => {
@@ -815,13 +791,13 @@ router.post('/sort-bam-file', upload.none(), (req, res) => {
 
     // Return the results as a JSON
     // Need to find and return the path of the output: Aligned SAM file in same directory
-    res.json({ });
+    res.json({});
+    return;
   });
 
 });
 
 router.post('/index-bam-file', upload.none(), (req, res) => {
-
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
 
@@ -851,7 +827,8 @@ router.post('/index-bam-file', upload.none(), (req, res) => {
 
   runIndexBam.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runIndexBam.on('exit', (code) => {
@@ -874,7 +851,8 @@ router.post('/index-bam-file', upload.none(), (req, res) => {
     });
 
     // Return the results as a JSON
-    res.json({ });
+    res.json({});
+    return;
   });
 
 });
@@ -883,18 +861,13 @@ router.post('/add-or-replace-read-groups', upload.none(), (req, res) => {
   // Specific Variables
   // let newReadGroupLine = '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina';
   // let editMode = 'overwrite_all';
-  console.log("hewwo?");
 
-
-  let editMode = req.body.editMode; // overwrite_all or orphan_only depending on user selected mode
+  let editMode = req.body.editMode ? 'overwrite_all' : 'orphan_only'; // overwrite_all or orphan_only depending on user selected mode
   let newReadGroupLine = req.body.newReadGroupLine; // This is the string that will be replaced/added to the file
   let outputFile = path.join(__dirname, '..', 'output', 'RG_bam.bam');
 
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
-
-  console.log("anybobdy?");
-
 
   if (!fs.existsSync(mainFilePath)) {
     console.log("where is file");
@@ -922,7 +895,8 @@ router.post('/add-or-replace-read-groups', upload.none(), (req, res) => {
 
   runRG.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runRG.on('exit', (code) => {
@@ -935,8 +909,9 @@ router.post('/add-or-replace-read-groups', upload.none(), (req, res) => {
       label: 'Read Groups Added/Replaced BAM',
       content: 'RG_bam.bam',
     });
-  
-    res.json({ });
+
+    res.json({});
+    return;
   });
 
 });
@@ -971,7 +946,8 @@ router.post('/bam-index-stats', upload.none(), (req, res) => {
 
   runBamIndexStats.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runBamIndexStats.on('exit', (code) => {
@@ -980,8 +956,8 @@ router.post('/bam-index-stats', upload.none(), (req, res) => {
     // Write outputData to a text file
     fs.writeFile(path.join(__dirname, '..', 'output', 'BAM_Index_Stats.txt'), outputData, (err) => {
       if (err) {
-          console.error('Error writing file:', err);
-          return;
+        console.error('Error writing file:', err);
+        return;
       }
       console.log('stdout data written to BAM_Index_Stats.txt');
     });
@@ -995,7 +971,8 @@ router.post('/bam-index-stats', upload.none(), (req, res) => {
     });
 
     // Return the results as a JSON
-    res.json({ });
+    res.json({});
+    return;
   });
 
 });
@@ -1003,7 +980,9 @@ router.post('/bam-index-stats', upload.none(), (req, res) => {
 router.post('/alignment-summary', upload.none(), async (req, res) => {
   // Variables
   let chosenRef = '';
-  chosenRef = req.body.ref;
+  chosenRef = req.body.ref_genome;
+  if (chosenRef = 'Human') { chosenRef = 'hgch38_index'; }
+  if (chosenRef = 'House_Mouse') { chosenRef = 'House_Mouse_GRCm39'; }
 
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
@@ -1019,8 +998,8 @@ router.post('/alignment-summary', upload.none(), async (req, res) => {
 
   // Run Command
   try {
-    let r_path = '../refs/Human/hgch38_index.fna';
-    // let r_path = '../refs/' + chosenRef + '/' + chosenRef + '.fna';
+    // let r_path = '../refs/Human/hgch38_index.fna';
+    let r_path = '../refs/' + chosenRef + '/' + chosenRef + '.fna';
     let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
     let o_path = '../output/AlignmentSummary.txt';
     const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -I ' + i_path + ' -O ' + o_path + ' -R ' + r_path);
@@ -1051,11 +1030,12 @@ router.post('/gc-bias-summary', upload.none(), async (req, res) => {
   // Variables
   let output_GC_bias_metrics_txt = path.join('..', 'output', 'GC_BIAS_Metrics.txt');
   let GC_bias_outputchart_pdf = path.join('..', 'output', 'GC_BIAS_OutputChart.pdf');
-  let GC_Bias_summary_output_txt = path.join('..', 'output','GC_BIAS_SummaryOutput.txt');
+  let GC_Bias_summary_output_txt = path.join('..', 'output', 'GC_BIAS_SummaryOutput.txt');
 
   let chosenRef = '';
-  chosenRef = req.body.ref;
-  let path_to_reference_fastA = path.join('..', 'refs', chosenRef);
+  chosenRef = req.body.ref_genome;
+  if (chosenRef = 'Human') { chosenRef = 'hgch38_index'; }
+  if (chosenRef = 'House_Mouse') { chosenRef = 'House_Mouse_GRCm39'; }
 
   // Main File Check
   let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
@@ -1069,12 +1049,17 @@ router.post('/gc-bias-summary', upload.none(), async (req, res) => {
     }
   }
 
+  
   // Run Command
   // java -jar picard.jar CollectGcBiasMetrics -I <path to sorted BAM> -O <output GC bias metrics.txt> -CHART <GC bias ouputchart.pdf> -S <GC Bias summary output.txt> -R <reference fasta>
   try {
-    let r_path = '../refs/Human/hgch38_index.fna';
+    let r_path = '../refs/' + chosenRef + '/' + chosenRef + '.fna';
     let i_path = '../output/SortedBAM.bam'; // CBTT this negates my main file check
-    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectGcBiasMetrics -I ' + i_path + ' -O ' + output_GC_bias_metrics_txt + ' -CHART ' + GC_bias_outputchart_pdf + ' -S ' + GC_Bias_summary_output_txt + ' -R ' + r_path);
+    let command = 'java -jar ../picard/picard.jar CollectGcBiasMetrics -I ' + i_path + ' -O ' + output_GC_bias_metrics_txt + ' -CHART ' + GC_bias_outputchart_pdf + ' -S ' + GC_Bias_summary_output_txt + ' -R ' + r_path;
+    if (!req.body.isVisual) {
+      command = 'java -jar ../picard/picard.jar CollectGcBiasMetrics -I ' + i_path + ' -O ' + output_GC_bias_metrics_txt + ' -S ' + GC_Bias_summary_output_txt + ' -R ' + r_path;
+    }  
+    const output = await runPicardCommand(command);
 
     console.log('Output:', output);
     // Make a downloadable_content entry for the results
@@ -1140,7 +1125,7 @@ router.post('/insert-size-summary', upload.none(), async (req, res) => {
       label: 'Insert Size Raw Data',
       content: 'Insert_Size_RawData.txt',
     });
-  
+
     downloadable_content.push({
       enabled: false,
       has_visual_component: false,
@@ -1154,13 +1139,15 @@ router.post('/insert-size-summary', upload.none(), async (req, res) => {
     console.error('Error:', error.message);
     res.status(500).send('Error executing Docker command');
   }
-  
+
 });
 
 router.post('/create-sequence-dictionary', upload.none(), (req, res) => {
   // Variables
   let chosenRef = '';
-  chosenRef = req.body.ref;
+  chosenRef = req.body.ref_genome;
+  if (chosenRef = 'Human') { chosenRef = 'hgch38_index'; }
+  if (chosenRef = 'House_Mouse') { chosenRef = 'House_Mouse_GRCm39'; }
   let path_to_reference_fastA = path.join(__dirname, '..', 'ref_genomes', chosenRef, chosenRef + '.fna');
 
   let outputFile = path.join(__dirname, '..', 'output', 'SeqDict.txt');
@@ -1182,7 +1169,8 @@ router.post('/create-sequence-dictionary', upload.none(), (req, res) => {
 
   runSeqDict.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runSeqDict.on('exit', (code) => {
@@ -1195,9 +1183,10 @@ router.post('/create-sequence-dictionary', upload.none(), (req, res) => {
       label: 'Sequence Dictionary',
       content: 'SeqDict.txt',
     });
-  
+
     // Return the results as a JSON
-    res.json({ });
+    res.json({});
+    return;
   });
 
 });
@@ -1232,7 +1221,8 @@ router.post('/flag-stats', upload.none(), (req, res) => {
 
   runFlagStats.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runFlagStats.on('exit', (code) => {
@@ -1241,8 +1231,8 @@ router.post('/flag-stats', upload.none(), (req, res) => {
     // Write outputData to a text file
     fs.writeFile(path.join(__dirname, '..', 'output', 'Flag_Stats.txt'), outputData, (err) => {
       if (err) {
-          console.error('Error writing file:', err);
-          return;
+        console.error('Error writing file:', err);
+        return;
       }
       console.log('stdout data written to Flag_Stats.txt');
     });
@@ -1254,9 +1244,10 @@ router.post('/flag-stats', upload.none(), (req, res) => {
       label: 'Flag Stats',
       content: 'Flag_Stats.txt',
     });
-  
+
     // Return the results as a JSON
-    res.json({ });
+    res.json({});
+    return;
   });
 
 });
@@ -1293,7 +1284,8 @@ router.post('/sequence-depth', upload.none(), (req, res) => {
 
   runSeqDepth.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runSeqDepth.on('exit', (code) => {
@@ -1306,9 +1298,10 @@ router.post('/sequence-depth', upload.none(), (req, res) => {
       label: 'Sequence Depth Data',
       content: 'Seq_Depth.txt',
     });
-  
+
     // Return the results as a JSON
-    res.json({ });
+    res.json({});
+    return;
   });
 
 });
@@ -1346,7 +1339,8 @@ router.post('/sequence-coverage', upload.none(), (req, res) => {
 
   runSeqCov.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
-    res.json();
+    res.json({});
+    return;
   });
 
   runSeqCov.on('exit', (code) => {
@@ -1361,7 +1355,8 @@ router.post('/sequence-coverage', upload.none(), (req, res) => {
     });
 
     // Return the results as a JSON
-    res.json({ });
+    res.json({});
+    return;
   });
 
 });
@@ -1406,7 +1401,7 @@ router.post('/mark-or-remove-duplicates', upload.none(), async (req, res) => {
       label: 'Marked Duplicates BAM',
       content: 'MarkedDuplicatesBAM.bam',
     });
-  
+
     downloadable_content.push({
       enabled: false,
       has_visual_component: false,
@@ -1433,7 +1428,7 @@ router.get('/testing', function (req, res) {
 router.post('/test-docker', upload.none(), async (req, res) => {
   try {
 
-  // 'java -jar ../picard/picard.jar MarkIlluminaAdapters -h'
+    // 'java -jar ../picard/picard.jar MarkIlluminaAdapters -h'
     // let r_path = '../refs/Ecoli/Ecoli.fna';
     let i_path = '../output/SortedBAM.bam';
     let o_path = '../output/AlignmentSummary.txt';
@@ -1566,7 +1561,7 @@ async function runBCLCommand(inputDirectory) {
 async function runFast5ToFastQ(inputDirectory) {
   const container = await docker.createContainer({
     Image: 'fast5-to-fastq', // Replace with your Docker image name
-    Cmd: ['/usr/uploads/' + folderName,  '>', 'usr/output/FastQFromFast5.fastq'],
+    Cmd: ['/usr/uploads/' + folderName, '>', 'usr/output/FastQFromFast5.fastq'],
     AttachStdout: true,
     AttachStderr: true,
     Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely

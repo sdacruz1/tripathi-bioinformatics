@@ -37,6 +37,8 @@ const adapterUploadButton = document.getElementById('adapterUploadButton');
 
 // Get a reference to the Genome objects
 const genomeTypeInfo = document.getElementById('genomeTypeInfo');
+const genomeSection = document.getElementById('genome_section');
+const genomeFileInput = document.getElementById('RNA_Genome_Uploader');
 
 // Get a reference to the continue button
 const continue_button = document.getElementById('file_info_continue_button');
@@ -219,6 +221,9 @@ function processMainFile() {
     // if input type is DNA and there are no adapters, enable the continue button
     if (input_type === 'DNA') {
         continue_button.disabled = false;
+    } else {
+        genomeSection.hidden = false;
+        genomeFileInput.disabled = false;
     }
 
 }
@@ -357,29 +362,17 @@ function storeFiles(files) {
 // NOTE: Come back to this after RNA
 // If a genome file is uploaded...
 function processGenomeFile() {
-    const RNA_Genome_Uploader = document.getElementById('RNA_Genome_Uploader');
-    const genomeFormData = new FormData();
-
-    for (const file of RNA_Genome_Uploader.files) {
-        genomeFormData.append('files', file);
+    if (!genomeFileInput.files[0]) {
+        return;
     }
-
-    // Make an asynchronous request to the server using the Fetch API
-    fetch('/main-file-upload', {
-        method: 'POST',
-        body: genomeFormData,
-    })
-        .then(response => response.json()) // Assume the server sends JSON data
-        .then(data => {
-            // have the backend check if it's a transcriptome or not
-            // set that variable and the info text, then activate the continue button
-            const type = data.type;
-            genomeTypeInfo.textContent = 'Genome type: ${genomeTypeInfo}';
+    storeFiles(genomeFileInput.files)
+        .then(fileStorage => {
+            uploadedGenomeFile = fileStorage.storedPath[0];
             continue_button.disabled = false;
-
         })
         .catch(error => {
-            console.error('Error:', error);
+            // Handle any errors
+            console.error('Error analyzing file:', error);
         });
 }
 
@@ -397,6 +390,7 @@ function submitContinueForm() {
     document.getElementById('trimmedInput').value = trimmed;
     document.getElementById('demultiplexedInput').value = demultiplexed;
     document.getElementById('uploadedAdapterFileInput').value = uploadedAdapterFile;
+    document.getElementById('uploadedGenomeFileInput').value = uploadedGenomeFile;
 
     // Submit the form
     document.getElementById('continueForm').submit();

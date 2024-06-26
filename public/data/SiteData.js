@@ -60,7 +60,7 @@ let DNAParameters = new Map([
             new Parameter("Read Length Trim: Minimum Length", true, 'number', [], 'minlen', ''),
         new Parameter("Perform Sliding Window Trim", false, 'checkbox', [], 'sliding_window_trim', false),
             new Parameter("Sliding Window Trim: Start", true,  'number', [], 'window_start', ''),
-            new Parameter("Sliding Window Trim: End", true,  'number', [], 'Window_end', ''),
+            new Parameter("Sliding Window Trim: End", true,  'number', [], 'window_end', ''),
         new Parameter("Perform Leading Trim", false, 'checkbox', [], 'leading_trim', false),
             new Parameter("Leading Trim: Input", true, 'number', [], 'leading', ''),
         new Parameter("Perform Trailing Trim", false, 'checkbox', [], 'trailing_trim', false),
@@ -76,8 +76,8 @@ let DNAParameters = new Map([
 
     // Statistics
     ["add-or-replace-read-groups", [
-        new Parameter("Overwrite Existing Read Groups", false, 'checkbox', [], false),
-        new Parameter("New Read Groups Line", false, 'text', [], ''),
+        new Parameter("Overwrite Existing Read Groups", false, 'checkbox', [], 'editMode', false),
+        new Parameter("New Read Groups Line", false, 'text', [], 'newReadGroupLine', ''),
     ]],
     ["bam-index-stats", []], // none
     ["flag-stats", []], // none

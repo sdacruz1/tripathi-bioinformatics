@@ -17,7 +17,7 @@
             border-radius: 10px;
             padding: 1rem;
             margin-left: 2rem;
-            max-width: 15rem;
+            max-width: 80%;
         }
 
         .status_img {
@@ -64,7 +64,7 @@
     <% }) %>
 
     <form id="runningForm" action="/output" method="post">
-        <button class="running_continue_button"><h3 style="color: black" disabled>Continue</h3></button>
+        <button class="continue_button"><h3 style="color: black" disabled>Continue</h3></button>
     </form>
 
     </div>
@@ -105,6 +105,8 @@
                     formData.append(parameter.serverTag, parameter.value);
                 });
 
+                console.log(command);
+                console.log(parameters);
                 console.log(formData);
 
                 setStatus(command.serverCall, 'running');
