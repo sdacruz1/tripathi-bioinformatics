@@ -14,9 +14,6 @@ let uploadedFile2;
 
 //#region ... REFERENCES ... 
 
-// Get references to the buttons and the RNA Genome Uploader
-const RNA_Genome_Uploader = document.getElementById('RNA_Genome_Uploader');
-
 // Get referneces to the sections
 const fileSection = document.getElementById('file_uploader_section');
 const adapterSection = document.getElementById('adapter_section');
@@ -37,8 +34,7 @@ const adapterUploadButton = document.getElementById('adapterUploadButton');
 
 // Get a reference to the Genome objects
 const genomeTypeInfo = document.getElementById('genomeTypeInfo');
-const genomeSection = document.getElementById('genome_section');
-const genomeFileInput = document.getElementById('RNA_Genome_Uploader');
+const RNA_Genome_Uploader = document.getElementById('RNA_Genome_Uploader');
 
 // Get a reference to the continue button
 const continue_button = document.getElementById('file_info_continue_button');
@@ -55,10 +51,7 @@ function select_input_type(type) {
     input_type = type;
     Main_File_Uploader.disabled = false;
     fileSection.hidden = false;
-    if (type == 'RNA') {
-        rnaSection.hidden = false;
-        RNA_Genome_Uploader.disabled = false;
-    } else {
+    if (type != 'RNA') {
         rnaSection.hidden = true;
     }
 };
@@ -158,8 +151,8 @@ function processMainFile() {
             if (input_type === 'DNA') {
                 continue_button.disabled = false;
             } else {
-                // For RNA, unhide the RNA section and enable the RNA uploader
-                // NOTE: Return here for RNA
+                rnaSection.hidden = false;
+                RNA_Genome_Uploader.disabled = false;
             }
             return;
         case 'SAM':
@@ -175,8 +168,8 @@ function processMainFile() {
             if (input_type === 'DNA') {
                 continue_button.disabled = false;
             } else {
-                // For RNA, unhide the RNA section and enable the RNA uploader
-                // NOTE: Return here for RNA
+                rnaSection.hidden = false;
+                RNA_Genome_Uploader.disabled = false;
             }
             return;
         case 'FastQ':
@@ -222,8 +215,8 @@ function processMainFile() {
     if (input_type === 'DNA') {
         continue_button.disabled = false;
     } else {
-        genomeSection.hidden = false;
-        genomeFileInput.disabled = false;
+        rnaSection.hidden = false;
+        RNA_Genome_Uploader.disabled = false;
     }
 
 }
@@ -362,10 +355,10 @@ function storeFiles(files) {
 // NOTE: Come back to this after RNA
 // If a genome file is uploaded...
 function processGenomeFile() {
-    if (!genomeFileInput.files[0]) {
+    if (!RNA_Genome_Uploader.files[0]) {
         return;
     }
-    storeFiles(genomeFileInput.files)
+    storeFiles(RNA_Genome_Uploader.files)
         .then(fileStorage => {
             uploadedGenomeFile = fileStorage.storedPath[0];
             continue_button.disabled = false;

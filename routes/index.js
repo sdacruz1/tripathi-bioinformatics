@@ -6,7 +6,7 @@ const fs = require('fs');
 const bodyParser = require('body-parser');
 const Docker = require('dockerode');
 
-const { DNACategories, DNACommands, DNAParameters } = require('../public/data/SiteData');
+const { DNACategories, DNACommands, DNAParameters, RNACategories, RNACommands, RNAParameters } = require('../public/data/SiteData');
 const docker = new Docker();
 var router = express.Router();
 
@@ -101,68 +101,103 @@ router.post('/dna-goalposts', function (req, res, next) {
   fastQCResults = req.body.fastQCResults;
   uploadedGenomeFile = req.body.uploadedGenomeFile;
 
-  res.render('dna-goalposts', { toolbar_index: 3, DNACategories, DNACommands, infoSteps });
+  let Categories;
+  let Commands;
+
+  if (mode == 'DNA') {
+    Categories = DNACategories;
+    Commands = DNACommands;
+  } else {
+    Categories = RNACategories;
+    Commands = RNACommands;
+  }
+
+  res.render('dna-goalposts', { toolbar_index: 3, Categories, Commands, infoSteps });
 });
 
 /* DNA Pipeline */
 router.post('/dna-pipeline', function (req, res, next) {
-  let temp = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
+  let temp = JSON.parse(decodeURIComponent(req.body.Commands || '[]'));
 
-  // Clear the existing commands
-  DNACommands.clear();
+  if (mode == 'DNA') {
+    // Clear the existing commands
+    DNACommands.clear();
 
-  // Convert the plain object to a Map and then iterate over it
-  const dnaCommandsMap = new Map(temp);
-  for (const [key, value] of dnaCommandsMap) {
-    DNACommands.set(key, value);
+    // Convert the plain object to a Map and then iterate over it
+    const dnaCommandsMap = new Map(temp);
+    for (const [key, value] of dnaCommandsMap) {
+      DNACommands.set(key, value);
+    }
+
+    Categories = DNACategories;
+    Commands = DNACommands;
+    Parameters = DNAParameters;
+  } else {
+    // Clear the existing commands
+    RNACommands.clear();
+
+    // Convert the plain object to a Map and then iterate over it
+    const rnaCommandsMap = new Map(temp);
+    for (const [key, value] of rnaCommandsMap) {
+      RNACommands.set(key, value);
+    }
+
+    Categories = RNACategories;
+    Commands = RNACommands;
+    Parameters = RNAParameters;
   }
 
-  res.render('dna-pipeline', { toolbar_index: 4, DNACategories, DNACommands, DNAParameters, infoSteps });
+  res.render('dna-pipeline', { toolbar_index: 4, Categories, Commands, Parameters, infoSteps });
 });
 
 /* Running Page */
 router.post('/running', function (req, res, next) {
-  let tempCOM = JSON.parse(decodeURIComponent(req.body.DNACommands || '[]'));
-  let tempPAR = JSON.parse(decodeURIComponent(req.body.DNAParameters || '[]'));
+  let tempCOM = JSON.parse(decodeURIComponent(req.body.Commands || '[]'));
+  let tempPAR = JSON.parse(decodeURIComponent(req.body.Parameters || '[]'));
 
-  // Clear the existing commands
-  DNACommands.clear();
-  DNAParameters.clear();
+  if (mode == 'DNA') {
+    // Clear the existing commands
+    DNACommands.clear();
+    DNAParameters.clear();
 
-  // Convert the plain object to a Map and then iterate over it
-  const dnaCommandsMap = new Map(tempCOM);
-  for (const [key, value] of dnaCommandsMap) {
-    DNACommands.set(key, value);
+    // Convert the plain object to a Map and then iterate over it
+    const dnaCommandsMap = new Map(tempCOM);
+    for (const [key, value] of dnaCommandsMap) {
+      DNACommands.set(key, value);
+    }
+    const dnaParametersMap = new Map(tempPAR);
+    for (const [key, value] of dnaParametersMap) {
+      DNAParameters.set(key, value);
+    }
+
+    Commands = DNACommands;
+    Parameters = DNAParameters;
+  } else {
+    // Clear the existing commands
+    RNACommands.clear();
+    RNAParameters.clear();
+
+    // Convert the plain object to a Map and then iterate over it
+    const rnaCommandsMap = new Map(tempCOM);
+    for (const [key, value] of rnaCommandsMap) {
+      RNACommands.set(key, value);
+    }
+    const rnaParametersMap = new Map(tempPAR);
+    for (const [key, value] of rnaParametersMap) {
+      RNAParameters.set(key, value);
+    }
+    
+    Commands = RNACommands;
+    Parameters = RNAParameters;
   }
-  const dnaParametersMap = new Map(tempPAR);
-  for (const [key, value] of dnaParametersMap) {
-    DNAParameters.set(key, value);
-  }
 
-  res.render('running', { toolbar_index: 5, DNACommands, DNAParameters, uploadedFilePath });
-});
-
-/* Running Page */
-router.get('/running', function (req, res, next) {
-  // Render the 'running' view TEMP
-  res.render('running', { DNACommands, DNAParameters, uploadedFilePath, toolbar_index: 5 });
+  res.render('running', { toolbar_index: 5, Commands, Parameters, uploadedFilePath });
 });
 
 /* Output Page */
 router.post('/output', function (req, res, next) {
   // Render the 'output' view
   res.render('output', { downloadable_content, toolbar_index: 5 });
-});
-
-/* Output Page */
-router.get('/output', function (req, res, next) {
-  // Render the 'output' view TEMP
-  res.render('output', { downloadable_content, toolbar_index: 5 });
-});
-
-/* Test Page */
-router.get('/test-commands', function (req, res, next) {
-  res.render('test-commands', { toolbar_index: 1 });
 });
 
 //#endregion

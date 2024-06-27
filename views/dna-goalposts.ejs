@@ -18,7 +18,7 @@
         <h3 style="color:black;">Select a goalpost for the end of your timeline</h3>
 
         <form id="goalpostForm" action="/dna-pipeline" method="post">
-            <% DNACategories.forEach(category => { %>
+            <% Categories.forEach(category => { %>
 
                 <button type="button" class="collapsible" onclick="toggleCollapsible('section_<%= category.title%>')">
                     <h3>
@@ -31,7 +31,7 @@
                         if (category.title === "File Processing") {
                             if (infoSteps[j] === 0) { continue; }
                         }
-                        let entry = DNACommands.get(category.entries[j]);
+                        let entry = Commands.get(category.entries[j]);
                         %>
                         <div style="display: flex;">
                         <label class="checkbox-container">
@@ -49,16 +49,16 @@
                 <%- '<script>' %>
 
                     const form = document.getElementById('goalpostForm');
-                    let DNACommands = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNACommands.entries())) %>'));
-                    let DNACategories = JSON.parse('<%- JSON.stringify(DNACategories) %>');
+                    let Commands = new Map(JSON.parse('<%- JSON.stringify(Array.from(Commands.entries())) %>'));
+                    let Categories = JSON.parse('<%- JSON.stringify(Categories) %>');
                     const infoSteps = JSON.parse('<%- JSON.stringify(infoSteps) %>');
 
                     form.addEventListener('change', function (event) {
                         if (event.target.type === 'checkbox') {
                             // Set the correct array element accordingly
                             
-                            changingEntry = DNACommands.get(event.target.name);
-                            DNACommands.set(event.target.name, {title: changingEntry.title, isEnabled: event.target.checked, serverCall: changingEntry.serverCall});
+                            changingEntry = Commands.get(event.target.name);
+                            Commands.set(event.target.name, {title: changingEntry.title, isEnabled: event.target.checked, serverCall: changingEntry.serverCall});
 
                         }
                     });
@@ -67,11 +67,11 @@
                         // prevent submission for now
                         event.preventDefault();
 
-                        console.log(DNACommands);
+                        console.log(Commands);
 
-                        // send the DNACommands array as a hidden input, to make sure it updates BTS
-                        const sendCommands = document.querySelector('[name="DNACommands"]');
-                        sendCommands.value = JSON.stringify(Array.from(DNACommands.entries()));
+                        // send the Commands array as a hidden input, to make sure it updates BTS
+                        const sendCommands = document.querySelector('[name="Commands"]');
+                        sendCommands.value = JSON.stringify(Array.from(Commands.entries()));
 
                         // Submit the form
                         form.submit();
@@ -85,7 +85,7 @@
 
                 <%- '</script>' %>
 
-                <input type="hidden" name="DNACommands">
+                <input type="hidden" name="Commands">
 
                 <button class="goals_continue_button" type="submit"><h3 style="color: black">Generate Timeline</h3></button>
         </form>

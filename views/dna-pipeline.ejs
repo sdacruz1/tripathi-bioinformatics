@@ -18,7 +18,7 @@
         <h3 style="color:black;">Edit your timeline if necessary:</h3>
 
         <form id="dnaPipelineForm" action="/running" method="post">
-            <% DNACategories.forEach(category => { %>
+            <% Categories.forEach(category => { %>
                 <button type="button" class="collapsible" onclick="toggleCollapsible('section_<%= category.title %>')">
                     <h3><%= category.title %></h3>
                 </button>
@@ -26,8 +26,8 @@
                 <div class="content" id="section_<%= category.title %>">
                     <% for (let j = 0; j < category.entries.length; j++) { %>
                         <% if (category.title === "File Processing" && infoSteps[j] === 0) { continue; } %>
-                        <% let entry = DNACommands.get(category.entries[j]); %>
-                        <% let parameters = DNAParameters.get(entry.serverCall); %>
+                        <% let entry = Commands.get(category.entries[j]); %>
+                        <% let parameters = Parameters.get(entry.serverCall); %>
 
                         <div>
                             <label>
@@ -83,11 +83,11 @@
             <%- '<script>' %>
                 const form = document.getElementById('dnaPipelineForm');
         
-                let DNACommands = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNACommands.entries())) %>'));
-                let DNAParameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNAParameters.entries())) %>'));
+                let Commands = new Map(JSON.parse('<%- JSON.stringify(Array.from(Commands.entries())) %>'));
+                let Parameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(Parameters.entries())) %>'));
         
                 function saveButton(entryTag) {
-                    let parameters = DNAParameters.get(entryTag);
+                    let parameters = Parameters.get(entryTag);
                     for (let parameter of parameters) {
                         let optionInput = document.getElementById(parameter.title);
                         let optionDisplayTag = document.getElementById('option_' + parameter.title + '_display');
@@ -115,7 +115,7 @@
                         parameter.value = newValue;
                         optionDisplayTag.innerText = newValue.toString();
                     };
-                    DNAParameters.set(entryTag, parameters);
+                    Parameters.set(entryTag, parameters);
         
                     let optionsDiv = document.getElementById('options_' + entryTag);
                     let displayDiv = document.getElementById('options_display_' + entryTag);
@@ -134,13 +134,13 @@
                     if (event.target.type === 'range') {
                         const sliderName = event.target.name;
                         const tag = sliderName.split('_')[1];
-                        changingEntry = DNACommands.get(tag);
-                        DNACommands.set(tag, {title: changingEntry.title, isEnabled: (event.target.value == 1), serverCall: changingEntry.serverCall});
+                        changingEntry = Commands.get(tag);
+                        Commands.set(tag, {title: changingEntry.title, isEnabled: (event.target.value == 1), serverCall: changingEntry.serverCall});
         
                         let optionsDiv = document.getElementById('options_' + tag);
                         let displayDiv = document.getElementById('options_display_' + tag);
         
-                        if (DNACommands.get(tag).isEnabled) {
+                        if (Commands.get(tag).isEnabled) {
                             displayDiv?.classList.remove('hidden');
                         } else {
                             optionsDiv?.classList.add('hidden');
@@ -151,8 +151,8 @@
         
                 form.addEventListener('submit', function (event) {
                     event.preventDefault();
-                    document.querySelector('[name="DNACommands"]').value = JSON.stringify(Array.from(DNACommands.entries()));
-                    document.querySelector('[name="DNAParameters"]').value = JSON.stringify(Array.from(DNAParameters.entries()));
+                    document.querySelector('[name="Commands"]').value = JSON.stringify(Array.from(Commands.entries()));
+                    document.querySelector('[name="Parameters"]').value = JSON.stringify(Array.from(Parameters.entries()));
 
                     form.submit();
                 });
@@ -163,8 +163,8 @@
                 }
                 <%- '</script>' %>
 
-            <input type="hidden" name="DNACommands">
-            <input type="hidden" name="DNAParameters">
+            <input type="hidden" name="Commands">
+            <input type="hidden" name="Parameters">
             <button class="pipeline_continue_button"><h3 style="color: black">Continue</h3></button>
         </form>
     </div>

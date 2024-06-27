@@ -37,7 +37,7 @@
 
     <h4>Your Timeline:</h4>
 
-    <% DNACommands.forEach(command => { %>
+    <% Commands.forEach(command => { %>
         <% if (!command.isEnabled) { return; } %>
         <div style="display: flex;">
             <div style="width: 4rem; margin-right: 1rem;" >
@@ -51,7 +51,7 @@
 
                 <div id="selections_display_<%= command.serverCall %>" class="selections-display hidden">
                     <!-- Display selections -->
-                    <% DNAParameters.get(command.serverCall).forEach(parameter => { %>
+                    <% Parameters.get(command.serverCall).forEach(parameter => { %>
                         <div style="display: flex;">
                         <p style="color: #b985d9;"> <%= parameter.title %>: </p>
                         <p style="margin-left: 1rem;" id="option_<%= parameter.title %>_display"><%= parameter.value %></p>
@@ -147,14 +147,14 @@
         });
 
         function runCommands() {
-            let DNACommands = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNACommands.entries())) %>'));
-            let DNAParameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNAParameters.entries())) %>'));
-            console.log(DNACommands);
+            let Commands = new Map(JSON.parse('<%- JSON.stringify(Array.from(Commands.entries())) %>'));
+            let Parameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(Parameters.entries())) %>'));
+            console.log(Commands);
 
             try {
-                DNACommands.forEach(async command => {
+                Commands.forEach(async command => {
                     if (command.isEnabled) {
-                        await MakeRequest(command, DNAParameters.get(command.serverCall));
+                        await MakeRequest(command, Parameters.get(command.serverCall));
                     }
                 })
             } catch (error) {

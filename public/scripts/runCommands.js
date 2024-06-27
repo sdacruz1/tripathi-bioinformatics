@@ -73,14 +73,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 function runCommands() {
-    let DNACommands = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNACommands.entries())) %>'));
-    let DNAParameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(DNAParameters.entries())) %>'));
-    console.log(DNACommands);
+    let Commands = new Map(JSON.parse('<%- JSON.stringify(Array.from(Commands.entries())) %>'));
+    let Parameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(Parameters.entries())) %>'));
+    console.log(Commands);
 
     try {
-        DNACommands.forEach(async command => {
+        Commands.forEach(async command => {
             if (command.isEnabled) {
-                await MakeRequest(command, DNAParameters.get(command.serverCall));
+                await MakeRequest(command, Parameters.get(command.serverCall));
             }
         })
     } catch (error) {
