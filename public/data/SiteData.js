@@ -109,9 +109,9 @@ let DNAParameters = new Map([
 
 const RNACategories = [
     { title: "File Conversion", entries: ['fasta-to-fastq', 'fast5-to-fastq', 'bcl2fastq', 'sam-to-bam']},
-    { title: "File Processing", entries: ['sort-bam', 'index-bam', 'fastqc', 'trimming', 'alignment']},
-    { title: "Statistics", entries: ['rna-stats', 'overall-stats']},
-    { title: "Post Processing", entries: ['coverage', 'depth', 'heat-map']},
+    { title: "Pre Processing", entries: ['sort-bam', 'index-bam', 'trimming', 'alignment-mapping']},
+    { title: "Quality Control", entries: ['fastqc', 'fastq-screen', 'alignmentqc', 'rseqc']},
+    { title: "Analysis", entries: ['quantification', 'normal-diff', 'quality-yield-metrics', 'rseq-metrics', 'flagstats-rna', 'coverage-rna']},
 ];
 
 let RNACommands = new Map([
@@ -121,21 +121,25 @@ let RNACommands = new Map([
     ["bcl2fastq", new Command("Convert BCL to FastQ", false, 'bcl2fastq')],
     ["sam-to-bam", new Command("Convert SAM to BAM", false, 'sam-to-bam')],
 
-    // File Processing
+    // PreProcessing
     ["sort-bam", new Command("Sort BAM", false, 'sort-bam')],
     ["index-bam", new Command("Index BAM", false, 'index-bam')],
-    ["fastqc", new Command("Run FastQC", false, 'fastqc')],
     ["trimming", new Command("Trimming", false, 'trimming')],
-    ["alignment", new Command("Alignment", false, 'alignment')],
+    ["alignment-mapping", new Command("Aligment / Mapping", false, 'alignment-mapping')],
 
-    // Statistics
-    ["rna-stats", new Command("RNA Stats", false, 'rna-stats')],
-    ["overall-stats", new Command("Overall Stats", false, 'overall-stats')],
+    // Quality Control
+    ["fastqc", new Command("FastQC", false, 'fastqc')],
+    ["fastq-screen", new Command("FastQScreen", false, 'fastq-screen')],
+    ["alignmentqc", new Command("Alignment QC", false, 'alignmentqc')],
+    ["rseqc", new Command("RSeQC", false, 'rseqc')],
 
-    // Post Processing
-    ["coverage", new Command("Coverage", false, 'coverage')],
-    ["depth", new Command("Depth", false, 'depth')],
-    ["heat-map", new Command("HeatMap", false, 'heat-map')],
+    // Analysis
+    ["quantification", new Command("Quantification", false, 'quantification')],
+    ["normal-diff", new Command("Normalization and Differential Expression", false, 'normal-diff')],
+    ["quality-yield-metrics", new Command("Collect Quality Yield Metrics", false, 'quality-yield-metrics')],
+    ["rseq-metrics", new Command("Collect RNA RSeq Metrics", false, 'rseq-metrics')],
+    ["flagstats-rna", new Command("Flagstat", false, 'flagstats-rna')],
+    ["coverage-rna", new Command("Coverage", false, 'coverage-rna')],
 ]);
 
 let RNAParameters = new Map([
@@ -145,10 +149,9 @@ let RNAParameters = new Map([
     ["bcl2fastq", []],
     ["sam-to-bam", []],
 
-    // File Processing
+    // Pre Processing
     ["sort-bam", []], // none
     ["index-bam", []], // none
-    ["fastqc", []], // none
     ["trimming", [
         new Parameter("Perform Adapter Trim", false, 'checkbox', [], 'adapter_trim', false),
             new Parameter("Adapter Trim: Adapter File", true, 'upload', [], 'adapter_trim_file', ''),
@@ -162,19 +165,26 @@ let RNAParameters = new Map([
         new Parameter("Perform Trailing Trim", false, 'checkbox', [], 'trailing_trim', false),
             new Parameter("Trailing Trim: Input", true, 'checkbox', [], 'trailing', false),
     ]],
-    ["alignment", [
-        new Parameter("Alignment Reference Genome", false, 'select', ['Human', 'Mouse', 'Ecoli', 'HIV', 'Pig', 'Staphylococcus_aureus'], 'ref_genome', 'Human'),
-        new Parameter("Alignment Mode", false, 'select', ['BWA', 'Bowtie', 'Bowtie2'], 'mode', 'BWA'),
+    ["alignment-mapping", [
+        new Parameter("Version", false, 'select', ['Bowtie2', 'TopHat', 'Star', 'Salmon', 'HISAT2'], 'version', 'Bowtie2'),
     ]],
 
-    // Statistics
-    ["rna-stats", []],
-    ["overall-stats", []],
+    // Quality Control
+    ["fastqc", []], // none
+    ["fastq-screen", []],
+    ["alignmentqc", []],
+    ["rseqc", []],
 
-    // Post Processing
-    ["coverage", []],
-    ["depth", []],
-    ["heat-map", []],
+    // Analysis
+    ["quantification", [
+        new Parameter("Version", false, 'select', ['htseq-count', 'featureCounts'], 'version', 'htseq-count'),
+    ]],
+    ["normal-diff", []],
+    ["quality-yield-metrics", []],
+    ["rseq-metrics", []],
+    ["flagstats-rna", []],
+    ["coverage-rna", []],
+
 ]);
-
+    
 module.exports = {DNACategories, DNACommands, DNAParameters, RNACategories, RNACommands, RNAParameters};
