@@ -1,0 +1,36 @@
+# Use an official Ubuntu base image
+FROM ubuntu:20.04
+
+# Set environment variables to non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    wget \
+    tar \
+    bzip2 \
+    libbz2-dev \
+    zlib1g-dev \
+    liblzma-dev \
+    libncurses5-dev \
+    libncursesw5-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and extract TopHat binary
+RUN wget https://ccb.jhu.edu/software/tophat/downloads/tophat-2.1.1.Linux_x86_64.tar.gz -O /tmp/tophat.tar.gz && \
+    tar -xzvf /tmp/tophat.tar.gz -C /opt && \
+    rm /tmp/tophat.tar.gz
+
+# Add TopHat to PATH
+ENV PATH="/opt/tophat-2.1.1.Linux_x86_64:${PATH}"
+
+# Set the working directory
+WORKDIR /data
+
+# Define the default command
+CMD ["bash"]
+
+# Example usage of TopHat command (uncomment the following line if you want to run TopHat by default)
+# CMD ["tophat2", "--version"]

@@ -1,0 +1,17 @@
+# Dockerfile for Qualimap without Xvfb
+
+FROM openjdk:8-jre
+
+RUN apt-get update && apt-get install -y wget unzip libxext6 libxrender1 libxtst6 fonts-dejavu
+
+RUN wget https://bitbucket.org/kokonech/qualimap/downloads/qualimap_v2.3.zip && \
+    unzip qualimap_v2.3.zip -d /opt && \
+    rm qualimap_v2.3.zip && \
+    mv /opt/qualimap_v2.3 /opt/qualimap
+
+ENV PATH="/opt/qualimap:${PATH}"
+
+WORKDIR /opt/qualimap
+
+# CMD ["qualimap"] # This line runs the GUI, causing the X11 error
+CMD ["qualimap", "bamqc", "--help"] # Example of running a CLI command, adjust as needed
