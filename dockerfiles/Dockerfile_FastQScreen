@@ -1,0 +1,41 @@
+# Use an official Ubuntu base image
+FROM ubuntu:20.04
+
+# Set environment variables to non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    wget \
+    unzip \
+    perl \
+    libperl-dev \
+    gcc \
+    make \
+    build-essential \
+    zlib1g-dev \
+    curl \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Bowtie2, which is a dependency for FastQ Screen
+RUN apt-get update && \
+    apt-get install -y bowtie2
+
+# Download and install FastQ Screen
+RUN wget https://github.com/StevenWingett/FastQ-Screen/archive/refs/tags/v0.15.3.tar.gz -O /tmp/fastq_screen.tar.gz && \
+    tar -xzvf /tmp/fastq_screen.tar.gz -C /opt && \
+    rm /tmp/fastq_screen.tar.gz
+
+# Add FastQ Screen to PATH
+ENV PATH="/opt/FastQ-Screen-0.15.3:${PATH}"
+
+# Set the working directory
+WORKDIR /data
+
+# Define the default command
+CMD ["bash"]
+
+# Example usage of FastQ Screen command (uncomment the following line if you want to run FastQ Screen by default)
+# CMD ["fastq_screen", "--version"]

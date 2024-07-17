@@ -1,0 +1,30 @@
+# Use an official Ubuntu base image
+FROM ubuntu:20.04
+
+# Set environment variables to non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    wget \
+    tar && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and extract SubRead package
+RUN wget https://sourceforge.net/projects/subread/files/subread-2.0.6/subread-2.0.6-Linux-x86_64.tar.gz/download -O /tmp/subread.tar.gz && \
+    tar -xzvf /tmp/subread.tar.gz -C /opt && \
+    rm /tmp/subread.tar.gz
+
+# Add featureCounts to PATH
+ENV PATH="/opt/subread-2.0.6-Linux-x86_64/bin:${PATH}"
+
+# Set the working directory
+WORKDIR /data
+
+# Define the default command
+CMD ["bash"]
+
+# Example usage of featureCounts command (uncomment the following line if you want to run featureCounts by default)
+# CMD ["featureCounts", "-v"]
