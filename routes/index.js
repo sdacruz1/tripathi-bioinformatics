@@ -1454,9 +1454,104 @@ router.post('/mark-or-remove-duplicates', upload.none(), async (req, res) => {
 });
 
 
-// const runCommand() {
+async function runCommand(checkFile, environment, command, downloadables) {
+  // Main File Check (We need a file. Check if we have it. If not, use the user uploaded file.)
+  let mainFilePath = path.join(__dirname, '..', 'output', checkFile);
+  if (!fs.existsSync(mainFilePath)) {
+    mainFilePath = uploadedFilePath;
+    // We need the file, so check if a file was uploaded
+    if (!fs.existsSync(uploadedFilePath)) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
+  }
 
-// }
+  // Run the command in a Docker environment
+  try {
+    const output = await runDockerCommand(environment, command);
+
+    // output will hold the output from stdout and stderr
+    // NOTE: how to deal with things that read stdout into a file
+    console.log('Output:', output);
+    
+    // Make downloadable content entries for the results
+    downloadables.forEach(downloadable => {
+      // check if the result was successfully created
+      if (fs.existsSync(path.join(__dirname, '..', 'output', downloadable.content))) {
+        // if so, push it to the downloadable list
+        downloadable_content.push(downloadable);
+      }
+    })
+
+    // Return the results as a JSON
+    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send('Error executing Docker command');
+  }
+}
+
+async function runDockerCommand(image, command) { 
+  const container = await docker.createContainer({
+    Image: image,
+    Cmd: command,
+    AttachStdout: true,
+    AttachStderr: true,
+    Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely
+    HostConfig: {
+      Mounts: [
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, '..', 'output'),
+          Target: '/usr/output',
+        },
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, '..', 'ref_genomes'),
+          Target: '/usr/refs',
+        },
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, '..', 'uploads'),
+          Target: '/usr/uploads',
+        },
+      ],
+    },
+  });
+
+  await container.start();
+
+  const outputPromise = new Promise((resolve, reject) => {
+    container.wait((err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        console.log('Raw Data:', data); // Log the raw data object
+        resolve(data.toString());
+      }
+    });
+  });
+
+  let output;
+  try {
+    output = await outputPromise;
+  } catch (err) {
+    console.error('Error while waiting for container output:', err);
+    throw new Error('Error waiting for container output');
+  } finally {
+    try {
+      // Get container logs after command execution
+      const logs = await container.logs({ stdout: true, stderr: true });
+      console.log('Container Logs:', logs.toString());
+    } catch (logErr) {
+      console.error('Error getting container logs:', logErr);
+    }
+
+    container.remove(); // Always remove the container after use
+  }
+
+  return output;
+}
 
 
 /// SCREM
