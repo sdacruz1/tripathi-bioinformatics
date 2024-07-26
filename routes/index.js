@@ -75,6 +75,10 @@ let downloadable_content = [  // An object array holding the result of the steps
 
 //#region  ... GET and POST Views ... 
 
+router.get('/test', function(req, res) {
+  res.render('test');
+});
+
 /* Home Page */
 router.get('/', function (req, res, next) {
   // Render the 'home' view
@@ -1454,130 +1458,107 @@ router.post('/mark-or-remove-duplicates', upload.none(), async (req, res) => {
 });
 
 
-async function runCommand(checkFile, environment, command, downloadables) {
-  // Main File Check (We need a file. Check if we have it. If not, use the user uploaded file.)
-  let mainFilePath = path.join(__dirname, '..', 'output', checkFile);
-  if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFilePath;
-    // We need the file, so check if a file was uploaded
-    if (!fs.existsSync(uploadedFilePath)) {
-      res.status(400).send('No file uploaded');
-      return;
-    }
-  }
+// async function runCommand(checkFile, environment, command, downloadables) {
+//   // Main File Check (We need a file. Check if we have it. If not, use the user uploaded file.)
+//   let mainFilePath = path.join(__dirname, '..', 'output', checkFile);
+//   if (!fs.existsSync(mainFilePath)) {
+//     mainFilePath = uploadedFilePath;
+//     // We need the file, so check if a file was uploaded
+//     if (!fs.existsSync(uploadedFilePath)) {
+//       res.status(400).send('No file uploaded');
+//       return;
+//     }
+//   }
 
-  // Run the command in a Docker environment
-  try {
-    const output = await runDockerCommand(environment, command);
+//   // Run the command in a Docker environment
+//   try {
+//     const output = await runDockerCommand(environment, command);
 
-    // output will hold the output from stdout and stderr
-    // NOTE: how to deal with things that read stdout into a file
-    console.log('Output:', output);
+//     // output will hold the output from stdout and stderr
+//     // NOTE: how to deal with things that read stdout into a file
+//     console.log('Output:', output);
     
-    // Make downloadable content entries for the results
-    downloadables.forEach(downloadable => {
-      // check if the result was successfully created
-      if (fs.existsSync(path.join(__dirname, '..', 'output', downloadable.content))) {
-        // if so, push it to the downloadable list
-        downloadable_content.push(downloadable);
-      }
-    })
+//     // Make downloadable content entries for the results
+//     downloadables.forEach(downloadable => {
+//       // check if the result was successfully created
+//       if (fs.existsSync(path.join(__dirname, '..', 'output', downloadable.content))) {
+//         // if so, push it to the downloadable list
+//         downloadable_content.push(downloadable);
+//       }
+//     })
 
-    // Return the results as a JSON
-    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
-  } catch (error) {
-    console.error('Error:', error.message);
-    res.status(500).send('Error executing Docker command');
-  }
-}
+//     // Return the results as a JSON
+//     res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
+//   } catch (error) {
+//     console.error('Error:', error.message);
+//     res.status(500).send('Error executing Docker command');
+//   }
+// }
 
-async function runDockerCommand(image, command) { 
-  const container = await docker.createContainer({
-    Image: image,
-    Cmd: command,
-    AttachStdout: true,
-    AttachStderr: true,
-    Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely
-    HostConfig: {
-      Mounts: [
-        {
-          Type: 'bind',
-          Source: path.join(__dirname, '..', 'output'),
-          Target: '/usr/output',
-        },
-        {
-          Type: 'bind',
-          Source: path.join(__dirname, '..', 'ref_genomes'),
-          Target: '/usr/refs',
-        },
-        {
-          Type: 'bind',
-          Source: path.join(__dirname, '..', 'uploads'),
-          Target: '/usr/uploads',
-        },
-      ],
-    },
-  });
+// async function runDockerCommand(image, command) { 
+//   const container = await docker.createContainer({
+//     Image: image,
+//     Cmd: command,
+//     AttachStdout: true,
+//     AttachStderr: true,
+//     Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely
+//     HostConfig: {
+//       Mounts: [
+//         {
+//           Type: 'bind',
+//           Source: path.join(__dirname, '..', 'output'),
+//           Target: '/usr/output',
+//         },
+//         {
+//           Type: 'bind',
+//           Source: path.join(__dirname, '..', 'ref_genomes'),
+//           Target: '/usr/refs',
+//         },
+//         {
+//           Type: 'bind',
+//           Source: path.join(__dirname, '..', 'uploads'),
+//           Target: '/usr/uploads',
+//         },
+//       ],
+//     },
+//   });
 
-  await container.start();
+//   await container.start();
 
-  const outputPromise = new Promise((resolve, reject) => {
-    container.wait((err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        console.log('Raw Data:', data); // Log the raw data object
-        resolve(data.toString());
-      }
-    });
-  });
+//   const outputPromise = new Promise((resolve, reject) => {
+//     container.wait((err, data) => {
+//       if (err) {
+//         reject(err);
+//       } else {
+//         console.log('Raw Data:', data); // Log the raw data object
+//         resolve(data.toString());
+//       }
+//     });
+//   });
 
-  let output;
-  try {
-    output = await outputPromise;
-  } catch (err) {
-    console.error('Error while waiting for container output:', err);
-    throw new Error('Error waiting for container output');
-  } finally {
-    try {
-      // Get container logs after command execution
-      const logs = await container.logs({ stdout: true, stderr: true });
-      console.log('Container Logs:', logs.toString());
-    } catch (logErr) {
-      console.error('Error getting container logs:', logErr);
-    }
+//   let output;
+//   try {
+//     output = await outputPromise;
+//   } catch (err) {
+//     console.error('Error while waiting for container output:', err);
+//     throw new Error('Error waiting for container output');
+//   } finally {
+//     try {
+//       // Get container logs after command execution
+//       const logs = await container.logs({ stdout: true, stderr: true });
+//       console.log('Container Logs:', logs.toString());
+//     } catch (logErr) {
+//       console.error('Error getting container logs:', logErr);
+//     }
 
-    container.remove(); // Always remove the container after use
-  }
+//     container.remove(); // Always remove the container after use
+//   }
 
-  return output;
-}
+//   return output;
+// }
 
 
 /// SCREM
-
-router.get('/testing', function (req, res) {
-  res.render('testing');
-});
-
-router.post('/test-docker', upload.none(), async (req, res) => {
-  try {
-
-    // 'java -jar ../picard/picard.jar MarkIlluminaAdapters -h'
-    // let r_path = '../refs/Ecoli/Ecoli.fna';
-    let i_path = '../output/SortedBAM.bam';
-    let o_path = '../output/AlignmentSummary.txt';
-    // const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -R ' + r_path + ' -I ' + i_path + ' -O ' + o_path);
-    const output = await runPicardCommand('java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -I ' + i_path + ' -O ' + o_path);
-
-    console.log('Output:', output);
-    res.status(200).send(JSON.stringify(output)); // Convert output to JSON string
-  } catch (error) {
-    console.error('Error:', error.message);
-    res.status(500).send('Error executing Docker command');
-  }
-});
-
 
 async function runPicardCommand(command) {
   const container = await docker.createContainer({
@@ -1749,6 +1730,138 @@ async function runFast5ToFastQ(inputDirectory) {
 
   return output;
 }
+
+//#region ... Execute Commands ...
+
+/** Example usage:
+* const pairs = [["name", "Jack"], ["age", "twenty"]];
+* const inputString = "fillForm <name> -addFile -useWarnings <age>";
+* const result = substitutePlaceholders(pairs, inputString);
+* console.log(result); // Output: "fillForm Jack -addFile -useWarnings twenty"
+**/
+function substitutePlaceholders(pairs, inputString) {
+  // Loop through each pair in the array
+  pairs.forEach(pair => {
+    const placeholder = `<${pair[0]}>`; // Create the placeholder format
+    const value = pair[1]; // Get the value to substitute
+
+    // Replace all occurrences of the placeholder in the input string
+    inputString = inputString.split(placeholder).join(value);
+  });
+
+  return inputString;
+}
+
+router.post('/run-command', upload.none(), async (req, res) => {
+  // Get the info needed
+  // let Executable = DNAExecutables[req.body.command];
+  let Executable = JSON.parse(req.body.executable);
+
+  // -- Main File Check --
+  // Find the output file we need to run on from the database
+  if (Executable.checkFile != '') {
+    let mainFilePath = path.join(__dirname, '..', 'output', Executable.checkFile);
+    // If the file we think we need does not exist, use the user uploaded file
+    if (!fs.existsSync(mainFilePath)) {
+      mainFilePath = uploadedFilePath;
+      // If there is no user uploaded file, we have an error
+      if (!fs.existsSync(uploadedFilePath)) {
+        res.status(400).send('No file uploaded');
+        return;
+      }
+    }
+  }
+
+  // -- Build the Command --
+  let allVars = (Executable.checkFile == '') ? Executable.variables : [['mainFile', mainFilePath]].push(Executable.variables);
+  let commandString = substitutePlaceholders(allVars, Executable.command);
+
+  // -- Run the Command in a Docker Environment --
+  try {
+    const output = await runDockerCommand(Executable.environment, commandString);
+    // NOTE: how to deal with things that read stdout into a file?
+    console.log('Output:', output);
+
+    // Make downloadable content entries for the results
+    Executable.downloadables.forEach(downloadable => {
+      // Check if the result was successfully created by the command
+      if (fs.existsSync(path.join(__dirname, '..', 'output', downloadable.path))) {
+        // if so, push it to the downloadable list
+        downloadable_content.push(downloadable);
+      }
+    })
+
+    // Return the results as a JSON
+    res.status(200).send(JSON.stringify(output));
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).send('Error executing Docker command');
+  }
+});
+
+async function runDockerCommand(image, command) { 
+  const container = await docker.createContainer({
+    Image: image,
+    Cmd: command,
+    AttachStdout: true,
+    AttachStderr: true,
+    Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely
+    HostConfig: {
+      Mounts: [
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, '..', 'output'),
+          Target: '/usr/output',
+        },
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, '..', 'ref_genomes'),
+          Target: '/usr/refs',
+        },
+        {
+          Type: 'bind',
+          Source: path.join(__dirname, '..', 'uploads'),
+          Target: '/usr/uploads',
+        },
+      ],
+    },
+  });
+
+  await container.start();
+
+  const outputPromise = new Promise((resolve, reject) => {
+    container.wait((err, data) => {
+      if (err) {
+        reject(err);
+      } else {
+        console.log('Raw Data:', data); // Log the raw data object
+        resolve(data.toString());
+      }
+    });
+  });
+
+  let output;
+  try {
+    output = await outputPromise;
+  } catch (err) {
+    console.error('Error while waiting for container output:', err);
+    throw new Error('Error waiting for container output');
+  } finally {
+    try {
+      // Get container logs after command execution
+      const logs = await container.logs({ stdout: true, stderr: true });
+      console.log('Container Logs:', logs.toString());
+    } catch (logErr) {
+      console.error('Error getting container logs:', logErr);
+    }
+
+    container.remove(); // Always remove the container after use
+  }
+
+  return output;
+}
+
+//#endregion
 
 
 

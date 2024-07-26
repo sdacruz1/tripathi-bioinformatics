@@ -1,0 +1,61 @@
+<head>
+    <title>Tripathi Bioinformatics</title>
+    <link rel="stylesheet" href="https://use.typekit.net/azy2ine.css">
+</head>
+
+<body>
+    <button onclick="RunCommand()">Run Command</button>
+</body>
+
+<script>
+    async function RunCommand () {
+        try {
+                await runIt();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        
+    }
+
+    const runIt = () => {
+        return new Promise((resolve) => {
+            
+            executable = {
+                checkFile: '',
+                dockerEnv:'samtools',
+                variables:[['ref_genome', 'usr/refs/hgch38_index'], ['output_file', 'usr/output/SeqDict.txt']],
+                command: "samtools dict <ref_genome> -o <output_file>",
+                downloadables: [{enabled: false, isVisual: false, label: "Sequence Dictionary", path: "SeqDict.txt"}]
+            }
+            let formData = new FormData();
+            formData.append('executable', JSON.stringify(executable));
+
+            // setStatus(command.serverCall, 'running');
+
+            fetch('/run-command', {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => {
+                    if (!response.ok) {
+                    // If response is not OK, throw an error with the status text
+                    throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
+                    }
+                    // Assume the server sends JSON data
+                    return response.json();
+                })
+                .then(data => {
+                    // Handle Response
+                    console.log(command.title + ' response:', data);
+                    // setStatus(command.serverCall, 'done');
+                    resolve(10);
+                })
+                .catch(error => {
+                    // Handle the error more gracefully
+                    console.error('Error with ' + command.title + ' :', error);
+                    // setStatus(command.serverCall, 'error');
+                    resolve(0);
+                });
+        });
+    };
+</script>
