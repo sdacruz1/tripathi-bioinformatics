@@ -1802,7 +1802,7 @@ router.post('/run-command', upload.none(), async (req, res) => {
 async function runDockerCommand(image, command) { 
   const container = await docker.createContainer({
     Image: image,
-    Cmd: command,
+    Cmd: command.split(' '),
     AttachStdout: true,
     AttachStderr: true,
     Tty: false, // Important: Set Tty to false to prevent the container from running indefinitely
