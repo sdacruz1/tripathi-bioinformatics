@@ -25,4 +25,23 @@ class Parameter {
     }
 }
 
-module.exports = {Command, Parameter};
+class Executable {
+    constructor(checkFile, dockerEnv, variables, command, downloadables) {
+        this.checkFile = checkFile;
+        this.dockerEnv = dockerEnv;
+        this.variables = variables;
+        this.command = command;
+        this.downloadables = downloadables;
+    }
+}
+
+class Downloadable {
+    constructor(enabled, isVisual, label, path) {
+        this.enabled = enabled;
+        this.isVisual = isVisual;
+        this.label = label;
+        this.path = path;
+    }
+}
+
+module.exports = {Command, Parameter, Executable, Downloadable};
