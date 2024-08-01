@@ -625,129 +625,6 @@ router.post('/alignment', upload.none(), (req, res) => {
 
 });
 
-// ***** READ IN FROM OUTPUT *****
-router.post('/bam-index-stats', upload.none(), (req, res) => {
-  // Main File Check
-  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
-
-  if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFilePath;
-    // We need the file, so check if a file was uploaded
-    if (!fs.existsSync(uploadedFilePath)) {
-      res.status(400).send('No file uploaded');
-      return;
-    }
-  }
-
-  // Run Command
-  // samtools idxstats in.bam
-  const BamIndexStatsCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const BamIndexStatsArgs = ['idxstats', mainFilePath];
-
-  const runBamIndexStats = spawn(BamIndexStatsCommand, BamIndexStatsArgs);
-
-  // Handle Response
-  let outputData = '';
-
-  runBamIndexStats.stdout.on('data', (data) => {
-    outputData += data;
-    console.log(`stdout: ${data}`);
-  });
-
-  runBamIndexStats.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    res.json({});
-    return;
-  });
-
-  runBamIndexStats.on('exit', (code) => {
-    console.log(`runIndexBam process exited with code ${code}`);
-
-    // Write outputData to a text file
-    fs.writeFile(path.join(__dirname, '..', 'output', 'BAM_Index_Stats.txt'), outputData, (err) => {
-      if (err) {
-        console.error('Error writing file:', err);
-        return;
-      }
-      console.log('stdout data written to BAM_Index_Stats.txt');
-    });
-
-    // Make a downloadable_content entry for the results
-    downloadable_content.push({
-      enabled: false,
-      has_visual_component: false,
-      label: 'BAM Index Stats',
-      content: 'BAM_Index_Stats.txt',
-    });
-
-    // Return the results as a JSON
-    res.json({});
-    return;
-  });
-
-});
-// ***** READ IN FROM OUTPUT *****
-router.post('/flag-stats', upload.none(), (req, res) => {
-  // Main File Check
-  let mainFilePath = path.join(__dirname, '..', 'output', 'SortedBAM.bam');
-
-  if (!fs.existsSync(mainFilePath)) {
-    mainFilePath = uploadedFilePath;
-    // We need the file, so check if a file was uploaded
-    if (!fs.existsSync(uploadedFilePath)) {
-      res.status(400).send('No file uploaded');
-      return;
-    }
-  }
-
-  // Run Command
-  // samtools flagstat in.sam|in.bam|in.cram
-  const FlagStatsCommand = path.join(__dirname, '..', 'bio_modules', 'samtools');
-  const FlagStatsArgs = ['flagstat', mainFilePath];
-
-  const runFlagStats = spawn(FlagStatsCommand, FlagStatsArgs);
-
-  // Handle Response
-  let outputData = '';
-
-  runFlagStats.stdout.on('data', (data) => {
-    outputData += data;
-    console.log(`stdout: ${data}`);
-  });
-
-  runFlagStats.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    res.json({});
-    return;
-  });
-
-  runFlagStats.on('exit', (code) => {
-    console.log(`FlagStats process exited with code ${code}`);
-
-    // Write outputData to a text file
-    fs.writeFile(path.join(__dirname, '..', 'output', 'Flag_Stats.txt'), outputData, (err) => {
-      if (err) {
-        console.error('Error writing file:', err);
-        return;
-      }
-      console.log('stdout data written to Flag_Stats.txt');
-    });
-
-    // Make a downloadable_content entry for the results
-    downloadable_content.push({
-      enabled: false,
-      has_visual_component: false,
-      label: 'Flag Stats',
-      content: 'Flag_Stats.txt',
-    });
-
-    // Return the results as a JSON
-    res.json({});
-    return;
-  });
-
-});
-
 router.post('/mark-or-remove-duplicates', upload.none(), async (req, res) => {
   let output_bam_file_name = path.join('..', 'output', 'MarkedDuplicatesBAM.bam');
   let output_metrics_file_name = path.join('..', 'output', 'DuplicateMetrics.txt');
@@ -970,6 +847,17 @@ router.post('/run-command', upload.none(), async (req, res) => {
     // NOTE: how to deal with things that read stdout into a file?
     console.log('Output:', output);
 
+    if(Executable.readOut[0]) {
+      // Write output data to a text file
+      fs.writeFile(path.join(__dirname, '..', 'output', Executable.readOut[1]), output, (err) => {
+        if (err) {
+          console.error('Error writing file:', err);
+          return;
+        }
+        console.log('stdout data written to ' + Executable.readOut[1]);
+      });
+    }
+
     // Make downloadable content entries for the results
     Executable.downloadables.forEach(downloadable => {
       // Check if the result was successfully created by the command
@@ -1050,8 +938,6 @@ async function runDockerCommand(image, command) {
 }
 
 //#endregion
-
-
 
 //#endregion
 

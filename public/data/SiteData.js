@@ -15,6 +15,7 @@ let DNAExecutables = new Map([
     ["fastqc", new Executable(
         '',
         'fastqc',
+        [false, ''],
         [['uploaded_file', '']],
         "fastqc <uploaded_file>",
         [new Downloadable(false, false, "FastQC Results", "CBTT")]
@@ -22,6 +23,7 @@ let DNAExecutables = new Map([
     ["fasta-to-fastq", new Executable(
         'convertedFastQ.fq',
         'seqtk',
+        [false, ''],
         [['char_to_replace_quality_scores', '#'], ['in_fa', ''], ['out_fq', '']],
         "seqtk seq -F <char_to_replace_quality_scores> <in_fa> > <out_fq>",
         [new Downloadable(false, false, "FastQ from FastA", "FastAConvertedToFastQ.fq")]
@@ -29,6 +31,7 @@ let DNAExecutables = new Map([
     ["sam-to-bam", new Executable(
         'AlignedSAM.sam',
         'samtools',
+        [false, ''],
         [['output_file', 'ConvertedToBAM.bam']],
         "samtools view -b <main_file> > <output_file>",
         [new Downloadable(false, false, "Converted BAM File", "AlignedSAM.sam")]
@@ -36,6 +39,7 @@ let DNAExecutables = new Map([
     ["sort-bam-file", new Executable(
         'ConvertedToBAM.bam',
         'samtools',
+        [false, ''],
         [['output_file', 'ConvertedToBAM.bam']],
         "samtools sort <main_file> -o <output_file>",
         [new Downloadable(false, false, "Sorted BAM", "SortedBAM.bam")]
@@ -43,6 +47,7 @@ let DNAExecutables = new Map([
     ["index-bam-file", new Executable(
         'SortedBAM.bam',
         'samtools',
+        [true, "BAM_Index_Stats.txt"],
         [],
         "samtools index <main_file>",
         [new Downloadable(false, false, "BAM Index", "SortedBAM.bam.bai"),
@@ -52,6 +57,7 @@ let DNAExecutables = new Map([
     ["add-or-replace-read-groups", new Executable(
         'SortedBAM.bam',
         'samtools',
+        [false, ''],
         [['new_readgroup_line', '@RG\tID:sample1\tSM:sample1\tLB:library1\tPL:illumina'], ['edit_mode', ''],['output_file', 'RG_bam.bam']],
         "samtools addreplacerg -r <new_readgroup_line> -m <edit_mode> -u -o <output_file> <main_file>",
         [new Downloadable(false, false, "Read Groups Added/Replaced BAM", "RG_bam.bam")]
@@ -59,6 +65,7 @@ let DNAExecutables = new Map([
     ["bam-index-stats", new Executable(
         'SortedBAM.bam',
         'samtools',
+        [false, ''],
         [],
         "samtools idxstats <main_file>",
         [new Downloadable(false, false, "BAM Index Stats", "BAM_Index_Stats.txt")]
@@ -66,6 +73,7 @@ let DNAExecutables = new Map([
     ["alignment-summary", new Executable(
         'output/SortedBAM.bam',
         'picard',
+        [false, ''],
         [['ref_genome', 'hgch38_index'], ['output_file', 'AlignmentSummary.txt']],
         "java -jar ../picard/picard.jar CollectAlignmentSummaryMetrics -I usr/<main_file> -O usr/output/<output_file> -R usr/refs/<ref_genome>/<ref_genome>.fna",
         [new Downloadable(false, false, "Alignment Summary", "AlignmentSummary.txt")]
@@ -73,6 +81,7 @@ let DNAExecutables = new Map([
     ["gc-bias-summary", new Executable(
         'output/SortedBAM.bam',
         'picard',
+        [false, ''],
         [['ref_genome', 'hgch38_index'], ['output_metrics_txt', 'GC_BIAS_Metrics.txt'], ['output_chart', 'GC_BIAS_OutputChart.txt'], ['output_summary', 'GC_BIAS_SummaryOutput.txt']],
         "java -jar ../picard/picard.jar CollectGcBiasMetrics -I usr/<main_file> -O usr/output/<output_metrics_txt> -CHART usr/output/<output_chart> -S usr/output/<output_summary> -R usr/refs/<ref_genome>/<ref_genome>.fna",
         [new Downloadable(false, false, "GC Bias Metrics", "GC_BIAS_Metrics.txt"),
@@ -83,6 +92,7 @@ let DNAExecutables = new Map([
     ["insert-size-summary", new Executable(
         'output/SortedBAM.bam',
         'picard',
+        [false, ''],
         [['output_raw_data', 'Insert_Size_RawData.txt'], ['output_histogram_name', 'Insert_Size_Histogram.pdf']],
         "java -jar ../picard/picard.jar CollectInsertSizeMetrics -I usr/<main_file> -O <output_raw_data> -H <output_histogram_name> -M 0.5",
         [new Downloadable(false, false, "Insert Size Raw Data", "Insert_Size_RawData.txt"),
@@ -92,6 +102,7 @@ let DNAExecutables = new Map([
     ["create-sequence-dictionary", new Executable(
         '',
         'samtools',
+        [false, ''],
         [['ref_genome', 'hgch38_index'], ['output_file', 'SeqDict.txt']],
         "samtools dict usr/refs/<ref_genome>/<ref_genome>.fna -o usr/output/<output_file>",
         [new Downloadable(false, false, "Sequence Dictionary", "SeqDict.txt")]
@@ -99,6 +110,7 @@ let DNAExecutables = new Map([
     ["flag-stats", new Executable(
         'SortedBAM.bam',
         'samtools',
+        [true, "Flag_Stats.txt"],
         [],
         "samtools flagstat <main_file>",
         [new Downloadable(false, false, "Flag Stats", "Flag_Stats.txt")]
@@ -106,6 +118,7 @@ let DNAExecutables = new Map([
     ["sequence-depth", new Executable(
         'SortedBAM.bam',
         'samtools',
+        [false, ''],
         ['output_file', 'Seq_Depth.txt'],
         "samtools depth -o <output_file> <main_file>",
         [new Downloadable(false, false, "Sequence Depth Data", "Seq_Depth.txt")]
@@ -113,6 +126,7 @@ let DNAExecutables = new Map([
     ["sequence-coverage", new Executable(
         'SortedBAM.bam',
         'samtools',
+        [false, ''],
         ['output_file', 'Seq_Coverage.txt'],
         "samtools coverage -o <output_file> -m <main_file>",
         [new Downloadable(false, false, "Sequence Coverage Histogram", "Seq_Coverage_Histogram.pdf"),
@@ -268,6 +282,81 @@ const RNACategories = [
     { title: "Quality Control", entries: ['fastqc', 'fastq-screen', 'alignmentqc', 'rseqc']},
     { title: "Analysis", entries: ['quantification', 'normal-diff', 'quality-yield-metrics', 'rseq-metrics', 'flagstats-rna', 'coverage-rna']},
 ];
+
+let RNAExecutables = new Map([
+    ["fastqscreen", new Executable(
+        '', // will be an input fastq
+        'fastqscreen',
+        [false, ''],
+        [['fastq_screen_config', ''], ['output_dir', '']],
+        "fastq_screen --conf <fastq_screen_config> <main_file> --outdir <output_dir>",
+        [new Downloadable(false, false, "FastQScreen Results", "CBTT")]
+    )],
+    ["bowtie2-alignment", new Executable(
+        '', // will be an input reads.fq
+        'bowtie2',
+        [false, ''],
+        [['index', ''], ['output_sam', 'Bowtie_Alignment_RNA.sam']],
+        "bowtie2 -x <index> -U <main_file> -S <output_sam>",
+        [new Downloadable(false, false, "Bowtie2 Alignment Results", "Bowtie_Alignment_RNA.sam")]
+    )],
+    ["star-alignment", new Executable(
+        '', // will be an input reads.fq
+        'star',
+        [false, ''],
+        [['ref_genome', ''], ['read1_fastq', ''], ['read2_fastq', ''], ['output_prefix', '']],
+        "STAR --genomeDir usr/refs/<ref_genome>/<ref_genome>.fna --readFilesIn <read1_fastq> <read2_fastq> --outFileNamePrefix <output_prefix>",
+        [new Downloadable(false, false, "Star Alignment Results", "CBTT")]
+    )],
+    ["salmon-alignment", new Executable(
+        '', // will be an input reads.fq
+        'salmon',
+        [false, ''],
+        [['quant', ''], ['index', ''], ['read1_fq', ''], ['read2_fq', ''], ['output_dir', '']],
+        "salmon <quant> -i <index> -l A -1 <read1_fq> -2 <read2_fq> -o <output_dir>",
+        [new Downloadable(false, false, "Salmon Alignment Results", "CBTT")]
+    )],
+    ["hisat2-alignment", new Executable(
+        '', // will be an input reads.fq
+        'hisat2',
+        [false, ''],
+        [['index', ''], ['read1_fq', ''], ['read2_fq', ''], ['output_sam', 'hisat_output.sam']],
+        "hisat2 -x <index> -1 <read1_fq> -2 <read2_fq> -S usr/output/<output_sam>",
+        [new Downloadable(false, false, "HISAT2 Alignment Results", "hisat_output.sam")]
+    )],
+    ["htseq-alignment", new Executable(
+        '', // bam file? how many
+        'htseq',
+        [false, ''],
+        [['bam', ''], ['gene_id', ''], ['aligned_reads_bam', ''], ['genes_gtf', ''], ['counts_txt', 'htseq_counts.txt']],
+        "htseq-count -f <bam> -s no -t exon -i <gene_id> <aligned_reads_bam> <genes_gtf> > <counts_txt>",
+        [new Downloadable(false, false, "Htseq-counts Alignment Results", "htseq_counts.txt")]
+    )],
+    ["featureCounts-alignment", new Executable(
+        '', // will be an input reads.fq
+        'featureCount',
+        [false, ''],
+        [['genes_gtf', ''], ['counts_txt', 'feature_counts.txt'], ['aligned_reads_bam', '']],
+        "featureCounts -a <genes_gtf> -o <counts_txt> <aligned_reads_bam>",
+        [new Downloadable(false, false, "Feature-counts Alignment Results", "feature_counts.txt")]
+    )],
+    ["rna-coverage-r", new Executable(
+        '', // will be an input CBTT
+        'r',
+        [false, ''],
+        [['reads', ''], ['transcripts', '']],
+        "library(GenomicAlignments) coverage <- coverageByTranscript(<reads>, <transcripts>)",
+        [new Downloadable(false, false, "RNA R Coverage Results", "CBTT")]
+    )],
+    ["rna-coverage-samtools", new Executable(
+        'SortedBAM.bam', // will be an input bam
+        'samtools',
+        [false, ''],
+        [['exons_bed', ''], ['coverage_txt', 'rna_coverage.txt']],
+        "samtools coverage -b <exons_bed> <main_file> > coverage_txt",
+        [new Downloadable(false, false, "RNA Samtools Coverage Results", "rna_coverage.txt")]
+    )],
+]);
 
 let RNACommands = new Map([
     // File Conversion
