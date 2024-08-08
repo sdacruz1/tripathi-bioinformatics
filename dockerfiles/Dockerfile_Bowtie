@@ -1,0 +1,22 @@
+# Use an official Ubuntu as the base image
+FROM ubuntu:22.04
+
+# Set environment variables
+ENV BOWTIE_VERSION=1.3.1
+ENV BOWTIE_URL=https://sourceforge.net/projects/bowtie-bio/files/bowtie/${BOWTIE_VERSION}/bowtie-${BOWTIE_VERSION}-linux-aarch64.zip/download
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y wget unzip python3 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and install Bowtie
+RUN wget -O bowtie.zip ${BOWTIE_URL} && \
+    unzip bowtie.zip -d /opt/ && \
+    rm bowtie.zip && \
+    ln -s /opt/bowtie-${BOWTIE_VERSION}-linux-aarch64/bowtie /usr/local/bin/bowtie && \
+    ln -s /opt/bowtie-${BOWTIE_VERSION}-linux-aarch64/bowtie-build /usr/local/bin/bowtie-build && \
+    ln -s /opt/bowtie-${BOWTIE_VERSION}-linux-aarch64/bowtie-inspect /usr/local/bin/bowtie-inspect
+
+# Set the entrypoint
+ENTRYPOINT ["bowtie"]

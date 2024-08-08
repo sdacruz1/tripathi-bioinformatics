@@ -1,0 +1,25 @@
+# Use an official Ubuntu base image
+FROM ubuntu:20.04
+
+# Set environment variables to non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    openjdk-11-jre \
+    wget \
+    unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and install Trimmomatic
+RUN wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.39.zip -O /tmp/Trimmomatic-0.39.zip && \
+    unzip /tmp/Trimmomatic-0.39.zip -d /opt && \
+    rm /tmp/Trimmomatic-0.39.zip
+
+# Set the working directory
+WORKDIR /data
+
+# Define the default command
+CMD ["java", "-jar", "/opt/Trimmomatic-0.39/trimmomatic-0.39.jar"]

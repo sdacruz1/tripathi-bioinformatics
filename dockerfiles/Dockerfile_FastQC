@@ -1,0 +1,31 @@
+# Use an official Ubuntu base image
+FROM ubuntu:20.04
+
+# Set environment variables to non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    openjdk-11-jre \
+    wget \
+    unzip \
+    perl \
+    perl-modules-5.30 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and install FastQC
+RUN wget https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.12.1.zip -O /tmp/fastqc.zip && \
+    unzip /tmp/fastqc.zip -d /opt && \
+    rm /tmp/fastqc.zip && \
+    chmod +x /opt/FastQC/fastqc
+
+# Add FastQC to PATH
+ENV PATH="/opt/FastQC:${PATH}"
+
+# Set the working directory
+WORKDIR /data
+
+# Define the default command
+CMD ["fastqc", "-h"]

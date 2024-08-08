@@ -1,0 +1,22 @@
+# Use an official Ubuntu as the base image
+FROM ubuntu:22.04
+
+# Set environment variables
+ENV BWA_GIT_REPO=https://github.com/lh3/bwa.git
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y wget build-essential zlib1g-dev git && \
+    rm -rf /var/lib/apt/lists/*
+
+# Clone and build BWA
+RUN git clone ${BWA_GIT_REPO} /bwa && \
+    cd /bwa && \
+    git checkout master && \ 
+    make && \
+    cp bwa /usr/local/bin/ && \
+    cd .. && \
+    rm -rf /bwa
+
+# Set the entrypoint
+ENTRYPOINT ["bwa"]

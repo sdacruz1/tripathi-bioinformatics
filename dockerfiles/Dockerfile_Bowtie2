@@ -1,0 +1,22 @@
+# Use an official Ubuntu as the base image
+FROM ubuntu:22.04
+
+# Set environment variables
+ENV BOWTIE2_VERSION=2.5.4
+ENV BOWTIE2_URL=https://sourceforge.net/projects/bowtie-bio/files/bowtie2/${BOWTIE2_VERSION}/bowtie2-${BOWTIE2_VERSION}-sra-linux-aarch64.zip/download
+
+# Install dependencies
+RUN apt-get update && \
+    apt-get install -y wget unzip perl libsys-hostname-long-perl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and install Bowtie2
+RUN wget -O bowtie2.zip ${BOWTIE2_URL} && \
+    unzip bowtie2.zip -d /opt/ && \
+    rm bowtie2.zip && \
+    ln -s /opt/bowtie2-${BOWTIE2_VERSION}-sra-linux-aarch64/bowtie2 /usr/local/bin/bowtie2 && \
+    ln -s /opt/bowtie2-${BOWTIE2_VERSION}-sra-linux-aarch64/bowtie2-build /usr/local/bin/bowtie2-build && \
+    ln -s /opt/bowtie2-${BOWTIE2_VERSION}-sra-linux-aarch64/bowtie2-inspect /usr/local/bin/bowtie2-inspect
+
+# Set the entrypoint
+ENTRYPOINT ["bowtie2"]

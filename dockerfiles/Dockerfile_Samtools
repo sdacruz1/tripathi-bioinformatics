@@ -27,5 +27,8 @@ RUN wget https://github.com/samtools/samtools/releases/download/1.17/samtools-1.
     cd .. && \
     rm -rf samtools-1.17 samtools-1.17.tar.bz2
 
+# Add samtools to PATH
+ENV PATH="/usr/local/bin:${PATH}"
+
 # Set the entrypoint to samtools
 ENTRYPOINT ["samtools"]
