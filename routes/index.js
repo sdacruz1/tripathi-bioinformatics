@@ -46,23 +46,9 @@ let inputType = "";
 
 // Stored Outputs
 let infoSteps;          // An array that determines which file processing steps will be available in the timeline
-let uploadedFilePath = "";   // The path to the original file that was uploaded or the directory, if it was a BCL folder
-let uploadType = '';
-let uploadedPairedPath = "";
-let uploadedAdapterPath = "";
-let uploadedGenomeFile = "";
-let uploadedFileType;   // A string representing the original uploaded file type
-let fastQConversion;    // The path to the fastQ file result of any conversions (BCL, FastA, Fast5)
-let fastQCResults;      // The path to the directory containing the results of running FastQC on the uploaded file
-let BAMFile;            // The path to the BAM file result of any conversions
-let downloadable_content = [  // An object array holding the result of the steps in the actual timeline
-  // {  -- EXAMPLE --
-  //     enabled: true,
-  //     has_visual_component: false,
-  //     label: "Test Object BAM",
-  //     content: "../output/SortedBAM.bam"
-  // },
-];
+let uploadedFilePath = ['', ''];   // The path to the original file that was uploaded. May be a directory. Second slot is for paried fastq files.
+let uploadedAdapterPath = ""; // The path to the uploaded adapter file
+let downloadable_content = [];  // An object array holding the result of the steps in the actual timeline
 
 //#endregion
 
@@ -73,126 +59,72 @@ router.get('/test', function(req, res) {
 });
 
 /* Home Page */
-router.get('/', function (req, res, next) {
+router.get('/', function (res) {
   // Render the 'home' view
   res.render('home', { toolbar_index: 1 });
 });
 
 /* File Info */
-router.post('/file-information', function (req, res, next) {
+router.post('/file-information', function (req, res) {
   // Set the mode
   mode = req.body.mode;
   res.render('file-info', { toolbar_index: 2 });
 });
 
 /* DNA Goalposts */
-router.post('/dna-goalposts', function (req, res, next) {
+router.post('/dna-goalposts', function (req, res) {
   // Store the uploaded file and any conversions
   inputType = req.body.inputType;
-  infoSteps = JSON.parse(req.body.infoSteps);
+  infoSteps = JSON.parse(req.body.infoSteps); // NOTE: still wrong btw, bc i moved things
   uploadedFilePath = req.body.uploadedFilePath;
-  uploadedPairedPath = req.body.uploadedPairedPath;
   uploadedAdapterPath = req.body.uploadedAdapterPath;
-  uploadedFileType = req.body.uploadedFileType;
-  fastQConversion = req.body.fastQConversion;
-  fastQCResults = req.body.fastQCResults;
-  uploadedGenomeFile = req.body.uploadedGenomeFile;
 
-  let Categories;
-  let Commands;
+  let Categories = (mode == 'DNA') ? DNACategories : RNACategories;
+  let Executables = (mode == 'DNA') ? DNAExecutables : RNAExecutables;
 
-  if (mode == 'DNA') {
-    Categories = DNACategories;
-    Commands = DNACommands;
-  } else {
-    Categories = RNACategories;
-    Commands = RNACommands;
-  }
-
-  res.render('dna-goalposts', { toolbar_index: 3, Categories, Commands, infoSteps });
+  res.render('dna-goalposts', { toolbar_index: 3, Categories, Executables, infoSteps });
 });
 
 /* DNA Pipeline */
-router.post('/dna-pipeline', function (req, res, next) {
-  let temp = JSON.parse(decodeURIComponent(req.body.Commands || '[]'));
+router.post('/dna-pipeline', function (req, res) {
+  let temp = JSON.parse(decodeURIComponent(req.body.Executables || '[]'));
 
-  if (mode == 'DNA') {
-    // Clear the existing commands
-    DNACommands.clear();
+  let Categories = (mode == 'DNA') ? DNACategories : RNACategories;
+  let Executables = (mode == 'DNA') ? DNAExecutables : RNAExecutables;
 
-    // Convert the plain object to a Map and then iterate over it
-    const dnaCommandsMap = new Map(temp);
-    for (const [key, value] of dnaCommandsMap) {
-      DNACommands.set(key, value);
-    }
-
-    Categories = DNACategories;
-    Commands = DNACommands;
-    Parameters = DNAParameters;
-  } else {
-    // Clear the existing commands
-    RNACommands.clear();
-
-    // Convert the plain object to a Map and then iterate over it
-    const rnaCommandsMap = new Map(temp);
-    for (const [key, value] of rnaCommandsMap) {
-      RNACommands.set(key, value);
-    }
-
-    Categories = RNACategories;
-    Commands = RNACommands;
-    Parameters = RNAParameters;
+  // Clear and refill the Executables map with the new data
+  Executables.clear();
+  const tempCommandMap = new Map(temp);
+  for (const [key, value] of tempCommandMap) {
+    Executables.set(key, value);
   }
 
-  res.render('dna-pipeline', { toolbar_index: 4, Categories, Commands, Parameters, infoSteps });
+  res.render('dna-pipeline', { toolbar_index: 4, Categories, Executables, infoSteps });
 });
 
 /* Running Page */
-router.post('/running', function (req, res, next) {
+router.post('/running', function (req, res) {
   let tempCOM = JSON.parse(decodeURIComponent(req.body.Commands || '[]'));
   let tempPAR = JSON.parse(decodeURIComponent(req.body.Parameters || '[]'));
 
-  if (mode == 'DNA') {
-    // Clear the existing commands
-    DNACommands.clear();
-    DNAParameters.clear();
+  let Commands = (mode == 'DNA') ? DNACommands : RNACommands;
 
-    // Convert the plain object to a Map and then iterate over it
-    const dnaCommandsMap = new Map(tempCOM);
-    for (const [key, value] of dnaCommandsMap) {
-      DNACommands.set(key, value);
-    }
-    const dnaParametersMap = new Map(tempPAR);
-    for (const [key, value] of dnaParametersMap) {
-      DNAParameters.set(key, value);
-    }
+  // Clear the existing commands
+  Commands.clear();
 
-    Commands = DNACommands;
-    Parameters = DNAParameters;
-  } else {
-    // Clear the existing commands
-    RNACommands.clear();
-    RNAParameters.clear();
-
-    // Convert the plain object to a Map and then iterate over it
-    const rnaCommandsMap = new Map(tempCOM);
-    for (const [key, value] of rnaCommandsMap) {
-      RNACommands.set(key, value);
-    }
-    const rnaParametersMap = new Map(tempPAR);
-    for (const [key, value] of rnaParametersMap) {
-      RNAParameters.set(key, value);
-    }
-    
-    Commands = RNACommands;
-    Parameters = RNAParameters;
+  // Convert the plain object to a Map and then iterate over it
+  const tempCommandMap = new Map(tempCOM);
+  for (const [key, value] of tempCommandMap) {
+    Commands.set(key, value);
   }
 
-  res.render('running', { toolbar_index: 5, Commands, Parameters, uploadedFilePath });
+  let Parameters = (mode == 'DNA') ? DNAParameters : RNAParameters;
+
+  res.render('running', { toolbar_index: 5, Commands, Executables, uploadedFilePath }); // CBTT, need the Executables variable
 });
 
 /* Output Page */
-router.post('/output', function (req, res, next) {
+router.post('/output', function (res) {
   // Render the 'output' view
   res.render('output', { downloadable_content, toolbar_index: 5 });
 });
@@ -286,8 +218,8 @@ router.get('/cleanup', (req, res) => {
 function substitutePlaceholders(pairs, inputString) {
   // Loop through each pair in the array
   pairs.forEach(pair => {
-    const placeholder = `<${pair[0]}>`; // Create the placeholder format
-    const value = pair[1]; // Get the value to substitute
+    const placeholder = `<${pair.placeholder}>`; // Create the placeholder format
+    const value = pair.value; // Get the value to substitute
 
     // Replace all occurrences of the placeholder in the input string
     inputString = inputString.split(placeholder).join(value);
@@ -298,36 +230,64 @@ function substitutePlaceholders(pairs, inputString) {
 
 router.post('/run-command', upload.none(), async (req, res) => {
   // Get the info needed
-  // let Executable = DNAExecutables[req.body.command];
-  let Executable = JSON.parse(req.body.executable);
+  let Executable = JSON.parse(req.body.Executable);
 
   // -- Main File Check --
-  // Find the output file we need to run on from the database
-  if (Executable.checkFile != '') {
-    let mainFilePath = path.join(__dirname, '..', 'output', Executable.checkFile);
-    // If the file we think we need does not exist, use the user uploaded file
-    if (!fs.existsSync(mainFilePath)) {
-      mainFilePath = uploadedFilePath;
-      // If there is no user uploaded file, we have an error
-      if (!fs.existsSync(uploadedFilePath)) {
-        res.status(400).send('No file uploaded');
-        return;
-      }
+  let mainFilePath = '';
+  let isPaired = false;
+  let checkFileExists = fs.existsSync(path.join(__dirname, '..', 'output', Executable.checkFile));
+  if (checkFileExists) {
+    mainFilePath = 'usr/output/' + Executable.checkFile;
+  } else {
+    // We need to use the user uploaded file.
+    // Make sure it exists
+    if (!fs.existsSync(path.join(__dirname, '..', 'uploads', uploadedFilePath[0]))) {
+      res.status(400).send('No file uploaded');
+      return;
+    }
+    mainFilePath = 'usr/uploads/' + uploadedFilePath[0];
+    if (uploadedFilePath[1] != '') {
+      mainFilePath += (' usr/uploads/' + uploadedFilePath[1]);
+      isPaired = true;
     }
   }
 
   // -- Special Case: Requires an output directory --
-  if(Executable.special[0] == 'output_dir') {
+  if(Executable.specialCase[0] == 'output_dir') {
     // Create an empty directory to hold the output
-    const OutputDirectory = path.join(__dirname, 'output', Executable.special[1]);
+    const OutputDirectory = path.join(__dirname, 'output', Executable.specialCase[1]);
     if (!fs.existsSync(OutputDirectory)) {
       fs.mkdirSync(OutputDirectory);
     }
   }
 
   // -- Build the Command --
-  let allVars = (Executable.checkFile == '') ? Executable.variables : [['mainFile', mainFilePath]].push(Executable.variables);
+  let allVars = [Executable.Parameters];
+  let pairedOption = isPaired ? 'PE' : 'SE';
+
+  allVars.push[{
+    title : '', type : '', options : [],
+    placeholder : 'paired_or_single',
+    value : pairedOption
+  }];
+  allVars.push[{
+    title : '', type : '', options : [],
+    placeholder : 'main_file',
+    value : mainFilePath
+  }];
+
+  // -- Special Case: paired CBTT
+  if (Executable.specialCase[0] == 'paired') {
+    let chooseOption = isPaired ? 0 : 1;
+    allVars.push[{
+      title : '', type : '', options : [],
+      placeholder : Executable.specialCase[1][0],
+      value : Executable.specialCase[1][chooseOption]
+    }];
+  }
+
   let commandString = substitutePlaceholders(allVars, Executable.command);
+  commandString = substitutePlaceholders(allVars, commandString); // a second pass to catch nested variables
 
   // -- Run the Command in a Docker Environment --
   try {
@@ -335,14 +295,14 @@ router.post('/run-command', upload.none(), async (req, res) => {
     console.log('Output:', output);
 
     // -- Special Case: Writes to stdout, have to record the output manually --
-    if(Executable.special[0] == 'readout') {
+    if(Executable.specialCase[0] == 'readout') {
       // Write output data to a text file
-      fs.writeFile(path.join(__dirname, '..', 'output', Executable.special[1]), output, (err) => {
+      fs.writeFile(path.join(__dirname, '..', 'output', Executable.specialCase[1]), output, (err) => {
         if (err) {
           console.error('Error writing file:', err);
           return;
         }
-        console.log('stdout data written to ' + Executable.special[1]);
+        console.log('stdout data written to ' + Executable.specialCase[1]);
       });
     }
 

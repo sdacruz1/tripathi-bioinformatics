@@ -26,56 +26,54 @@
                 <div class="content" id="section_<%= category.title %>">
                     <% for (let j = 0; j < category.entries.length; j++) { %>
                         <% if (category.title === "File Processing" && infoSteps[j] === 0) { continue; } %>
-                        <% let key = category.entries[j]; %>
-                        <% let entry = Executables.get(key); %>
+                        <% let entry = Commands.get(category.entries[j]); %>
+                        <% let parameters = Parameters.get(entry.serverCall); %>
 
                         <div>
                             <label>
                                 <div style="display: flex;">
-                                    <input type="range" min="0" max="1" step="1" value="<%= entry.isEnabled ? 1 : 0 %>" name="slider_<%= key %>">
+                                    <input type="range" min="0" max="1" step="1" value="<%= entry.isEnabled ? 1 : 0 %>" name="slider_<%= entry.serverCall %>">
                                     <h4 class="category_labels"><%= entry.title %></h4>
                                 </div>
                             </label>
 
-                            <% if (entry.parameters.length === 0) { %>
+                            <% if (parameters.length === 0) { %>
                                 </div>
                                 <% continue; } %>
 
-                            <div id="options_<%= key %>" class="options-container <%= entry.isEnabled ? '' : 'hidden' %>">
-                                <% entry.parameters.forEach(parameter => { %>
+                            <div id="options_<%= entry.serverCall %>" class="options-container <%= entry.isEnabled ? '' : 'hidden' %>">
+                                <% parameters.forEach(parameter => { %>
                                     <div style="display: flex;">
                                         <label for="<%= parameter.title %>"><%= parameter.title %>:</label>
                                         <% if (parameter.type === "number") { %>
                                             <input class="option_input" type="number" id="<%= parameter.title %>" value="<%= parameter.value %>">
                                         <% } else if (parameter.type === "checkbox") { %>
-                                            <!-- NOTE: Not using this anymore -->
                                             <input class="option_input" type="checkbox" id="<%= parameter.title %>" <% if (parameter.value) { %>checked<% } %>>
                                         <% } else if (parameter.type === "upload") { %>
-                                            <!-- NOTE: Not using this anymore -->
                                             <input class="option_input" type="file" id="<%= parameter.title %>">
                                             <button type="button" onclick="uploadParameterFile('<%= parameter.title %>')"></button>
                                         <% } else if (parameter.type === "text") { %>
                                             <input class="option_input" type="text" id="<%= parameter.title %>" value="<%= parameter.value %>">
                                         <% } else { %>
                                             <select class="option_input" id="<%= parameter.title %>">
-                                                <% parameter.options.forEach((option, index) => { %>
-                                                    <option value="<%= index %>" <% if (option[1] === parameter.value) { %>selected<% } %>> <%= option[0] %> </option>
+                                                <% parameter.options.forEach(option => { %>
+                                                    <option value="<%= option %>" <% if (option === parameter.value) { %>selected<% } %>><%= option %></option>
                                                 <% }) %>
                                             </select>
                                         <% } %>
                                     </div>
                                 <% }) %>
-                                <button type="button" class="save-btn" onclick="saveButton('<%= key %>')">Save</button>
+                                <button type="button" class="save-btn" onclick="saveButton('<%= entry.serverCall %>')">Save</button>
                             </div>
 
-                            <div id="options_display_<%= key %>" class="options-display hidden">
-                                <% entry.parameters.forEach(parameter => { %>
+                            <div id="options_display_<%= entry.serverCall %>" class="options-display hidden">
+                                <% parameters.forEach(parameter => { %>
                                     <div style="display: flex;">
                                         <p style="color: #b985d9;"><%= parameter.title %>:</p>
                                         <p style="margin-left: 1rem;" id="option_<%= parameter.title %>_display"></p>
                                     </div>
                                 <% }) %>
-                                <button type="button" onclick="editButton('<%= key %>')" class="edit-btn">Edit</button>
+                                <button type="button" onclick="editButton('<%= entry.serverCall %>')" class="edit-btn">Edit</button>
                             </div>
                         </div>
                     <% } %>
@@ -85,32 +83,27 @@
             <%- '<script>' %>
                 const form = document.getElementById('dnaPipelineForm');
         
-                let Executables = new Map(JSON.parse('<%- JSON.stringify(Array.from(Executables.entries())) %>'));
+                let Commands = new Map(JSON.parse('<%- JSON.stringify(Array.from(Commands.entries())) %>'));
+                let Parameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(Parameters.entries())) %>'));
         
-                function saveButton(key) {
-                    let executable = Executables.get(key);
-                    let parameters = executable.parameters;
+                function saveButton(entryTag) {
+                    let parameters = Parameters.get(entryTag);
                     for (let parameter of parameters) {
                         let optionInput = document.getElementById(parameter.title);
                         let optionDisplayTag = document.getElementById('option_' + parameter.title + '_display');
                         let newValue;
                         switch (parameter.type) {
                             case "number":
-                                parameter.value = optionInput.value.toString();
                             case "text":
-                                parameter.value = optionInput.value;
-                                optionDisplayTag.innerText = newValue.toString();
+                                newValue = optionInput.value;
                                 break;
                             case "checkbox":
-                                // NOTE: not using this anymore
                                 newValue = optionInput.checked;
                                 break;
                             case "select":
-                                parameter.value = parameter.options[optionInput.value][1];
-                                optionDisplayTag.innerText = parameter.options[optionInput.value][0];
+                                newValue = optionInput.value;
                                 break;
                             case "upload":
-                                // NOTE: not using this anymore
                                 continue;
                             default:
                                 console.log("Not a valid input type");
@@ -119,30 +112,20 @@
                             // no value was entered, dip
                             continue;
                         }
-                        // parameter.value = newValue.toString();
-                        // optionDisplayTag.innerText = newValue.toString();
+                        parameter.value = newValue;
+                        optionDisplayTag.innerText = newValue.toString();
                     };
-                    Executables.set(key, {
-                        isEnabled: changingEntry.enabled,
-                        title: changingEntry.title,
-                        checkFile: changingEntry.checkFile,
-                        dockerEnv: changingEntry.dockerEnv,
-                        specialCase: changingEntry.specialCase,
-                        parameters: parameters,
-                        command: changingEntry.command,
-                        downloadables: changingEntry.downloadables,
-                    });
-                    // executable.parameters.set(key, parameters); // Will not doing this prevent proper updating? it's not a map this time
+                    Parameters.set(entryTag, parameters);
         
-                    let optionsDiv = document.getElementById('options_' + key);
-                    let displayDiv = document.getElementById('options_display_' + key);
+                    let optionsDiv = document.getElementById('options_' + entryTag);
+                    let displayDiv = document.getElementById('options_display_' + entryTag);
                     optionsDiv?.classList.add('hidden');
                     displayDiv?.classList.remove('hidden');
                 }
         
-                function editButton(key) {
-                    let optionsDiv = document.getElementById('options_' + key);
-                    let displayDiv = document.getElementById('options_display_' + key);
+                function editButton(entryTag) {
+                    let optionsDiv = document.getElementById('options_' + entryTag);
+                    let displayDiv = document.getElementById('options_display_' + entryTag);
                     displayDiv?.classList.add('hidden');
                     optionsDiv?.classList.remove('hidden');
                 }
@@ -150,23 +133,14 @@
                 form.addEventListener('change', function (event) {
                     if (event.target.type === 'range') {
                         const sliderName = event.target.name;
-                        const key = sliderName.split('_')[1];
-                        changingEntry = Executables.get(event.target.name);
-                        Executables.set(event.target.name, {
-                            isEnabled: event.target.checked,
-                            title: changingEntry.title,
-                            checkFile: changingEntry.checkFile,
-                            dockerEnv: changingEntry.dockerEnv,
-                            specialCase: changingEntry.specialCase,
-                            parameters: changingEntry.parameters,
-                            command: changingEntry.command,
-                            downloadables: changingEntry.downloadables,
-                        });
+                        const tag = sliderName.split('_')[1];
+                        changingEntry = Commands.get(tag);
+                        Commands.set(tag, {title: changingEntry.title, isEnabled: (event.target.value == 1), serverCall: changingEntry.serverCall});
         
-                        let optionsDiv = document.getElementById('options_' + key);
-                        let displayDiv = document.getElementById('options_display_' + key);
+                        let optionsDiv = document.getElementById('options_' + tag);
+                        let displayDiv = document.getElementById('options_display_' + tag);
         
-                        if (Executables.get(key).isEnabled) {
+                        if (Commands.get(tag).isEnabled) {
                             displayDiv?.classList.remove('hidden');
                         } else {
                             optionsDiv?.classList.add('hidden');
@@ -177,7 +151,7 @@
         
                 form.addEventListener('submit', function (event) {
                     event.preventDefault();
-                    document.querySelector('[name="Executables"]').value = JSON.stringify(Array.from(Executables.entries()));
+                    document.querySelector('[name="Commands"]').value = JSON.stringify(Array.from(Commands.entries()));
                     document.querySelector('[name="Parameters"]').value = JSON.stringify(Array.from(Parameters.entries()));
 
                     form.submit();
@@ -189,7 +163,7 @@
                 }
                 <%- '</script>' %>
 
-            <input type="hidden" name="Executables">
+            <input type="hidden" name="Commands">
             <input type="hidden" name="Parameters">
             <button class="pipeline_continue_button"><h3 style="color: black">Continue</h3></button>
         </form>

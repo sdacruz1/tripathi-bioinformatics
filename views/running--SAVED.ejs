@@ -37,35 +37,24 @@
 
     <h4>Your Timeline:</h4>
 
-    <% Executables.forEach((executable, key) => { %>
-        <% if (!executable.isEnabled) { return; } %>
+    <% Commands.forEach(command => { %>
+        <% if (!command.isEnabled) { return; } %>
         <div style="display: flex;">
             <div style="width: 4rem; margin-right: 1rem;" >
-                <img class="status_img" id="status_img_<%= key %>" src="../images/Unchecked_Circle.png">
-                <h3 class="status_text_none" id="status_text_<%= key %>">Waiting</h3>
+                <img class="status_img" id="status_img_<%= command.serverCall %>" src="../images/Unchecked_Circle.png">
+                <h3 class="status_text_none" id="status_text_<%= command.serverCall %>">Waiting</h3>
             </div>
             <div class="info_box">
                 <h3>
-                    <%= executable.title %>
+                    <%= command.title %>
                 </h3>
 
-                <div id="selections_display_<%= key %>" class="selections-display hidden">
+                <div id="selections_display_<%= command.serverCall %>" class="selections-display hidden">
                     <!-- Display selections -->
-                    <% executable.parameters.forEach(parameter => { %>
+                    <% Parameters.get(command.serverCall).forEach(parameter => { %>
                         <div style="display: flex;">
                         <p style="color: #b985d9;"> <%= parameter.title %>: </p>
-                        <% 
-                        let displayValue = parameter.value;
-                        if (parameter.type === "select") {
-                            parameter.options.forEach(option => {
-                                if (option[1] != parameter.value) {
-                                    continue;
-                                }
-                                displayValue = option[0];
-                                break;
-                            })
-                        } %>
-                        <p style="margin-left: 1rem;" id="option_<%= parameter.title %>_display"><%= displayValue %></p>
+                        <p style="margin-left: 1rem;" id="option_<%= parameter.title %>_display"><%= parameter.value %></p>
                         <br></div>
                     <% }) %>
                 </div>
@@ -85,9 +74,9 @@
      <script>
 
         // Set Status
-        function setStatus(key, status) {
-            const imageElement = document.getElementById(`status_img_${key}`);
-            const textElement = document.getElementById(`status_text_${key}`);
+        function setStatus(tag, status) {
+            const imageElement = document.getElementById(`status_img_${tag}`);
+            const textElement = document.getElementById(`status_text_${tag}`);
 
             if (imageElement === null || textElement === null) {
                 return;
@@ -109,12 +98,20 @@
         }
 
         // Make Request
-        const MakeRequest = (executable, key) => {
+        const MakeRequest = (command, parameters) => {
             return new Promise((resolve) => {
                 let formData = new FormData();
-                formData.append('Executable', executable);
+                parameters.forEach(parameter => {
+                    formData.append(parameter.serverTag, parameter.value);
+                });
 
-                fetch('/run-command', {
+                console.log(command);
+                console.log(parameters);
+                console.log(formData);
+
+                setStatus(command.serverCall, 'running');
+
+                fetch('/' + command.serverCall, {
                     method: 'POST',
                     body: formData,
                 })
@@ -128,14 +125,14 @@
                     })
                     .then(data => {
                         // Handle Response
-                        console.log(executable.title + ' response:', data);
-                        setStatus(key, 'done');
+                        console.log(command.title + ' response:', data);
+                        setStatus(command.serverCall, 'done');
                         resolve(10);
                     })
                     .catch(error => {
                         // Handle the error more gracefully
-                        console.error('Error with ' + executable.title + ' :', error);
-                        setStatus(key, 'error');
+                        console.error('Error with ' + command.title + ' :', error);
+                        setStatus(command.serverCall, 'error');
                         resolve(0);
                     });
             });
@@ -150,13 +147,14 @@
         });
 
         function runCommands() {
-            let Executables = new Map(JSON.parse('<%- JSON.stringify(Array.from(Executables.entries())) %>'));
-            console.log(Executables);
+            let Commands = new Map(JSON.parse('<%- JSON.stringify(Array.from(Commands.entries())) %>'));
+            let Parameters = new Map(JSON.parse('<%- JSON.stringify(Array.from(Parameters.entries())) %>'));
+            console.log(Commands);
 
             try {
-                Executables.forEach(async (executable, key) => {
-                    if (executable.isEnabled) {
-                        await MakeRequest(executable, key);
+                Commands.forEach(async command => {
+                    if (command.isEnabled) {
+                        await MakeRequest(command, Parameters.get(command.serverCall));
                     }
                 })
             } catch (error) {

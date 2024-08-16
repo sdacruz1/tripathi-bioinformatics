@@ -31,12 +31,11 @@
                         if (category.title === "File Processing") {
                             if (infoSteps[j] === 0) { continue; }
                         }
-                        let key = category.entries[j];
-                        let entry = Executables.get(key);
+                        let entry = Commands.get(category.entries[j]);
                         %>
                         <div style="display: flex;">
                         <label class="checkbox-container">
-                            <input type="checkbox" name="<%= key %>" <% if (entry.isEnabled) {
+                            <input type="checkbox" name="<%= entry.serverCall %>" <% if (entry.isEnabled) {
                                 %>checked
                             <% } %>>
                             <span class="checkmark"></span>
@@ -50,36 +49,31 @@
                 <%- '<script>' %>
 
                     const form = document.getElementById('goalpostForm');
-                    let Executables = new Map(JSON.parse('<%- JSON.stringify(Array.from(Executables.entries())) %>'));
+                    let Commands = new Map(JSON.parse('<%- JSON.stringify(Array.from(Commands.entries())) %>'));
                     let Categories = JSON.parse('<%- JSON.stringify(Categories) %>');
                     const infoSteps = JSON.parse('<%- JSON.stringify(infoSteps) %>');
 
                     form.addEventListener('change', function (event) {
                         if (event.target.type === 'checkbox') {
-                            // Set the 'enabled' attribute whenever a command is toggled
-                            changingEntry = Executables.get(event.target.name);
-                            Executables.set(event.target.name, {
-                                isEnabled: event.target.checked,
-                                title: changingEntry.title,
-                                checkFile: changingEntry.checkFile,
-                                dockerEnv: changingEntry.dockerEnv,
-                                specialCase: changingEntry.specialCase,
-                                parameters: changingEntry.parameters,
-                                command: changingEntry.command,
-                                downloadables: changingEntry.downloadables,
-                            });
+                            // Set the correct array element accordingly
+                            
+                            changingEntry = Commands.get(event.target.name);
+                            Commands.set(event.target.name, {title: changingEntry.title, isEnabled: event.target.checked, serverCall: changingEntry.serverCall});
+
                         }
                     });
 
                     form.addEventListener('submit', function(event) {
-                        // Prevent submission for changes
+                        // prevent submission for now
                         event.preventDefault();
 
-                        // Send the Executables array as a hidden input, to make sure it updates BTS
-                        const sendExecutables = document.querySelector('[name="Executables"]');
-                        sendExecutables.value = JSON.stringify(Array.from(Executables.entries()));
+                        console.log(Commands);
 
-                        // Submit the form manually
+                        // send the Commands array as a hidden input, to make sure it updates BTS
+                        const sendCommands = document.querySelector('[name="Commands"]');
+                        sendCommands.value = JSON.stringify(Array.from(Commands.entries()));
+
+                        // Submit the form
                         form.submit();
                     });
 
@@ -91,7 +85,7 @@
 
                 <%- '</script>' %>
 
-                <input type="hidden" name="Executables">
+                <input type="hidden" name="Commands">
 
                 <button class="goals_continue_button" type="submit"><h3 style="color: black">Generate Timeline</h3></button>
         </form>

@@ -22,9 +22,9 @@
             
             executable = {
                 checkFile: '',
-                dockerEnv:'samtools',
-                variables:[['ref_genome', 'usr/refs/hgch38_index'], ['output_file', 'usr/output/SeqDict.txt']],
-                command: "samtools dict <ref_genome> -o <output_file>",
+                environment:"samtools",
+                variables:[['ref_genome', 'usr/refs/hgch38_index/hgch38_index.fna'], ['output_file', 'usr/output/SeqDict.txt']],
+                command: "dict <ref_genome> -o <output_file>",
                 downloadables: [{enabled: false, isVisual: false, label: "Sequence Dictionary", path: "SeqDict.txt"}]
             }
             let formData = new FormData();
