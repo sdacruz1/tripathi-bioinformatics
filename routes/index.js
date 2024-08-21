@@ -59,7 +59,7 @@ router.get('/test', function(req, res) {
 });
 
 /* Home Page */
-router.get('/', function (res) {
+router.get('/', function (req, res) {
   // Render the 'home' view
   res.render('home', { toolbar_index: 1 });
 });
@@ -124,7 +124,7 @@ router.post('/running', function (req, res) {
 });
 
 /* Output Page */
-router.post('/output', function (res) {
+router.post('/output', function (req, res) {
   // Render the 'output' view
   res.render('output', { downloadable_content, toolbar_index: 5 });
 });
@@ -255,35 +255,35 @@ router.post('/run-command', upload.none(), async (req, res) => {
   // -- Special Case: Requires an output directory --
   if(Executable.specialCase[0] == 'output_dir') {
     // Create an empty directory to hold the output
-    const OutputDirectory = path.join(__dirname, 'output', Executable.specialCase[1]);
+    const OutputDirectory = path.join(__dirname, '..', 'output', Executable.specialCase[1]);
     if (!fs.existsSync(OutputDirectory)) {
       fs.mkdirSync(OutputDirectory);
     }
   }
 
   // -- Build the Command --
-  let allVars = [Executable.Parameters];
+  let allVars = Executable.parameters;
   let pairedOption = isPaired ? 'PE' : 'SE';
 
-  allVars.push[{
+  allVars.push({
     title : '', type : '', options : [],
     placeholder : 'paired_or_single',
     value : pairedOption
-  }];
-  allVars.push[{
+  });
+  allVars.push({
     title : '', type : '', options : [],
     placeholder : 'main_file',
     value : mainFilePath
-  }];
+  });
 
   // -- Special Case: paired CBTT
   if (Executable.specialCase[0] == 'paired') {
     let chooseOption = isPaired ? 0 : 1;
-    allVars.push[{
+    allVars.push({
       title : '', type : '', options : [],
       placeholder : Executable.specialCase[1][0],
       value : Executable.specialCase[1][chooseOption]
-    }];
+    });
   }
 
   let commandString = substitutePlaceholders(allVars, Executable.command);

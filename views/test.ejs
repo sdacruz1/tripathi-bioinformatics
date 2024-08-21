@@ -21,14 +21,17 @@
         return new Promise((resolve) => {
             
             executable = {
-                checkFile: '',
-                environment:"samtools",
-                variables:[['ref_genome', 'usr/refs/hgch38_index/hgch38_index.fna'], ['output_file', 'usr/output/SeqDict.txt']],
-                command: "dict <ref_genome> -o <output_file>",
-                downloadables: [{enabled: false, isVisual: false, label: "Sequence Dictionary", path: "SeqDict.txt"}]
+                isEnabled : false,
+                title : "Run FastQC",
+                checkFile : 'convertedFastQ.fq',
+                environment : 'fastqc',
+                specialCase : ['output_dir', 'FastQC_Output'],
+                parameters : [],
+                command : "fastqc <main_file> -o usr/output/FastQC_Output",
+                downloadables: [{enabled: false, isVisual: false, label: "FastQC Results", path:"FastQC_Output"}]
             }
             let formData = new FormData();
-            formData.append('executable', JSON.stringify(executable));
+            formData.append('Executable', JSON.stringify(executable));
 
             // setStatus(command.serverCall, 'running');
 
@@ -46,13 +49,13 @@
                 })
                 .then(data => {
                     // Handle Response
-                    console.log(command.title + ' response:', data);
+                    console.log(executable.title + ' response:', data);
                     // setStatus(command.serverCall, 'done');
                     resolve(10);
                 })
                 .catch(error => {
                     // Handle the error more gracefully
-                    console.error('Error with ' + command.title + ' :', error);
+                    console.error('Error with ' + executable.title + ' :', error);
                     // setStatus(command.serverCall, 'error');
                     resolve(0);
                 });

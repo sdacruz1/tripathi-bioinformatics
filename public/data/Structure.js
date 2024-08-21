@@ -9,11 +9,11 @@ class Parameter {
 }
 
 class Executable {
-    constructor(isEnabled, title, checkFile, dockerEnv, specialCase, parameters, command, downloadables) {
+    constructor(isEnabled, title, checkFile, environment, specialCase, parameters, command, downloadables) {
         this.isEnabled = isEnabled;
         this.title = title;
         this.checkFile = checkFile;
-        this.dockerEnv = dockerEnv;
+        this.environment = environment;
         this.specialCase = specialCase;
         this.parameters = parameters;
         this.command = command;
