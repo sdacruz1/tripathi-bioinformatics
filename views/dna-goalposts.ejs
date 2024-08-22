@@ -71,17 +71,10 @@
                         }
                     });
 
-                    form.addEventListener('submit', function(event) {
-                        // Prevent submission for changes
-                        event.preventDefault();
-
-                        // Send the Executables array as a hidden input, to make sure it updates BTS
-                        const sendExecutables = document.querySelector('[name="Executables"]');
-                        sendExecutables.value = JSON.stringify(Array.from(Executables.entries()));
-
-                        // Submit the form manually
-                        form.submit();
-                    });
+                    function submitGoalpost() {
+                        document.getElementById('executables').value = JSON.stringify(Array.from(Executables.entries()));
+                        document.getElementById('goalpostForm').submit();
+                    }
 
                     // JavaScript to handle the toggling
                     function toggleCollapsible(sectionId) {
@@ -91,9 +84,9 @@
 
                 <%- '</script>' %>
 
-                <input type="hidden" name="Executables">
+                <input type="hidden" id="executables" name="Executables">
 
-                <button class="goals_continue_button" type="submit"><h3 style="color: black">Generate Timeline</h3></button>
+                <button class="goals_continue_button" type="button" onclick="submitGoalpost()"><h3 style="color: black">Generate Timeline</h3></button>
         </form>
     </div>
 </body>

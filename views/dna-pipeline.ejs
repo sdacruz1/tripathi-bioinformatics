@@ -151,7 +151,7 @@
                     if (event.target.type === 'range') {
                         const sliderName = event.target.name;
                         const key = sliderName.split('_')[1];
-                        changingEntry = Executables.get(event.target.name);
+                        changingEntry = Executables.get(key);
                         Executables.set(event.target.name, {
                             isEnabled: event.target.checked,
                             title: changingEntry.title,
@@ -178,7 +178,6 @@
                 form.addEventListener('submit', function (event) {
                     event.preventDefault();
                     document.querySelector('[name="Executables"]').value = JSON.stringify(Array.from(Executables.entries()));
-                    document.querySelector('[name="Parameters"]').value = JSON.stringify(Array.from(Parameters.entries()));
 
                     form.submit();
                 });
@@ -190,7 +189,6 @@
                 <%- '</script>' %>
 
             <input type="hidden" name="Executables">
-            <input type="hidden" name="Parameters">
             <button class="pipeline_continue_button"><h3 style="color: black">Continue</h3></button>
         </form>
     </div>

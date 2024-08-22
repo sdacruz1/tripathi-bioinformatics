@@ -9,7 +9,7 @@ const Docker = require('dockerode');
 const docker = new Docker();
 var router = express.Router();
 
-const { DNACategories, DNACommands, DNAParameters, RNACategories, RNACommands, RNAParameters } = require('../public/data/SiteData');
+const { DNACategories, DNAExecutables, RNACategories, RNAExecutables } = require('../public/data/SiteData');
 
 //#endregion
 
@@ -74,28 +74,29 @@ router.post('/file-information', function (req, res) {
 /* DNA Goalposts */
 router.post('/dna-goalposts', function (req, res) {
   // Store the uploaded file and any conversions
-  inputType = req.body.inputType;
   infoSteps = JSON.parse(req.body.infoSteps); // NOTE: still wrong btw, bc i moved things
+  inputType = req.body.inputType;
   uploadedFilePath = req.body.uploadedFilePath;
   uploadedAdapterPath = req.body.uploadedAdapterPath;
 
-  let Categories = (mode == 'DNA') ? DNACategories : RNACategories;
-  let Executables = (mode == 'DNA') ? DNAExecutables : RNAExecutables;
+  let Categories = (inputType === 'DNA') ? DNACategories : RNACategories;
+  let Executables = (inputType === 'DNA') ? DNAExecutables : RNAExecutables;
 
   res.render('dna-goalposts', { toolbar_index: 3, Categories, Executables, infoSteps });
 });
 
 /* DNA Pipeline */
 router.post('/dna-pipeline', function (req, res) {
-  let temp = JSON.parse(decodeURIComponent(req.body.Executables || '[]'));
+  // let temp = JSON.parse(decodeURIComponent(req.body.Executables || '[]'));
+  let temp = JSON.parse(req.body.Executables);
 
-  let Categories = (mode == 'DNA') ? DNACategories : RNACategories;
-  let Executables = (mode == 'DNA') ? DNAExecutables : RNAExecutables;
+  let Categories = (inputType == 'DNA') ? DNACategories : RNACategories;
+  let Executables = (inputType == 'DNA') ? DNAExecutables : RNAExecutables;
 
   // Clear and refill the Executables map with the new data
   Executables.clear();
-  const tempCommandMap = new Map(temp);
-  for (const [key, value] of tempCommandMap) {
+  const tempMap = new Map(temp);
+  for (const [key, value] of tempMap) {
     Executables.set(key, value);
   }
 
@@ -104,23 +105,18 @@ router.post('/dna-pipeline', function (req, res) {
 
 /* Running Page */
 router.post('/running', function (req, res) {
-  let tempCOM = JSON.parse(decodeURIComponent(req.body.Commands || '[]'));
-  let tempPAR = JSON.parse(decodeURIComponent(req.body.Parameters || '[]'));
+  let temp = JSON.parse(req.body.Executables);
 
-  let Commands = (mode == 'DNA') ? DNACommands : RNACommands;
+  let Executables = (inputType == 'DNA') ? DNAExecutables : RNAExecutables;
 
-  // Clear the existing commands
-  Commands.clear();
-
-  // Convert the plain object to a Map and then iterate over it
-  const tempCommandMap = new Map(tempCOM);
-  for (const [key, value] of tempCommandMap) {
-    Commands.set(key, value);
+  // Clear and refill the Executables map with the new data
+  Executables.clear();
+  const tempMap = new Map(temp);
+  for (const [key, value] of tempMap) {
+    Executables.set(key, value);
   }
 
-  let Parameters = (mode == 'DNA') ? DNAParameters : RNAParameters;
-
-  res.render('running', { toolbar_index: 5, Commands, Executables, uploadedFilePath }); // CBTT, need the Executables variable
+  res.render('running', { toolbar_index: 5, Executables, uploadedFilePath });
 });
 
 /* Output Page */

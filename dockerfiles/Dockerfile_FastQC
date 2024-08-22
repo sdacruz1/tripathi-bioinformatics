@@ -24,8 +24,5 @@ RUN wget https://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v0.12.
 # Add FastQC to PATH
 ENV PATH="/opt/FastQC:${PATH}"
 
-# Set the working directory
-WORKDIR /data
-
 # Define the default command
 CMD ["fastqc", "-h"]
