@@ -51,7 +51,7 @@ let DNAExecutables = new Map([
         ['output_dir', 'FastQC_Output'],
         [],
         "fastqc <main_file> -o usr/output/FastQC_Output",
-        [new Downloadable(false, false, "FastQC Results", "FastQC_Output")]
+        [new Downloadable(false, false, "FastQC Results", "FastQC_Output.zip")]
     )],
     ["trimming", new Executable(
         false,
@@ -115,7 +115,7 @@ let DNAExecutables = new Map([
         'samtools',
         ['', ''],
         [],
-        "samtools view -b <main_file> > ConvertedToBAM.bam",
+        "samtools view -b <main_file> > usr/output/ConvertedToBAM.bam",
         [new Downloadable(false, false, "Converted BAM File", "ConvertedToBAM.bam")]
     )],
     ["sort-bam-file", new Executable(
@@ -125,7 +125,7 @@ let DNAExecutables = new Map([
         'samtools',
         ['', ''],
         [],
-        "samtools sort <main_file> -o SortedBAM.bam",
+        "sort <main_file> -o usr/output/SortedBAM.bam",
         [new Downloadable(false, false, "Sorted BAM", "SortedBAM.bam")]
     )],
     ["index-bam-file", new Executable(
@@ -261,171 +261,103 @@ const RNACategories = [
     { title: "Quality Control", entries: ['fastqc', 'fastq-screen', 'alignmentqc', 'rseqc'] },
     { title: "Analysis", entries: ['quantification', 'normal-diff', 'quality-yield-metrics', 'rseq-metrics', 'flagstats-rna', 'coverage-rna'] },
 ];
-
 let RNAExecutables = new Map([
     ["fastqscreen", new Executable(
-        "fasta-to-fastq",
         false,
-        '', // will be an input fastq
+        "FastQ Screen",
+        'convertedFastQ.fq',
         'fastqscreen',
-        ['', ''],
-        [['fastq_screen_config', ''], ['output_dir', '']],
-        "fastq_screen --conf <fastq_screen_config> <main_file> --outdir <output_dir>",
-        [new Downloadable(false, false, "FastQScreen Results", "CBTT")]
+        ['output_dir', 'FastQScreen_Output'],
+        [new Parameter("FastQ Screen Configurations", 'select', [['', '']], 'fastq_screen_config', '')], //CBTT
+        "fastq_screen --conf <fastq_screen_config> <main_file> --outdir usr/output/FastQScreen_Output",
+        [new Downloadable(false, false, "FastQScreen Results", "FastQScreen_Output.zip")]
     )],
-    ["bowtie2-alignment", new Executable(
-        "fasta-to-fastq",
+    ["alignment-bowtie2", new Executable(
         false,
-        '', // will be an input reads.fq
+        "Bowtie2 Alignment",
+        '',
         'bowtie2',
         ['', ''],
-        [['index', ''], ['output_sam', 'Bowtie_Alignment_RNA.sam']],
-        "bowtie2 -x <index> -U <main_file> -S <output_sam>",
-        [new Downloadable(false, false, "Bowtie2 Alignment Results", "Bowtie_Alignment_RNA.sam")]
+        [new Parameter("Bowtie2 Alignment Reference Genome", 'select', refGenomeOptions, 'ref_genome', 'hgch38_index')],
+        "bowtie2 -x usr/refs/<ref_genome>/<ref_genome>.fna -U r <main_file_read1>, <main_file_read2> -S usr/output/AlignedSAM.sam",
+        [new Downloadable(false, false, "Bowtie 2 Alignment Results", "AlignedSAM.sam")]
     )],
     ["star-alignment", new Executable(
-        "fasta-to-fastq",
         false,
+        "Star Alignment",
         '', // will be an input reads.fq
         'star',
         ['', ''],
-        [['ref_genome', ''], ['read1_fastq', ''], ['read2_fastq', ''], ['output_prefix', '']],
-        "STAR --genomeDir usr/refs/<ref_genome>/<ref_genome>.fna --readFilesIn <read1_fastq> <read2_fastq> --outFileNamePrefix <output_prefix>",
+        [new Parameter("Star Alignment Reference Genome", 'select', refGenomeOptions, 'ref_genome', 'hgch38_index')],
+        "STAR --genomeDir usr/refs/<ref_genome>/<ref_genome>.fna --readFilesIn <main_file_read1> <main_file_read2> --outFileNamePrefix <output_prefix>", // CBTT, choose a static output prefix
         [new Downloadable(false, false, "Star Alignment Results", "CBTT")]
     )],
     ["salmon-alignment", new Executable(
-        "fasta-to-fastq",
         false,
+        "Salmon Alignment",
         '', // will be an input reads.fq
         'salmon',
-        ['', ''],
-        [['quant', ''], ['index', ''], ['read1_fq', ''], ['read2_fq', ''], ['output_dir', '']],
-        "salmon <quant> -i <index> -l A -1 <read1_fq> -2 <read2_fq> -o <output_dir>",
-        [new Downloadable(false, false, "Salmon Alignment Results", "CBTT")]
+        ['output_dir', 'Salmon_Alignment_Output'],
+        [new Parameter("Salmon Quantity", 'text', [], 'quant', ''),
+            new Parameter("Salmon Index", 'text', [], 'index', ''),
+        ],
+        "salmon <quant> -i <index> -l A -1 <main_file_read1> -2 <main_file_read2> -o usr/output/Salmon_Alignment_Output",
+        [new Downloadable(false, false, "Salmon Alignment Results", "Salmon_Alignment_Output.zip")]
     )],
     ["hisat2-alignment", new Executable(
-        "fasta-to-fastq",
         false,
+        "HISAT2 Alignment",
         '', // will be an input reads.fq
         'hisat2',
         ['', ''],
-        [['index', ''], ['read1_fq', ''], ['read2_fq', ''], ['output_sam', 'hisat_output.sam']],
-        "hisat2 -x <index> -1 <read1_fq> -2 <read2_fq> -S usr/output/<output_sam>",
+        [new Parameter("HISAT2 Index", 'text', [], 'index', ''),],
+        "hisat2 -x <index> -1 <main_file_read1> -2 <main_file_read2> -S usr/output/HITSAT_Alignment_Output.sam",
         [new Downloadable(false, false, "HISAT2 Alignment Results", "hisat_output.sam")]
     )],
     ["htseq-alignment", new Executable(
-        "fasta-to-fastq",
         false,
-        '', // bam file? how many
+        "HTSeq Alignment",
+        'Aligned_Reads_BAM.bam', // aligned_reads_bam file? how many? CBTT
         'htseq',
         ['', ''],
-        [['bam', ''], ['gene_id', ''], ['aligned_reads_bam', ''], ['genes_gtf', ''], ['counts_txt', 'htseq_counts.txt']],
-        "htseq-count -f <bam> -s no -t exon -i <gene_id> <aligned_reads_bam> <genes_gtf> > <counts_txt>",
+        [new Parameter("CBTT", 'text', [], 'bam', ''), // CBTT?
+            new Parameter("HTSeq Gene ID", 'text', [], 'gene_id', ''),
+            new Parameter("HTSeq Genes GTF", 'text', [], 'genes_gtf', ''), // CBTT
+        ],
+        "htseq-count -f <bam> -s no -t exon -i <gene_id> <main_file> <genes_gtf> > usr/output/htseq_counts.txt",
         [new Downloadable(false, false, "Htseq-counts Alignment Results", "htseq_counts.txt")]
     )],
     ["featureCounts-alignment", new Executable(
-        "fasta-to-fastq",
         false,
-        '', // will be an input reads.fq
+        "FeatureCounts Alignment",
+        'Aligned_Reads_BAM.bam', // aligned_reads_bam file? how many? CBTT
         'featureCount',
         ['', ''],
-        [['genes_gtf', ''], ['counts_txt', 'feature_counts.txt'], ['aligned_reads_bam', '']],
-        "featureCounts -a <genes_gtf> -o <counts_txt> <aligned_reads_bam>",
+        [new Parameter("FeatureCounts Genes GTF", 'text', [], 'genes_gtf', '')], // CBTT
+        "featureCounts -a <genes_gtf> -o usr/output/feature_counts.txt <main_file>",
         [new Downloadable(false, false, "Feature-counts Alignment Results", "feature_counts.txt")]
     )],
     ["rna-coverage-r", new Executable(
-        "fasta-to-fastq",
         false,
+        "RNA Coverage (R)",
         '', // will be an input CBTT
         'r',
         ['', ''],
-        [['reads', ''], ['transcripts', '']],
+        [new Parameter("CBTT", 'text', [], 'reads', ''), // CBTT?
+            new Parameter("RNA Coverage Transcripts", 'text', [], 'transcripts', '')], //CBTT
         "library(GenomicAlignments) coverage <- coverageByTranscript(<reads>, <transcripts>)",
         [new Downloadable(false, false, "RNA R Coverage Results", "CBTT")]
     )],
     ["rna-coverage-samtools", new Executable(
-        "fasta-to-fastq",
         false,
+        "RNA Coverage Samtools",
         'SortedBAM.bam', // will be an input bam
         'samtools',
         ['', ''],
-        [['exons_bed', ''], ['coverage_txt', 'rna_coverage.txt']],
-        "samtools coverage -b <exons_bed> <main_file> > coverage_txt",
+        [new Parameter("CBTT", 'text', [], 'exons_bed', '')], // CBTT
+        "samtools coverage -b <exons_bed> <main_file> > usr/output/rna_coverage_txt",
         [new Downloadable(false, false, "RNA Samtools Coverage Results", "rna_coverage.txt")]
     )],
 ]);
-
-// let RNACommands = new Map([
-//     // File Conversion
-//     ["fasta-to-fastq", new Command("Convert FastA to FastQ", false, 'fasta-to-fastq')],
-//     ["fast5-to-fastq", new Command("Convert Fast5 to FastQ", false, 'fast5-to-fastq')],
-//     ["bcl2fastq", new Command("Convert BCL to FastQ", false, 'bcl2fastq')],
-//     ["sam-to-bam", new Command("Convert SAM to BAM", false, 'sam-to-bam')],
-
-//     // PreProcessing
-//     ["sort-bam", new Command("Sort BAM", false, 'sort-bam')],
-//     ["index-bam", new Command("Index BAM", false, 'index-bam')],
-//     ["trimming", new Command("Trimming", false, 'trimming')],
-//     ["alignment-mapping", new Command("Aligment / Mapping", false, 'alignment-mapping')],
-
-//     // Quality Control
-//     ["fastqc", new Command("FastQC", false, 'fastqc')],
-//     ["fastq-screen", new Command("FastQScreen", false, 'fastq-screen')],
-//     ["alignmentqc", new Command("Alignment QC", false, 'alignmentqc')],
-//     ["rseqc", new Command("RSeQC", false, 'rseqc')],
-
-//     // Analysis
-//     ["quantification", new Command("Quantification", false, 'quantification')],
-//     ["normal-diff", new Command("Normalization and Differential Expression", false, 'normal-diff')],
-//     ["quality-yield-metrics", new Command("Collect Quality Yield Metrics", false, 'quality-yield-metrics')],
-//     ["rseq-metrics", new Command("Collect RNA RSeq Metrics", false, 'rseq-metrics')],
-//     ["flagstats-rna", new Command("Flagstat", false, 'flagstats-rna')],
-//     ["coverage-rna", new Command("Coverage", false, 'coverage-rna')],
-// ]);
-
-// let RNAParameters = new Map([
-//     // File Conversion, no parameters
-//     ["fasta-to-fastq", []],
-//     ["fast5-to-fastq", []],
-//     ["bcl2fastq", []],
-//     ["sam-to-bam", []],
-
-//     // Pre Processing
-//     ["sort-bam", []], // none
-//     ["index-bam", []], // none
-//     ["trimming", [
-//         new Parameter("Perform Adapter Trim", false, 'checkbox', [], 'adapter_trim', false),
-//         new Parameter("Adapter Trim: Adapter File", true, 'upload', [], 'adapter_trim_file', ''),
-//         new Parameter("Perform Read Length Trim", false, 'checkbox', [], 'read_length_trim', false),
-//         new Parameter("Read Length Trim: Minimum Length", true, 'number', [], 'minlen', ''),
-//         new Parameter("Perform Sliding Window Trim", false, 'checkbox', [], 'sliding_window_trim', false),
-//         new Parameter("Sliding Window Trim: Start", true, 'number', [], 'window_start', ''),
-//         new Parameter("Sliding Window Trim: End", true, 'number', [], 'window_end', ''),
-//         new Parameter("Perform Leading Trim", false, 'checkbox', [], 'leading_trim', false),
-//         new Parameter("Leading Trim: Input", true, 'number', [], 'leading', ''),
-//         new Parameter("Perform Trailing Trim", false, 'checkbox', [], 'trailing_trim', false),
-//         new Parameter("Trailing Trim: Input", true, 'checkbox', [], 'trailing', false),
-//     ]],
-//     ["alignment-mapping", [
-//         new Parameter("Version", false, 'select', ['Bowtie2', 'TopHat', 'Star', 'Salmon', 'HISAT2'], 'version', 'Bowtie2'),
-//     ]],
-
-//     // Quality Control
-//     ["fastqc", []], // none
-//     ["fastq-screen", []],
-//     ["alignmentqc", []],
-//     ["rseqc", []],
-
-//     // Analysis
-//     ["quantification", [
-//         new Parameter("Version", false, 'select', ['htseq-count', 'featureCounts'], 'version', 'htseq-count'),
-//     ]],
-//     ["normal-diff", []],
-//     ["quality-yield-metrics", []],
-//     ["rseq-metrics", []],
-//     ["flagstats-rna", []],
-//     ["coverage-rna", []],
-
-// ]);
 
 module.exports = { DNACategories, DNAExecutables, RNACategories, RNAExecutables };

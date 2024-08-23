@@ -5,6 +5,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const bodyParser = require('body-parser');
+const archiver = require('archiver');
 const Docker = require('dockerode');
 const docker = new Docker();
 var router = express.Router();
@@ -224,9 +225,33 @@ function substitutePlaceholders(pairs, inputString) {
   return inputString;
 }
 
+router.post('/download-folder', upload.none(), async (req, res) => {
+  const folderPath = path.join(__dirname, 'output', req.body.folderName);
+  const zipFilename = 'output.zip';
+
+  res.setHeader('Content-Disposition', `attachment; filename=${req.body.folderName + '.zip'}`);
+  res.setHeader('Content-Type', 'application/zip');
+
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  archive.on('error', err => {
+      throw err;
+  });
+
+  archive.pipe(res);
+
+  // Append the folder to the zip file
+  archive.directory(path.join(__dirname, '..', 'output', req.body.folderName), false);
+
+  archive.finalize();
+})
+
 router.post('/run-command', upload.none(), async (req, res) => {
   // Get the info needed
-  let Executable = JSON.parse(req.body.Executable);
+  // let Executable = JSON.parse(req.body.Executable);
+  let Executables = (inputType == 'DNA') ? DNAExecutables : RNAExecutables;
+  console.log("KEY:", req.body.key);
+  let Executable = Executables.get(req.body.key);
 
   // -- Main File Check --
   let mainFilePath = '';
@@ -305,7 +330,7 @@ router.post('/run-command', upload.none(), async (req, res) => {
     // -- Make downloadable content entries for the results --
     Executable.downloadables.forEach(downloadable => {
       // Check if the result was successfully created by the command
-      if (fs.existsSync(path.join(__dirname, '..', 'output', downloadable.path))) {
+      if (fs.existsSync(path.join(__dirname, '..', 'output', downloadable.path)) || (Executable.specialCase[0] == 'output_dir') ) {
         // if so, push it to the downloadable list
         downloadable_content.push(downloadable);
       }

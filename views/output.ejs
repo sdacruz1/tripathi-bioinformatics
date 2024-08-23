@@ -101,12 +101,12 @@
             enabledItems.forEach((item, index) => {
                 // Create a download link
                 const downloadLink = document.createElement('a');
-                console.log(item.content);
-                downloadLink.href = '../output/' + item.content; // Set the href to the file path
+                console.log(item.path);
+                // NOTE: how to download a file
+                downloadLink.href = '../output/' + item.path; // Set the href to the file path
 
                 // Extract the filename from the file path
-                const fileName = item.content.split('/').pop();
-                downloadLink.download = fileName; // Set the download attribute to the filename
+                downloadLink.download = item.path; // Set the download attribute to the filename
                 downloadLink.style.display = 'none'; // Hide the download link
 
                 // Append the download link to the document body and trigger the download
@@ -118,12 +118,6 @@
                     document.body.removeChild(downloadLink);
                 }, 100);
             });
-        }
-
-        // Function to get file extension from content
-        function getFileExtension(content) {
-            const extension = content.match(/\.([0-9a-z]+)(?=[?#])|(\.)(?:[\w]+)$/i);
-            return extension ? extension[0].replace('.', '') : '';
         }
     </script>
     

@@ -113,7 +113,8 @@
         const MakeRequest = (executable, key) => {
             return new Promise((resolve) => {
                 let formData = new FormData();
-                formData.append('Executable', executable);
+                // formData.append('Executable', executable);
+                formData.append('key', key);
 
                 fetch('/run-command', {
                     method: 'POST',
@@ -152,7 +153,6 @@
 
         function runCommands() {
             let Executables = new Map(JSON.parse('<%- JSON.stringify(Array.from(Executables.entries())) %>'));
-            console.log(Executables);
 
             try {
                 Executables.forEach(async (executable, key) => {
