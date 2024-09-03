@@ -1,5 +1,104 @@
 const { Command, Parameter, Downloadable, Executable } = require('./Structure');
 
+let FastAToFastQ = new Executable(
+    false,
+    "Convert FastA to FastQ",
+    'dummy', // use uploaded
+    'seqtk',
+    ['', ''],
+    [],
+    "seqtk seq -F # <main_file> > usr/output/convertedFastQ.fq",
+    [new Downloadable(false, false, "FastQ from FastA", "convertedFastQ.fq")]
+);
+let Fast5ToFastQ = new Executable(
+    false,
+    "Convert Fast5 to FastQ",
+    'dummy', // use uploaded
+    'fast5-to-fastq',
+    ['output_dir', 'Fast5ConvertedToFastQ'],
+    [],
+    "/usr/uploads/<main_file> > usr/output/Fast5ConvertedToFastQ",
+    [new Downloadable(false, false, "FastQ from Fast5", "Fast5ConvertedToFastQ")]
+);
+let BCL2FastQ = new Executable(
+    false,
+    "Convert BCL to FastQ",
+    'dummy', // use uploaded
+    'illumina-bcl2fastq',
+    ['output_dir', 'BCLConvertedToFastQ'],
+    [],
+    "/bin/bash -c bcl2fastq --runfolder-dir /usr/uploads/<main_file> --output-dir /usr/output/BCLConvertedToFastQ --processing-threads 1 --no-lane-splitting",
+    [new Downloadable(false, false, "BCL2FastQ Conversion Output", "BCLConvertedToFastQ")]
+);
+let FastQC = new Executable(
+    false,
+    "Run FastQC",
+    'convertedFastQ.fq',
+    'fastqc',
+    ['output_dir', 'FastQC_Output'],
+    [],
+    "fastqc <main_file> -o usr/output/FastQC_Output",
+    [new Downloadable(false, false, "FastQC Results", "FastQC_Output.zip")]
+);
+let Trimming = new Executable(
+    false,
+    "Trimming",
+    '',
+    'picard',
+    ['paired', ['output_files', ['usr/output/output_paired_Read1.fastq.gz usr/output/output_unpaired_Read1.fastq.gz usr/output/output_paired_Read2.fastq.gz usr/output/output_unpaired_Read2.fastq.gz', 'usr/output/output_single_trim.fastq.gz']]],
+    [new Parameter("Perform Adapter Trim", 'select', [['Yes', 'ILLUMINACLIP:<adapter_filepath>2:30:2'], ['No', '']], 'adapter_trim', ''),
+    new Parameter("Perform Read Length Trim", 'select', [['Yes', 'MINLEN:'], ['No', '']], 'read_length_trim', ''),
+    new Parameter("Read Length Trim: Minimum Length", 'number', [], 'minlen', ''),
+    new Parameter("Perform Sliding Window Trim", 'select', [['Yes', 'SLIDINGWINDOW:<window_start>:<window_end>'], ['No', '']], 'sliding_window_trim', ''),
+    new Parameter("Window Start", 'number', [], 'window_start', ''),
+    new Parameter("Window End", 'number', [], 'window_end', ''),
+    new Parameter("Perform Leading Trim", 'select', [['Yes', 'LEADING:'], ['No', '']], 'leading_trim', ''),
+    new Parameter("Leading Trim: Input", 'number', [], 'leading_int', ''),
+    new Parameter("Perform Trailing Trim", 'select', [['Yes', 'TRAILING:'], ['No', '']], 'trailing_trim', ''),
+    new Parameter("Trailing Trim: Input", 'number', [], 'trailing_int', ''),
+    ],
+    "java -jar picard.jar <paired_or_single> <main_file> <output_files> <adapter_trim> <read_length_trim><minlen> <sliding_window_trim> <leading_trim><leading_int> <trailing_trim><trailing_int>",
+    [new Downloadable(false, false, "Trimming Paired Read 1", "output_paired_Read1.fastq.gz"),
+    new Downloadable(false, false, "Trimming Unpaired Read 1", "output_unpaired_Read1.fastq.gz"),
+    new Downloadable(false, false, "Trimming Paired Read 2", "output_paired_Read2.fastq.gz"),
+    new Downloadable(false, false, "Trimming Unpaired Read 2", "output_unpaired_Read2.fastq.gz"),
+    new Downloadable(false, false, "Single Trimming Output", "output_single_trim.fastq.gz"),
+    ]
+);
+let SamToBam = new Executable(
+    false,
+    "Convert SAM to BAM",
+    'AlignedSAM.sam',
+    'samtools',
+    ['', ''],
+    [],
+    "samtools view -b <main_file> > usr/output/ConvertedToBAM.bam",
+    [new Downloadable(false, false, "Converted BAM File", "ConvertedToBAM.bam")]
+);
+let SortBamFile = new Executable(
+    false,
+    "Sort BAM File",
+    'ConvertedToBAM.bam',
+    'samtools',
+    ['', ''],
+    [],
+    "sort <main_file> -o usr/output/SortedBAM.bam",
+    [new Downloadable(false, false, "Sorted BAM", "SortedBAM.bam")]
+);
+
+let IndexBamFile = new Executable(
+    false,
+    "Index BAM File",
+    'SortedBAM.bam',
+    'samtools',
+    ['readout', "BAM_Index_Stats.txt"],
+    [],
+    "samtools index <main_file>",
+    [new Downloadable(false, false, "BAM Index", "SortedBAM.bam.bai"),
+    new Downloadable(false, false, "BAM Index", "SortedBAM.bam.csi")
+    ]
+);
+
 // ---- DNA ---- //
 
 const DNACategories = [
@@ -13,71 +112,11 @@ const DNACategories = [
 const refGenomeOptions = [['Human', 'hgch38_index'], ['Mouse', 'House_Mouse_GRCm39'], ['Ecoli', 'Ecoli'], ['HIV', 'HIV'], ['Pig', 'Pig'], ['Staphylococcus_aureus', 'Staphylococcus_aureus']];
 
 let DNAExecutables = new Map([
-    ["fasta-to-fastq", new Executable(
-        false,
-        "Convert FastA to FastQ",
-        'dummy', // use uploaded
-        'seqtk',
-        ['', ''],
-        [],
-        "seqtk seq -F # <main_file> > usr/output/convertedFastQ.fq",
-        [new Downloadable(false, false, "FastQ from FastA", "convertedFastQ.fq")]
-    )],
-    ["fast5-to-fastq", new Executable(
-        false,
-        "Convert Fast5 to FastQ",
-        'dummy', // use uploaded
-        'fast5-to-fastq',
-        ['output_dir', 'Fast5ConvertedToFastQ'],
-        [],
-        "/usr/uploads/<main_file> > usr/output/Fast5ConvertedToFastQ",
-        [new Downloadable(false, false, "FastQ from Fast5", "Fast5ConvertedToFastQ")]
-    )],
-    ["bcl2fastq", new Executable(
-        false,
-        "Convert BCL to FastQ",
-        'dummy', // use uploaded
-        'illumina-bcl2fastq',
-        ['output_dir', 'BCLConvertedToFastQ'],
-        [],
-        "/bin/bash -c bcl2fastq --runfolder-dir /usr/uploads/<main_file> --output-dir /usr/output/BCLConvertedToFastQ --processing-threads 1 --no-lane-splitting",
-        [new Downloadable(false, false, "BCL2FastQ Conversion Output", "BCLConvertedToFastQ")]
-    )],
-    ["fastqc", new Executable(
-        false,
-        "Run FastQC",
-        'convertedFastQ.fq',
-        'fastqc',
-        ['output_dir', 'FastQC_Output'],
-        [],
-        "fastqc <main_file> -o usr/output/FastQC_Output",
-        [new Downloadable(false, false, "FastQC Results", "FastQC_Output.zip")]
-    )],
-    ["trimming", new Executable(
-        false,
-        "Trimming",
-        '',
-        'picard',
-        ['paired', ['output_files', ['usr/output/output_paired_Read1.fastq.gz usr/output/output_unpaired_Read1.fastq.gz usr/output/output_paired_Read2.fastq.gz usr/output/output_unpaired_Read2.fastq.gz', 'usr/output/output_single_trim.fastq.gz']]],
-        [new Parameter("Perform Adapter Trim", 'select', [['Yes', 'ILLUMINACLIP:<adapter_filepath>2:30:2'], ['No', '']], 'adapter_trim', ''),
-        new Parameter("Perform Read Length Trim", 'select', [['Yes', 'MINLEN:'], ['No', '']], 'read_length_trim', ''),
-        new Parameter("Read Length Trim: Minimum Length", 'number', [], 'minlen', ''),
-        new Parameter("Perform Sliding Window Trim", 'select', [['Yes', 'SLIDINGWINDOW:<window_start>:<window_end>'], ['No', '']], 'sliding_window_trim', ''),
-        new Parameter("Window Start", 'number', [], 'window_start', ''),
-        new Parameter("Window End", 'number', [], 'window_end', ''),
-        new Parameter("Perform Leading Trim", 'select', [['Yes', 'LEADING:'], ['No', '']], 'leading_trim', ''),
-        new Parameter("Leading Trim: Input", 'number', [], 'leading_int', ''),
-        new Parameter("Perform Trailing Trim", 'select', [['Yes', 'TRAILING:'], ['No', '']], 'trailing_trim', ''),
-        new Parameter("Trailing Trim: Input", 'number', [], 'trailing_int', ''),
-        ],
-        "java -jar picard.jar <paired_or_single> <main_file> <output_files> <adapter_trim> <read_length_trim><minlen> <sliding_window_trim> <leading_trim><leading_int> <trailing_trim><trailing_int>",
-        [new Downloadable(false, false, "Trimming Paired Read 1", "output_paired_Read1.fastq.gz"),
-        new Downloadable(false, false, "Trimming Unpaired Read 1", "output_unpaired_Read1.fastq.gz"),
-        new Downloadable(false, false, "Trimming Paired Read 2", "output_paired_Read2.fastq.gz"),
-        new Downloadable(false, false, "Trimming Unpaired Read 2", "output_unpaired_Read2.fastq.gz"),
-        new Downloadable(false, false, "Single Trimming Output", "output_single_trim.fastq.gz"),
-        ]
-    )],
+    ["fasta-to-fastq", FastAToFastQ],
+    ["fast5-to-fastq", Fast5ToFastQ],
+    ["bcl2fastq", BCL2FastQ],
+    ["fastqc", FastQC],
+    ["trimming", Trimming],
     ["alignment-bwamem", new Executable(
         false,
         "Alignment BWA",
@@ -108,38 +147,9 @@ let DNAExecutables = new Map([
         "bowtie2 -x usr/refs/<ref_genome>/<ref_genome>.fna -U r <main_file_read1>, <main_file_read2> -S usr/output/AlignedSAM.sam",
         [new Downloadable(false, false, "Aligned SAM File: Bowtie2", "AlignedSAM.sam")]
     )],
-    ["sam-to-bam", new Executable(
-        false,
-        "Convert SAM to BAM",
-        'AlignedSAM.sam',
-        'samtools',
-        ['', ''],
-        [],
-        "samtools view -b <main_file> > usr/output/ConvertedToBAM.bam",
-        [new Downloadable(false, false, "Converted BAM File", "ConvertedToBAM.bam")]
-    )],
-    ["sort-bam-file", new Executable(
-        false,
-        "Sort BAM File",
-        'ConvertedToBAM.bam',
-        'samtools',
-        ['', ''],
-        [],
-        "sort <main_file> -o usr/output/SortedBAM.bam",
-        [new Downloadable(false, false, "Sorted BAM", "SortedBAM.bam")]
-    )],
-    ["index-bam-file", new Executable(
-        false,
-        "Index BAM File",
-        'SortedBAM.bam',
-        'samtools',
-        ['readout', "BAM_Index_Stats.txt"],
-        [],
-        "samtools index <main_file>",
-        [new Downloadable(false, false, "BAM Index", "SortedBAM.bam.bai"),
-        new Downloadable(false, false, "BAM Index", "SortedBAM.bam.csi")
-        ]
-    )],
+    ["sam-to-bam", SamToBam],
+    ["sort-bam-file", SortBamFile],
+    ["index-bam-file", IndexBamFile],
     ["mark-or-remove-duplicates", new Executable(
         false,
         "Mark Or Remove Duplicates",
@@ -257,12 +267,23 @@ let DNAExecutables = new Map([
 
 const RNACategories = [
     { title: "File Conversion", entries: ['fasta-to-fastq', 'fast5-to-fastq', 'bcl2fastq', 'sam-to-bam'] },
-    { title: "Pre Processing", entries: ['sort-bam', 'index-bam', 'trimming', 'alignment-mapping'] },
-    { title: "Quality Control", entries: ['fastqc', 'fastq-screen', 'alignmentqc', 'rseqc'] },
-    { title: "Analysis", entries: ['quantification', 'normal-diff', 'quality-yield-metrics', 'rseq-metrics', 'flagstats-rna', 'coverage-rna'] },
+    { title: "Pre Processing", entries: ['sort-bam', 'index-bam', 'trimming'] },
+    { title: "Quality Control", entries: ['fastqc', 'fastq-screen'] },
+    { title: "Alignment", entries: ['alignment-bowtie2', 'star-alignment', 'salmon-alignment', 'hisat2-alignment', 'htseq-alignment', 'featureCounts-alignment'] },
+    { title: "Coverage", entries: ['rna-coverage-samtools', 'build-index'] },
+    // { title: "Quality Control", entries: ['fastqc', 'fastq-screen', 'alignmentqc', 'rseqc'] },
+    // { title: "Analysis", entries: ['quantification', 'normal-diff', 'quality-yield-metrics', 'rseq-metrics', 'flagstats-rna', 'coverage-rna'] },
 ];
 let RNAExecutables = new Map([
-    ["fastqscreen", new Executable(
+    ["fasta-to-fastq", FastAToFastQ],
+    ["fast5-to-fastq", Fast5ToFastQ],
+    ["bcl2fastq", BCL2FastQ],
+    ["sam-to-bam", SamToBam],
+    ["sort-bam", SortBamFile],
+    ["index-bam", IndexBamFile],
+    ["trimming", Trimming],
+    ["fastqc", FastQC],
+    ["fastq-screen", new Executable(
         false,
         "FastQ Screen",
         'convertedFastQ.fq',
@@ -317,37 +338,38 @@ let RNAExecutables = new Map([
     ["htseq-alignment", new Executable(
         false,
         "HTSeq Alignment",
-        'Aligned_Reads_BAM.bam', // aligned_reads_bam file? how many? CBTT
+        'Aligned_Reads_BAM.bam', // aligned_reads_bam file
         'htseq',
         ['', ''],
-        [new Parameter("CBTT", 'text', [], 'bam', ''), // CBTT?
-            new Parameter("HTSeq Gene ID", 'text', [], 'gene_id', ''),
-            new Parameter("HTSeq Genes GTF", 'text', [], 'genes_gtf', ''), // CBTT
+        [new Parameter("Reverse?", 'select', [['yes', 'yes'], ['no', 'no']], 'reverse_or_not', 'no'),
+            new Parameter("__On Type", 'select', [['exon', 'exon'], ['intron', 'intron']], 'on_type', 'exon'),
+            new Parameter("HTSeq Gene ID", 'text', [], 'gene_id', '664792'),
+            new Parameter("HTSeq Genes GTF", 'select', [['Human', 'GRCh38.p14_genomic'], ['Mouse', 'House_Mouse_GRCm39'], ['Ecoli', 'Ecoli'], ['HIV', 'HIV'], ['Pig', 'Pig'], ['Staphylococcus_aureus', 'Staphylococcus_aureus']], 'genes_gtf', 'House_Mouse_GRCm39'),
         ],
-        "htseq-count -f <bam> -s no -t exon -i <gene_id> <main_file> <genes_gtf> > usr/output/htseq_counts.txt",
+        "htseq-count -f bam -s <reverse_or_not> -t <on_type> -i <gene_id> /<main_file> /usr/refs/RNA/<genes_gtf>/<genes_gtf>.gtf > /usr/output/htseq_counts.txt",
         [new Downloadable(false, false, "Htseq-counts Alignment Results", "htseq_counts.txt")]
     )],
     ["featureCounts-alignment", new Executable(
         false,
         "FeatureCounts Alignment",
-        'Aligned_Reads_BAM.bam', // aligned_reads_bam file? how many? CBTT
-        'featureCount',
+        'Aligned_Reads_BAM.bam', // aligned_reads_bam file
+        'featurecounts:2.0.6',
         ['', ''],
-        [new Parameter("FeatureCounts Genes GTF", 'text', [], 'genes_gtf', '')], // CBTT
-        "featureCounts -a <genes_gtf> -o usr/output/feature_counts.txt <main_file>",
+        [new Parameter("FeatureCounts Genes GTF", 'select', [['Human', 'GRCh38.p14_genomic'], ['Mouse', 'House_Mouse_GRCm39'], ['Ecoli', 'Ecoli'], ['HIV', 'HIV'], ['Pig', 'Pig'], ['Staphylococcus_aureus', 'Staphylococcus_aureus']], 'genes_gtf', 'House_Mouse_GRCm39')],
+        "featureCounts -a /usr/refs/RNA/<genes_gtf>/<genes_gtf>.gtf -o /usr/output/feature_counts.txt /<main_file>",
         [new Downloadable(false, false, "Feature-counts Alignment Results", "feature_counts.txt")]
     )],
-    ["rna-coverage-r", new Executable(
-        false,
-        "RNA Coverage (R)",
-        '', // will be an input CBTT
-        'r',
-        ['', ''],
-        [new Parameter("CBTT", 'text', [], 'reads', ''), // CBTT?
-            new Parameter("RNA Coverage Transcripts", 'text', [], 'transcripts', '')], //CBTT
-        "library(GenomicAlignments) coverage <- coverageByTranscript(<reads>, <transcripts>)",
-        [new Downloadable(false, false, "RNA R Coverage Results", "CBTT")]
-    )],
+    // ["rna-coverage-r", new Executable(
+    //     false,
+    //     "RNA Coverage (R)",
+    //     '', // will be an input CBTT
+    //     'r',
+    //     ['', ''],
+    //     [new Parameter("CBTT", 'text', [], 'reads', ''), // CBTT?
+    //         new Parameter("RNA Coverage Transcripts", 'text', [], 'transcripts', '')], //CBTT
+    //     "library(GenomicAlignments) coverage <- coverageByTranscript(<reads>, <transcripts>)",
+    //     [new Downloadable(false, false, "RNA R Coverage Results", "CBTT")]
+    // )],
     ["rna-coverage-samtools", new Executable(
         false,
         "RNA Coverage Samtools",
@@ -356,6 +378,16 @@ let RNAExecutables = new Map([
         ['', ''],
         [new Parameter("CBTT", 'text', [], 'exons_bed', '')], // CBTT
         "samtools coverage -b <exons_bed> <main_file> > usr/output/rna_coverage_txt",
+        [new Downloadable(false, false, "RNA Samtools Coverage Results", "rna_coverage.txt")]
+    )],
+    ["build-index", new Executable(
+        true,
+        "Make Index Bowtie2",
+        '',
+        'bowtie2',
+        ['', ''],
+        [],
+        "bowtie2-build /usr/refs/House_Mouse_GRCm39/House_Mouse_GRCm39.fna /usr/output/bowtie2_index/house_mouse",
         [new Downloadable(false, false, "RNA Samtools Coverage Results", "rna_coverage.txt")]
     )],
 ]);

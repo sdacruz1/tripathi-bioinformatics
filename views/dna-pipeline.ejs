@@ -88,22 +88,21 @@
                 let Executables = new Map(JSON.parse('<%- JSON.stringify(Array.from(Executables.entries())) %>'));
         
                 function saveButton(key) {
-                    let executable = Executables.get(key);
-                    let parameters = executable.parameters;
+                    let changingEntry = Executables.get(key);
+                    let parameters = changingEntry.parameters;
                     for (let parameter of parameters) {
                         let optionInput = document.getElementById(parameter.title);
                         let optionDisplayTag = document.getElementById('option_' + parameter.title + '_display');
-                        let newValue;
                         switch (parameter.type) {
                             case "number":
                                 parameter.value = optionInput.value.toString();
                             case "text":
                                 parameter.value = optionInput.value;
-                                optionDisplayTag.innerText = newValue.toString();
+                                optionDisplayTag.innerText = optionInput.value.toString();
                                 break;
                             case "checkbox":
                                 // NOTE: not using this anymore
-                                newValue = optionInput.checked;
+                                // newValue = optionInput.checked;
                                 break;
                             case "select":
                                 parameter.value = parameter.options[optionInput.value][1];
@@ -115,15 +114,11 @@
                             default:
                                 console.log("Not a valid input type");
                         }
-                        if (newValue === "") {
-                            // no value was entered, dip
-                            continue;
-                        }
                         // parameter.value = newValue.toString();
                         // optionDisplayTag.innerText = newValue.toString();
                     };
                     Executables.set(key, {
-                        isEnabled: changingEntry.enabled,
+                        isEnabled: changingEntry.isEnabled,
                         title: changingEntry.title,
                         checkFile: changingEntry.checkFile,
                         environment: changingEntry.environment,

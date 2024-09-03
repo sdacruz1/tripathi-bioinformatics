@@ -57,7 +57,7 @@
                         <% 
                         let displayValue = parameter.value;
                         if (parameter.type === "select") {
-                            for (let i = 0; i < category.entries.length; i++) {
+                            for (let i = 0; i < parameter.options.entries.length; i++) {
                                 let option = parameter.options[i];
                                 if (option[1] != parameter.value) {
                                     continue;
