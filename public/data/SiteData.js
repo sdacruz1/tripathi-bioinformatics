@@ -269,8 +269,8 @@ const RNACategories = [
     { title: "File Conversion", entries: ['fasta-to-fastq', 'fast5-to-fastq', 'bcl2fastq', 'sam-to-bam'] },
     { title: "Pre Processing", entries: ['sort-bam', 'index-bam', 'trimming'] },
     { title: "Quality Control", entries: ['fastqc', 'fastq-screen'] },
-    { title: "Alignment", entries: ['alignment-bowtie2', 'star-alignment', 'salmon-alignment', 'hisat2-alignment', 'htseq-alignment', 'featureCounts-alignment'] },
-    { title: "Coverage", entries: ['rna-coverage-samtools', 'build-index'] },
+    { title: "Alignment", entries: ['bowtie2-alignment', 'star-alignment', 'salmon-alignment', 'hisat2-alignment', 'htseq-alignment', 'featureCounts-alignment'] },
+    { title: "Coverage", entries: ['rna-coverage-samtools'] },
     // { title: "Quality Control", entries: ['fastqc', 'fastq-screen', 'alignmentqc', 'rseqc'] },
     // { title: "Analysis", entries: ['quantification', 'normal-diff', 'quality-yield-metrics', 'rseq-metrics', 'flagstats-rna', 'coverage-rna'] },
 ];
@@ -293,14 +293,14 @@ let RNAExecutables = new Map([
         "fastq_screen --conf <fastq_screen_config> <main_file> --outdir usr/output/FastQScreen_Output",
         [new Downloadable(false, false, "FastQScreen Results", "FastQScreen_Output.zip")]
     )],
-    ["alignment-bowtie2", new Executable(
+    ["bowtie2-alignment", new Executable(
         false,
         "Bowtie2 Alignment",
         '',
         'bowtie2',
         ['', ''],
         [new Parameter("Bowtie2 Alignment Reference Genome", 'select', refGenomeOptions, 'ref_genome', 'hgch38_index')],
-        "bowtie2 -x usr/refs/<ref_genome>/<ref_genome>.fna -U r <main_file_read1>, <main_file_read2> -S usr/output/AlignedSAM.sam",
+        "-x usr/refs/index_files/bowtie2_index/house_mouse -1 <main_file_read1> -2 <main_file_read2> -S usr/output/AlignedSAM.sam", //CBTT, make new ref_genome options menu
         [new Downloadable(false, false, "Bowtie 2 Alignment Results", "AlignedSAM.sam")]
     )],
     ["star-alignment", new Executable(
@@ -310,7 +310,7 @@ let RNAExecutables = new Map([
         'star',
         ['', ''],
         [new Parameter("Star Alignment Reference Genome", 'select', refGenomeOptions, 'ref_genome', 'hgch38_index')],
-        "STAR --genomeDir usr/refs/<ref_genome>/<ref_genome>.fna --readFilesIn <main_file_read1> <main_file_read2> --outFileNamePrefix <output_prefix>", // CBTT, choose a static output prefix
+        "STAR --genomeDir /usr/refs/index_files/star_indices --readFilesIn /<main_file_read1> /<main_file_read2> --outFileNamePrefix /usr/output/Star_Alignment_Output", // CBTT, choose a static output prefix
         [new Downloadable(false, false, "Star Alignment Results", "CBTT")]
     )],
     ["salmon-alignment", new Executable(
@@ -331,9 +331,9 @@ let RNAExecutables = new Map([
         '', // will be an input reads.fq
         'hisat2',
         ['', ''],
-        [new Parameter("HISAT2 Index", 'text', [], 'index', ''),],
-        "hisat2 -x <index> -1 <main_file_read1> -2 <main_file_read2> -S usr/output/HITSAT_Alignment_Output.sam",
-        [new Downloadable(false, false, "HISAT2 Alignment Results", "hisat_output.sam")]
+        [new Parameter("HISAT2 Index", 'select', refGenomeOptions, 'index', ''),],
+        "hisat2 -x /usr/refs/index_files/HISAT2_indices/House_Mouse_GRCm39 -1 /<main_file_read1> -2 /<main_file_read2> -S /usr/output/HITSAT_Alignment_Output.sam", // make index chooseable again
+        [new Downloadable(false, false, "HISAT2 Alignment Results", "HITSAT_Alignment_Output.sam")]
     )],
     ["htseq-alignment", new Executable(
         false,
@@ -376,20 +376,10 @@ let RNAExecutables = new Map([
         'SortedBAM.bam', // will be an input bam
         'samtools',
         ['', ''],
-        [new Parameter("CBTT", 'text', [], 'exons_bed', '')], // CBTT
-        "samtools coverage -b <exons_bed> <main_file> > usr/output/rna_coverage_txt",
+        [], // CBTT, might be adding ability to add "sections"?
+        "coverage -o usr/output/rna_coverage.txt -m <main_file>",
         [new Downloadable(false, false, "RNA Samtools Coverage Results", "rna_coverage.txt")]
-    )],
-    ["build-index", new Executable(
-        true,
-        "Make Index Bowtie2",
-        '',
-        'bowtie2',
-        ['', ''],
-        [],
-        "bowtie2-build /usr/refs/House_Mouse_GRCm39/House_Mouse_GRCm39.fna /usr/output/bowtie2_index/house_mouse",
-        [new Downloadable(false, false, "RNA Samtools Coverage Results", "rna_coverage.txt")]
-    )],
+    )]
 ]);
 
 module.exports = { DNACategories, DNAExecutables, RNACategories, RNAExecutables };

@@ -296,6 +296,17 @@ router.post('/run-command', upload.none(), async (req, res) => {
     placeholder : 'main_file',
     value : mainFilePath
   });
+  // CBTT vv
+  allVars.push({
+    title : '', type : '', options : [],
+    placeholder : 'main_file_read1',
+    value : 'usr/output/output_paired_Read1.fastq.gz'
+  });
+  allVars.push({
+    title : '', type : '', options : [],
+    placeholder : 'main_file_read2',
+    value : 'usr/output/output_paired_Read2.fastq.gz'
+  });
 
   // -- Special Case: paired CBTT
   if (Executable.specialCase[0] == 'paired') {
